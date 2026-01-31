@@ -60,21 +60,21 @@
 - Profile management
 
 ### Tasks
-- [ ] Create User model/schema
-- [ ] Implement JWT authentication
-- [ ] Create registration endpoint
-- [ ] Create login endpoint
-- [ ] Build registration form UI
-- [ ] Build login form UI
-- [ ] Add protected routes
-- [ ] Implement session management
-- [ ] Create user profile page
-- [ ] Add password hashing (bcrypt)
+- [x] Create User model/schema
+- [x] Implement JWT authentication
+- [x] Create registration endpoint
+- [x] Create login endpoint
+- [x] Build registration form UI
+- [x] Build login form UI
+- [x] Add protected routes
+- [x] Implement session management
+- [x] Create user profile page
+- [x] Add password hashing (bcrypt)
 
 ### Deliverables
-- Working auth system
-- User can register, login, logout
-- Protected routes implemented
+- ✅ Working auth system
+- ✅ User can register, login, logout
+- ✅ Protected routes implemented
 
 ---
 

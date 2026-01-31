@@ -1,0 +1,23 @@
+{
+  "name": "chess-website",
+  "version": "1.0.0",
+  "description": "Chess website with bots, multiplayer, reviews, commentary & video generation",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "cd frontend && npm run lint -- --fix",
+      "cd frontend && npx prettier --write"
+    ],
+    "backend/**/*.{js,ts}": [
+      "cd backend && npx eslint --fix",
+      "cd backend && npx prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  }
+}

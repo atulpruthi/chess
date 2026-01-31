@@ -5,12 +5,33 @@ import MoveHistory from './components/MoveHistory';
 import GameControls from './components/GameControls';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { UserProfile } from './components/UserProfile';
+import { BotSelection } from './components/BotSelection';
+import { BotChessBoard } from './components/BotChessBoard';
+import { BotGameStatus } from './components/BotGameStatus';
 import { useAuthStore } from './store/authStore';
+import { useBotGameStore } from './store/botGameStore';
 import './App.css';
+
+type GameMode = 'local' | 'bot' | 'selection';
 
 function App() {
   const [showProfile, setShowProfile] = useState(false);
+  const [gameMode, setGameMode] = useState<GameMode>('selection');
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { resetGame: resetBotGame, moveHistory: botMoveHistory } = useBotGameStore();
+
+  const handleNewLocalGame = () => {
+    setGameMode('local');
+  };
+
+  const handleNewBotGame = () => {
+    resetBotGame();
+    setGameMode('selection');
+  };
+
+  const handleStartBotGame = () => {
+    setGameMode('bot');
+  };
 
   return (
     <ProtectedRoute>
@@ -19,7 +40,16 @@ function App() {
           {/* Header */}
           <header className="text-center mb-8">
             <div className="flex justify-between items-center max-w-7xl mx-auto mb-4">
-              <div></div>
+              <div className="flex gap-2">
+                {!showProfile && gameMode !== 'selection' && (
+                  <button
+                    onClick={handleNewBotGame}
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  >
+                    ← Game Menu
+                  </button>
+                )}
+              </div>
               <h1 className="text-5xl font-bold text-white">
                 ♔ Chess Game ♚
               </h1>
@@ -44,7 +74,7 @@ function App() {
               )}
             </div>
             <p className="text-gray-300 text-lg">
-              Play offline chess with full rule validation
+              {gameMode === 'bot' ? 'Playing against Bot' : gameMode === 'local' ? 'Local Game' : 'Choose Your Game Mode'}
             </p>
           </header>
 
@@ -58,9 +88,79 @@ function App() {
               </button>
               <UserProfile />
             </div>
+          ) : gameMode === 'selection' ? (
+            <div className="max-w-7xl mx-auto space-y-6">
+              {/* Game Mode Selection */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <button
+                  onClick={handleNewLocalGame}
+                  className="p-8 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border-2 border-slate-600 hover:border-purple-500 group"
+                >
+                  <div className="text-6xl mb-4">♟️</div>
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+                    Local Game
+                  </h3>
+                  <p className="text-gray-400">
+                    Play against a friend on the same device
+                  </p>
+                </button>
+
+                <button
+                  onClick={handleNewBotGame}
+                  className="p-8 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border-2 border-slate-600 hover:border-blue-500 group"
+                >
+                  <div className="text-6xl mb-4">🤖</div>
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                    Play vs Bot
+                  </h3>
+                  <p className="text-gray-400">
+                    Challenge the computer at various difficulty levels
+                  </p>
+                </button>
+              </div>
+
+              <BotSelection onStartGame={handleStartBotGame} />
+            </div>
+          ) : gameMode === 'bot' ? (
+            <>
+              {/* Bot Game Area */}
+              <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+                {/* Left Panel - Bot Game Status */}
+                <div className="lg:w-80 space-y-6">
+                  <BotGameStatus />
+                  <div className="bg-slate-800 rounded-lg p-4">
+                    <button
+                      onClick={handleNewBotGame}
+                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                    >
+                      New Bot Game
+                    </button>
+                  </div>
+                </div>
+
+                {/* Center - Chess Board */}
+                <div className="flex-1 flex justify-center items-start">
+                  <BotChessBoard />
+                </div>
+
+                {/* Right Panel - Move History */}
+                <div className="lg:w-80">
+                  <div className="bg-slate-800 rounded-lg p-6 shadow-xl">
+                    <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {botMoveHistory.map((move, index) => (
+                        <div key={index} className="text-gray-300">
+                          {Math.floor(index / 2) + 1}. {move}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
             <>
-              {/* Main Game Area */}
+              {/* Local Game Area */}
               <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
                 {/* Left Panel - Game Status */}
                 <div className="lg:w-80 space-y-6">

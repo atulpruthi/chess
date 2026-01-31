@@ -9,12 +9,25 @@ const api = axios.create({
 });
 
 // Add auth token to requests
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const authData = localStorage.getItem('auth-storage');
+    if (authData) {
+      try {
+        const parsed = JSON.parse(authData);
+        const token = parsed.state?.token;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error parsing auth data:', error);
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 export default api;

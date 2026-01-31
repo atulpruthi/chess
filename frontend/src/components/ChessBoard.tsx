@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Chessboard } from 'react-chessboard';
-import { useGameStore, PieceSymbol } from '../store/gameStore';
-import { Square } from 'chess.js';
+import { useGameStore, type PieceSymbol } from '../store/gameStore';
+import { type Square } from 'chess.js';
 
 export default function ChessBoard() {
   const {

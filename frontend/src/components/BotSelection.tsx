@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useBotGameStore, DifficultyLevel } from '../store/botGameStore';
+import { useBotGameStore, type DifficultyLevel } from '../store/botGameStore';
 
 interface BotSelectionProps {
   onStartGame: () => void;

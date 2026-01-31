@@ -8,17 +8,23 @@ import { UserProfile } from './components/UserProfile';
 import { BotSelection } from './components/BotSelection';
 import { BotChessBoard } from './components/BotChessBoard';
 import { BotGameStatus } from './components/BotGameStatus';
+import { MultiplayerLobby } from './components/MultiplayerLobby';
+import { MultiplayerChessBoard } from './components/MultiplayerChessBoard';
+import { MultiplayerGameStatus } from './components/MultiplayerGameStatus';
+import { MultiplayerChat } from './components/MultiplayerChat';
 import { useAuthStore } from './store/authStore';
 import { useBotGameStore } from './store/botGameStore';
+import { useMultiplayerGameStore } from './store/multiplayerGameStore';
 import './App.css';
 
-type GameMode = 'local' | 'bot' | 'selection';
+type GameMode = 'local' | 'bot' | 'multiplayer' | 'selection';
 
 function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>('selection');
   const { user, isAuthenticated, logout } = useAuthStore();
   const { resetGame: resetBotGame, moveHistory: botMoveHistory } = useBotGameStore();
+  const { resetGame: resetMultiplayerGame, moveHistory: multiplayerMoveHistory } = useMultiplayerGameStore();
 
   const handleNewLocalGame = () => {
     setGameMode('local');
@@ -33,6 +39,19 @@ function App() {
     setGameMode('bot');
   };
 
+  const handleStartMultiplayer = () => {
+    setGameMode('multiplayer');
+  };
+
+  const handleBackToMenu = () => {
+    if (gameMode === 'bot') {
+      resetBotGame();
+    } else if (gameMode === 'multiplayer') {
+      resetMultiplayerGame();
+    }
+    setGameMode('selection');
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
@@ -43,7 +62,7 @@ function App() {
               <div className="flex gap-2">
                 {!showProfile && gameMode !== 'selection' && (
                   <button
-                    onClick={handleNewBotGame}
+                    onClick={handleBackToMenu}
                     className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
                   >
                     ← Game Menu
@@ -74,7 +93,7 @@ function App() {
               )}
             </div>
             <p className="text-gray-300 text-lg">
-              {gameMode === 'bot' ? 'Playing against Bot' : gameMode === 'local' ? 'Local Game' : 'Choose Your Game Mode'}
+              {gameMode === 'bot' ? 'Playing against Bot' : gameMode === 'local' ? 'Local Game' : gameMode === 'multiplayer' ? 'Online Multiplayer' : 'Choose Your Game Mode'}
             </p>
           </header>
 
@@ -91,7 +110,7 @@ function App() {
           ) : gameMode === 'selection' ? (
             <div className="max-w-7xl mx-auto space-y-6">
               {/* Game Mode Selection */}
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-3 gap-6">
                 <button
                   onClick={handleNewLocalGame}
                   className="p-8 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border-2 border-slate-600 hover:border-purple-500 group"
@@ -117,10 +136,54 @@ function App() {
                     Challenge the computer at various difficulty levels
                   </p>
                 </button>
+
+                <button
+                  onClick={handleStartMultiplayer}
+                  className="p-8 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border-2 border-slate-600 hover:border-green-500 group"
+                >
+                  <div className="text-6xl mb-4">🌐</div>
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-green-400 transition-colors">
+                    Online Multiplayer
+                  </h3>
+                  <p className="text-gray-400">
+                    Play against players from around the world
+                  </p>
+                </button>
               </div>
 
               <BotSelection onStartGame={handleStartBotGame} />
             </div>
+          ) : gameMode === 'multiplayer' ? (
+            <>
+              {/* Multiplayer Game Area */}
+              <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+                {/* Left Panel - Game Status */}
+                <div className="lg:w-80 space-y-6">
+                  <MultiplayerLobby onGameStart={() => {}} />
+                  <MultiplayerGameStatus />
+                </div>
+
+                {/* Center - Chess Board */}
+                <div className="flex-1 flex justify-center items-start">
+                  <MultiplayerChessBoard />
+                </div>
+
+                {/* Right Panel - Chat and Move History */}
+                <div className="lg:w-80 space-y-6">
+                  <MultiplayerChat />
+                  <div className="bg-slate-800 rounded-lg p-6 shadow-xl">
+                    <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {multiplayerMoveHistory.map((move, index) => (
+                        <div key={index} className="text-gray-300">
+                          {Math.floor(index / 2) + 1}. {move}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : gameMode === 'bot' ? (
             <>
               {/* Bot Game Area */}
@@ -130,7 +193,7 @@ function App() {
                   <BotGameStatus />
                   <div className="bg-slate-800 rounded-lg p-4">
                     <button
-                      onClick={handleNewBotGame}
+                      onClick={handleBackToMenu}
                       className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
                     >
                       New Bot Game

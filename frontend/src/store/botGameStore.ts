@@ -133,7 +133,7 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
         difficulty,
       });
 
-      const { fen, botMove, gameOver, result: gameResult } = response.data;
+      const { fen, gameOver, result: gameResult } = response.data;
 
       // Update with server response
       const newChess = new Chess(fen);

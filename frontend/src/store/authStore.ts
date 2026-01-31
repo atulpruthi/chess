@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5000/api/auth/login', {
+          const response = await fetch('http://localhost:5001/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (username: string, email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5000/api/auth/register', {
+          const response = await fetch('http://localhost:5001/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password }),
@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5000/api/auth/profile', {
+          const response = await fetch('http://localhost:5001/api/auth/profile', {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

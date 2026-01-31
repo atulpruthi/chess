@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
-import { Square } from 'chess.js';
+import { type Square } from 'chess.js';
 import { useBotGameStore } from '../store/botGameStore';
 
 export const BotChessBoard: React.FC = () => {

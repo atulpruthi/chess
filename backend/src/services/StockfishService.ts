@@ -140,7 +140,12 @@ export class StockfishService {
     });
   }
 
-  async evaluatePosition(fen: string, depth: number = 15): Promise<number> {
+  async evaluatePosition(fen: string, depth: number = 15): Promise<{
+    evaluation: number;
+    mateIn: number | null;
+    bestMove: string | null;
+    isForced: boolean;
+  }> {
     await this.waitForReady();
 
     return new Promise((resolve, reject) => {
@@ -150,29 +155,50 @@ export class StockfishService {
       }
 
       let evaluation = 0;
+      let mateIn: number | null = null;
+      let bestMove: string | null = null;
+      let legalMoves = 0;
 
       const dataHandler = (data: Buffer) => {
         const output = data.toString();
         const lines = output.split('\n');
 
         for (const line of lines) {
+          // Count legal moves to determine if position is forced
+          if (line.includes('info depth 1') && line.includes('multipv 1')) {
+            const movesMatch = line.match(/nodes (\d+)/);
+            if (movesMatch) {
+              legalMoves = parseInt(movesMatch[1], 10);
+            }
+          }
+
           // Look for evaluation score
           if (line.includes('score cp')) {
             const match = line.match(/score cp (-?\d+)/);
             if (match) {
-              evaluation = parseInt(match[1], 10) / 100; // Convert centipawns to pawns
+              evaluation = parseInt(match[1], 10); // Keep in centipawns
             }
           } else if (line.includes('score mate')) {
             const match = line.match(/score mate (-?\d+)/);
             if (match) {
-              const mateIn = parseInt(match[1], 10);
-              evaluation = mateIn > 0 ? 1000 : -1000; // Mate advantage
+              mateIn = parseInt(match[1], 10);
+              evaluation = mateIn > 0 ? 100000 : -100000; // Large value for mate
             }
           }
 
+          // Get best move
           if (line.startsWith('bestmove')) {
+            const match = line.match(/bestmove (\w+)/);
+            if (match) {
+              bestMove = match[1];
+            }
             this.process?.stdout?.removeListener('data', dataHandler);
-            resolve(evaluation);
+            resolve({
+              evaluation,
+              mateIn,
+              bestMove,
+              isForced: legalMoves <= 1,
+            });
           }
         }
       };
@@ -187,7 +213,7 @@ export class StockfishService {
       setTimeout(() => {
         this.process?.stdout?.removeListener('data', dataHandler);
         reject(new Error('Evaluation timeout'));
-      }, 15000);
+      }, 30000);
     });
   }
 

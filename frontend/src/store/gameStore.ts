@@ -28,7 +28,7 @@ interface GameActions {
 
 const initialChess = new Chess();
 
-const updateCapturedPieces = (moveHistory: any[], chess: Chess) => {
+const updateCapturedPieces = (moveHistory: any[]) => {
   const captured = { white: [] as string[], black: [] as string[] };
   const tempChess = new Chess();
 
@@ -71,7 +71,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
       if (move) {
         const history = chess.history({ verbose: true });
-        const capturedPieces = updateCapturedPieces(history, chess);
+        const capturedPieces = updateCapturedPieces(history);
 
         set({
           fen: chess.fen(),
@@ -123,7 +123,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     const { chess } = get();
     chess.undo();
     const history = chess.history({ verbose: true });
-    const capturedPieces = updateCapturedPieces(history, chess);
+    const capturedPieces = updateCapturedPieces(history);
 
     set({
       fen: chess.fen(),

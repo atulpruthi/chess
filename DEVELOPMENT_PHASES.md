@@ -85,21 +85,21 @@
 - Multiple difficulty levels
 
 ### Tasks
-- [ ] Setup Stockfish engine
-- [ ] Create Bot service/controller
-- [ ] Implement UCI protocol communication
-- [ ] Create bot difficulty levels (Easy/Medium/Hard)
-- [ ] Add "Play vs Bot" mode UI
-- [ ] Implement bot move calculation
-- [ ] Add bot move delay (UX improvement)
-- [ ] Create bot selection screen
-- [ ] Test bot gameplay thoroughly
-- [ ] Optimize bot performance
+- [x] Setup Stockfish engine
+- [x] Create Bot service/controller
+- [x] Implement UCI protocol communication
+- [x] Create bot difficulty levels (Easy/Medium/Hard)
+- [x] Add "Play vs Bot" mode UI
+- [x] Implement bot move calculation
+- [x] Add bot move delay (UX improvement)
+- [x] Create bot selection screen
+- [x] Test bot gameplay thoroughly
+- [x] Optimize bot performance
 
 ### Deliverables
-- Working bot opponents
-- 3+ difficulty levels
-- Smooth bot gameplay experience
+- ✅ Working bot opponents
+- ✅ 3+ difficulty levels
+- ✅ Smooth bot gameplay experience
 
 ---
 

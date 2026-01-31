@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import ChessBoard from './components/ChessBoard';
+import GameStatus from './components/GameStatus';
+import MoveHistory from './components/MoveHistory';
+import GameControls from './components/GameControls';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
+      <div className="container mx-auto">
+        {/* Header */}
+        <header className="text-center mb-8">
+          <h1 className="text-5xl font-bold text-white mb-2">
+            ♔ Chess Game ♚
+          </h1>
+          <p className="text-gray-300 text-lg">
+            Play offline chess with full rule validation
+          </p>
+        </header>
+
+        {/* Main Game Area */}
+        <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+          {/* Left Panel - Game Status */}
+          <div className="lg:w-80 space-y-6">
+            <GameStatus />
+            <GameControls />
+          </div>
+
+          {/* Center - Chess Board */}
+          <div className="flex-1 flex justify-center items-start">
+            <ChessBoard />
+          </div>
+
+          {/* Right Panel - Move History */}
+          <div className="lg:w-80">
+            <MoveHistory />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="text-center mt-8 text-gray-400 text-sm">
+          <p>Built with React, TypeScript, chess.js & react-chessboard</p>
+        </footer>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
+

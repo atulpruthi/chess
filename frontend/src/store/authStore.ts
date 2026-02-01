@@ -6,6 +6,7 @@ interface User {
   username: string;
   email: string;
   rating: number;
+  role?: string;
   avatarUrl?: string;
   bio?: string;
 }

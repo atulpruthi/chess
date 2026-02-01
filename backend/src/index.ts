@@ -7,6 +7,7 @@ import botRoutes from './routes/bot';
 import statsRoutes from './routes/stats';
 import gameRoutes from './routes/games';
 import analysisRoutes from './routes/analysis';
+import adminRoutes from './routes/admin';
 import SocketService from './services/SocketService';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/api/bot', botRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Basic health check route
 app.get('/api/health', (req: Request, res: Response) => {

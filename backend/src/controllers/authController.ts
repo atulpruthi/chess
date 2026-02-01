@@ -34,9 +34,9 @@ export const register = async (req: Request, res: Response) => {
 
     // Create user
     const result = await pool.query(
-      `INSERT INTO users (username, email, password_hash, rating) 
-       VALUES ($1, $2, $3, 1200) 
-       RETURNING id, username, email, rating, created_at`,
+      `INSERT INTO users (username, email, password_hash, rating, role) 
+       VALUES ($1, $2, $3, 1200, 'user') 
+       RETURNING id, username, email, rating, role, created_at`,
       [username, email, passwordHash]
     );
 
@@ -57,6 +57,7 @@ export const register = async (req: Request, res: Response) => {
         username: user.username,
         email: user.email,
         rating: user.rating,
+        role: user.role,
         createdAt: user.created_at,
       },
     });
@@ -77,7 +78,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Find user
     const result = await pool.query(
-      'SELECT id, username, email, password_hash, rating, avatar_url, bio FROM users WHERE email = $1',
+      'SELECT id, username, email, password_hash, rating, role, avatar_url, bio FROM users WHERE email = $1',
       [email]
     );
 
@@ -109,6 +110,7 @@ export const login = async (req: Request, res: Response) => {
         username: user.username,
         email: user.email,
         rating: user.rating,
+        role: user.role || 'user',
         avatarUrl: user.avatar_url,
         bio: user.bio,
       },

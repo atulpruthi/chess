@@ -12,6 +12,7 @@ import Leaderboard from './components/Leaderboard.tsx'
 import GameReplay from './components/GameReplay.tsx'
 import GameAnalysis from './components/GameAnalysis.tsx'
 import { UserProfile } from './components/UserProfile.tsx'
+import AdminDashboard from './components/AdminDashboard.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { useAuthStore } from './store/authStore.ts'
 
@@ -93,6 +94,14 @@ const Router = () => {
         element={
           <ProtectedRoute>
             <UserProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />

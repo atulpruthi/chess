@@ -80,18 +80,21 @@ const Dashboard: React.FC = () => {
   };
 
   const getWinRate = () => {
-    if (!stats || stats.gamesPlayed === 0) return 0;
-    return ((stats.gamesWon / stats.gamesPlayed) * 100).toFixed(1);
+    const s = stats || displayStats;
+    if (!s || s.gamesPlayed === 0) return 0;
+    return ((s.gamesWon / s.gamesPlayed) * 100).toFixed(1);
   };
 
   const getDrawRate = () => {
-    if (!stats || stats.gamesPlayed === 0) return 0;
-    return ((stats.gamesDrawn / stats.gamesPlayed) * 100).toFixed(1);
+    const s = stats || displayStats;
+    if (!s || s.gamesPlayed === 0) return 0;
+    return ((s.gamesDrawn / s.gamesPlayed) * 100).toFixed(1);
   };
 
   const getLossRate = () => {
-    if (!stats || stats.gamesPlayed === 0) return 0;
-    return ((stats.gamesLost / stats.gamesPlayed) * 100).toFixed(1);
+    const s = stats || displayStats;
+    if (!s || s.gamesPlayed === 0) return 0;
+    return ((s.gamesLost / s.gamesPlayed) * 100).toFixed(1);
   };
 
   if (loading) {
@@ -102,13 +105,31 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (!stats || !user) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">No statistics available</div>
+        <div className="text-white text-xl">Please log in</div>
       </div>
     );
   }
+
+  // Initialize default stats if not loaded
+  const displayStats = stats || {
+    gamesPlayed: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    gamesDrawn: 0,
+    botGames: 0,
+    multiplayerGames: 0,
+    bulletGames: 0,
+    blitzGames: 0,
+    rapidGames: 0,
+    classicalGames: 0,
+    highestRating: user.rating,
+    lowestRating: user.rating,
+    bestWinStreak: 0,
+    currentWinStreak: 0,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
@@ -143,9 +164,9 @@ const Dashboard: React.FC = () => {
           {/* Games Played Card */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
             <div className="text-gray-300 text-sm mb-2">Games Played</div>
-            <div className="text-4xl font-bold text-white mb-2">{stats.gamesPlayed}</div>
+            <div className="text-4xl font-bold text-white mb-2">{displayStats.gamesPlayed}</div>
             <div className="text-sm text-emerald-400">
-              {stats.multiplayerGames} multiplayer • {stats.botGames} vs bot
+              {displayStats.multiplayerGames} multiplayer • {displayStats.botGames} vs bot
             </div>
           </div>
 
@@ -154,7 +175,7 @@ const Dashboard: React.FC = () => {
             <div className="text-gray-300 text-sm mb-2">Win Rate</div>
             <div className="text-4xl font-bold text-emerald-400 mb-2">{getWinRate()}%</div>
             <div className="text-sm text-gray-400">
-              {stats.gamesWon}W • {stats.gamesDrawn}D • {stats.gamesLost}L
+              {displayStats.gamesWon}W • {displayStats.gamesDrawn}D • {displayStats.gamesLost}L
             </div>
           </div>
 
@@ -162,10 +183,10 @@ const Dashboard: React.FC = () => {
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
             <div className="text-gray-300 text-sm mb-2">Win Streak</div>
             <div className="text-4xl font-bold text-orange-400 mb-2">
-              🔥 {stats.currentWinStreak}
+              🔥 {displayStats.currentWinStreak}
             </div>
             <div className="text-sm text-gray-400">
-              Best: {stats.bestWinStreak}
+              Best: {displayStats.bestWinStreak}
             </div>
           </div>
         </div>
@@ -181,7 +202,7 @@ const Dashboard: React.FC = () => {
               <div>
                 <div className="flex justify-between text-sm text-gray-300 mb-2">
                   <span>Wins</span>
-                  <span>{stats.gamesWon} ({getWinRate()}%)</span>
+                  <span>{displayStats.gamesWon} ({getWinRate()}%)</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div
@@ -194,7 +215,7 @@ const Dashboard: React.FC = () => {
               <div>
                 <div className="flex justify-between text-sm text-gray-300 mb-2">
                   <span>Draws</span>
-                  <span>{stats.gamesDrawn} ({getDrawRate()}%)</span>
+                  <span>{displayStats.gamesDrawn} ({getDrawRate()}%)</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div
@@ -207,7 +228,7 @@ const Dashboard: React.FC = () => {
               <div>
                 <div className="flex justify-between text-sm text-gray-300 mb-2">
                   <span>Losses</span>
-                  <span>{stats.gamesLost} ({getLossRate()}%)</span>
+                  <span>{displayStats.gamesLost} ({getLossRate()}%)</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div
@@ -223,13 +244,13 @@ const Dashboard: React.FC = () => {
                   <div>
                     <div className="text-sm text-gray-400">Peak Rating</div>
                     <div className="text-2xl font-bold text-emerald-400">
-                      {stats.highestRating}
+                      {displayStats.highestRating}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-gray-400">Lowest Rating</div>
                     <div className="text-2xl font-bold text-red-400">
-                      {stats.lowestRating}
+                      {displayStats.lowestRating}
                     </div>
                   </div>
                 </div>
@@ -250,7 +271,7 @@ const Dashboard: React.FC = () => {
                     <div className="text-sm text-gray-400">1+0 minutes</div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white">{stats.bulletGames}</div>
+                <div className="text-2xl font-bold text-white">{displayStats.bulletGames}</div>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
@@ -261,7 +282,7 @@ const Dashboard: React.FC = () => {
                     <div className="text-sm text-gray-400">3+2 minutes</div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white">{stats.blitzGames}</div>
+                <div className="text-2xl font-bold text-white">{displayStats.blitzGames}</div>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
@@ -272,7 +293,7 @@ const Dashboard: React.FC = () => {
                     <div className="text-sm text-gray-400">10+0 minutes</div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white">{stats.rapidGames}</div>
+                <div className="text-2xl font-bold text-white">{displayStats.rapidGames}</div>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
@@ -283,7 +304,7 @@ const Dashboard: React.FC = () => {
                     <div className="text-sm text-gray-400">30+0 minutes</div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white">{stats.classicalGames}</div>
+                <div className="text-2xl font-bold text-white">{displayStats.classicalGames}</div>
               </div>
             </div>
           </div>

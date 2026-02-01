@@ -24,9 +24,9 @@ export const createBotGame = async (req: Request, res: Response) => {
     const initialFen = chess.fen();
 
     const result = await pool.query(
-      `INSERT INTO games (white_player_id, black_player_id, game_type, status, fen, pgn) 
+      `INSERT INTO games (white_player_id, black_player_id, game_type, status, current_fen, pgn) 
        VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, white_player_id, black_player_id, game_type, status, fen, created_at`,
+       RETURNING id, white_player_id, black_player_id, game_type, status, current_fen, created_at`,
       [
         playerColor === 'white' ? userId : null,
         playerColor === 'black' ? userId : null,
@@ -48,7 +48,7 @@ export const createBotGame = async (req: Request, res: Response) => {
       chess.move(move);
       
       await pool.query(
-        'UPDATE games SET fen = $1, pgn = $2 WHERE id = $3',
+        'UPDATE games SET current_fen = $1, pgn = $2 WHERE id = $3',
         [chess.fen(), chess.pgn(), game.id]
       );
 
@@ -96,7 +96,7 @@ export const makeBotMove = async (req: Request, res: Response) => {
     }
 
     const game = gameResult.rows[0];
-    const chess = new Chess(game.fen);
+    const chess = new Chess(game.current_fen);
 
     // Validate and make player's move
     try {
@@ -116,7 +116,7 @@ export const makeBotMove = async (req: Request, res: Response) => {
       }
 
       await pool.query(
-        'UPDATE games SET fen = $1, pgn = $2, status = $3, result = $4 WHERE id = $5',
+        'UPDATE games SET current_fen = $1, pgn = $2, status = $3, result = $4 WHERE id = $5',
         [chess.fen(), chess.pgn(), 'completed', result, gameId]
       );
 
@@ -156,7 +156,7 @@ export const makeBotMove = async (req: Request, res: Response) => {
 
     // Update game state
     await pool.query(
-      'UPDATE games SET fen = $1, pgn = $2, status = $3, result = $4 WHERE id = $5',
+      'UPDATE games SET current_fen = $1, pgn = $2, status = $3, result = $4 WHERE id = $5',
       [chess.fen(), chess.pgn(), gameOver ? 'completed' : 'active', result, gameId]
     );
 
@@ -211,7 +211,7 @@ export const getBotGame = async (req: Request, res: Response) => {
     res.json({
       game: {
         id: game.id,
-        fen: game.fen,
+        fen: game.current_fen,
         pgn: game.pgn,
         status: game.status,
         result: game.result,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { useGameStore, type PieceSymbol } from '../store/gameStore';
 import { type Square } from 'chess.js';
+import { chessComHighlight, chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export default function ChessBoard() {
   const {
@@ -32,18 +33,19 @@ export default function ChessBoard() {
 
     const newSquares: Record<string, any> = {};
     moves.forEach(move => {
+      const toPiece = chess.get(move.to as Square);
+      const fromPiece = chess.get(square);
       newSquares[move.to] = {
         background:
-          chess.get(move.to as Square) &&
-          chess.get(move.to as Square).color !== chess.get(square).color
-            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
-            : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+          toPiece && fromPiece && toPiece.color !== fromPiece.color
+            ? chessComHighlight.captureRing
+            : chessComHighlight.moveDot,
         borderRadius: '50%',
       };
     });
 
     newSquares[square] = {
-      background: 'rgba(255, 255, 0, 0.4)',
+      background: chessComHighlight.selected,
     };
 
     setOptionSquares(newSquares);
@@ -109,7 +111,7 @@ export default function ChessBoard() {
   };
 
   const onSquareRightClick = (square: Square) => {
-    const color = 'rgba(0, 0, 255, 0.4)';
+    const color = chessComHighlight.rightClick;
     setRightClickedSquares({
       ...rightClickedSquares,
       [square]:
@@ -130,19 +132,22 @@ export default function ChessBoard() {
   return (
     <div className="relative">
       <Chessboard
-        position={fen}
-        onPieceDrop={onPieceDrop}
-        onSquareClick={onSquareClick}
-        onSquareRightClick={onSquareRightClick}
-        customSquareStyles={{
-          ...optionSquares,
-          ...rightClickedSquares,
-        }}
-        boardWidth={560}
-        customBoardStyle={{
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        }}
+        options={chessComOptions({
+          id: 'local-chessboard',
+          position: fen,
+          onPieceDrop: ({ sourceSquare, targetSquare }) =>
+            onPieceDrop(sourceSquare as Square, targetSquare as Square),
+          onSquareClick: ({ square }) => onSquareClick(square as Square),
+          onSquareRightClick: ({ square }) => onSquareRightClick(square as Square),
+          squareStyles: {
+            ...optionSquares,
+            ...rightClickedSquares,
+          },
+          boardStyle: {
+            ...responsiveBoardStyle(560, 240),
+            borderRadius: '8px',
+          },
+        })}
       />
 
       {/* Promotion Dialog */}

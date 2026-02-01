@@ -1,5 +1,6 @@
 import React from 'react';
 import { Chessboard } from 'react-chessboard';
+import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 interface DisplayBoardProps {
   fen: string;
@@ -9,13 +10,18 @@ interface DisplayBoardProps {
 const DisplayBoard: React.FC<DisplayBoardProps> = ({ fen, orientation = 'white' }) => {
   return (
     <Chessboard 
-      position={fen} 
-      boardOrientation={orientation}
-      arePiecesDraggable={false}
-      customBoardStyle={{
-        borderRadius: '4px',
-        boxShadow: '0 5px 15px rgba(0, 0, 0, 0.5)'
-      }}
+      options={chessComOptions({
+        id: 'display-chessboard',
+        position: fen,
+        boardOrientation: orientation,
+        allowDragging: false,
+        showNotation: false,
+        boardStyle: {
+          ...responsiveBoardStyle(360, 260),
+          borderRadius: '4px',
+          boxShadow: '0 5px 15px rgba(0, 0, 0, 0.5)',
+        },
+      })}
     />
   );
 };

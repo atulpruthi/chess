@@ -6,6 +6,7 @@ import { useSocket } from '../hooks/useSocket';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
+import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export const MultiplayerGame = () => {
   const navigate = useNavigate();
@@ -221,13 +222,16 @@ export const MultiplayerGame = () => {
           {/* Center - Chessboard */}
           <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
             <Chessboard
-              position={game.fen()}
-              onPieceDrop={onDrop}
-              boardOrientation={boardOrientation}
-              customBoardStyle={{
-                borderRadius: '8px',
-                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-              }}
+              options={chessComOptions({
+                id: 'multiplayer-room-chessboard',
+                position: game.fen(),
+                onPieceDrop: ({ sourceSquare, targetSquare }) =>
+                  onDrop(sourceSquare as Square, targetSquare as Square),
+                boardOrientation,
+                boardStyle: {
+                  ...responsiveBoardStyle(620, 240),
+                },
+              })}
             />
             <div className="mt-4 text-center">
               <p className="text-white/80">

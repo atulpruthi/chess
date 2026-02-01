@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { type Square } from 'chess.js';
 import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
+import { chessComHighlight, chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export const MultiplayerChessBoard: React.FC = () => {
   const {
@@ -42,14 +43,14 @@ export const MultiplayerChessBoard: React.FC = () => {
         background:
           chess.get(move.to) &&
           chess.get(move.to).color !== chess.get(square).color
-            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
-            : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+            ? chessComHighlight.captureRing
+            : chessComHighlight.moveDot,
         borderRadius: '50%',
       };
     });
 
     newSquares[square] = {
-      background: 'rgba(255, 255, 0, 0.4)',
+      background: chessComHighlight.selected,
     };
 
     return newSquares;
@@ -108,7 +109,7 @@ export const MultiplayerChessBoard: React.FC = () => {
   };
 
   const onSquareRightClick = (square: Square) => {
-    const color = 'rgba(255, 0, 0, 0.5)';
+    const color = chessComHighlight.rightClick;
     setRightClickedSquares({
       ...rightClickedSquares,
       [square]:
@@ -129,20 +130,23 @@ export const MultiplayerChessBoard: React.FC = () => {
   return (
     <div className="relative">
       <Chessboard
-        position={fen}
-        onPieceDrop={onPieceDrop}
-        onSquareClick={onSquareClick}
-        onSquareRightClick={onSquareRightClick}
-        boardOrientation={playerColor || 'white'}
-        customSquareStyles={{
-          ...optionSquares,
-          ...rightClickedSquares,
-        }}
-        customBoardStyle={{
-          borderRadius: '8px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-        }}
-        arePiecesDraggable={isMyTurn && !opponentDisconnected}
+        options={chessComOptions({
+          id: 'multiplayer-chessboard',
+          position: fen,
+          onPieceDrop: ({ sourceSquare, targetSquare }) =>
+            onPieceDrop(sourceSquare as Square, targetSquare as Square),
+          onSquareClick: ({ square }) => onSquareClick(square as Square),
+          onSquareRightClick: ({ square }) => onSquareRightClick(square as Square),
+          boardOrientation: playerColor || 'white',
+          squareStyles: {
+            ...optionSquares,
+            ...rightClickedSquares,
+          },
+          boardStyle: {
+            ...responsiveBoardStyle(560, 260),
+          },
+          allowDragging: isMyTurn && !opponentDisconnected,
+        })}
       />
 
       {/* Check indicator */}

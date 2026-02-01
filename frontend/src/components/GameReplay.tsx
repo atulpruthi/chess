@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { useAuthStore } from '../store/authStore';
+import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 interface GameData {
   id: number;
@@ -29,7 +29,6 @@ interface Move {
 const GameReplay: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   
   const [game, setGame] = useState<Chess>(new Chess());
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -46,7 +45,7 @@ const GameReplay: React.FC = () => {
   }, [gameId]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval> | undefined;
     
     if (isPlaying && currentMoveIndex < moves.length - 1) {
       interval = setInterval(() => {
@@ -234,9 +233,14 @@ const GameReplay: React.FC = () => {
               {/* Board */}
               <div className="mb-4">
                 <Chessboard
-                  position={position}
-                  boardWidth={600}
-                  arePiecesDraggable={false}
+                  options={chessComOptions({
+                    id: 'game-replay-chessboard',
+                    position,
+                    allowDragging: false,
+                    boardStyle: {
+                      ...responsiveBoardStyle(620, 260),
+                    },
+                  })}
                 />
               </div>
 

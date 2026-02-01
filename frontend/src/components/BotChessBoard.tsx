@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { type Square } from 'chess.js';
 import { useBotGameStore } from '../store/botGameStore';
+import { chessComHighlight, chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export const BotChessBoard: React.FC = () => {
   const {
@@ -15,6 +16,10 @@ export const BotChessBoard: React.FC = () => {
     setPromotionSquare,
     promoteAndMove,
   } = useBotGameStore() as any;
+
+  const isMyTurn =
+    (playerColor === 'white' && chess.turn() === 'w') ||
+    (playerColor === 'black' && chess.turn() === 'b');
 
   const [moveFrom, setMoveFrom] = useState<string>('');
   const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, any>>({});
@@ -41,14 +46,14 @@ export const BotChessBoard: React.FC = () => {
         background:
           chess.get(move.to) &&
           chess.get(move.to).color !== chess.get(square).color
-            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
-            : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+            ? chessComHighlight.captureRing
+            : chessComHighlight.moveDot,
         borderRadius: '50%',
       };
     });
 
     newSquares[square] = {
-      background: 'rgba(255, 255, 0, 0.4)',
+      background: chessComHighlight.selected,
     };
 
     return newSquares;
@@ -113,7 +118,7 @@ export const BotChessBoard: React.FC = () => {
   };
 
   const onSquareRightClick = (square: Square) => {
-    const color = 'rgba(255, 0, 0, 0.5)';
+    const color = chessComHighlight.rightClick;
     setRightClickedSquares({
       ...rightClickedSquares,
       [square]:
@@ -132,19 +137,24 @@ export const BotChessBoard: React.FC = () => {
   return (
     <div className="relative">
       <Chessboard
-        position={fen}
-        onPieceDrop={onPieceDrop}
-        onSquareClick={onSquareClick}
-        onSquareRightClick={onSquareRightClick}
-        boardOrientation={playerColor}
-        customSquareStyles={{
-          ...optionSquares,
-          ...rightClickedSquares,
-        }}
-        customBoardStyle={{
-          borderRadius: '8px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-        }}
+        key={`bot-board-${playerColor}`}
+        options={chessComOptions({
+          id: 'bot-chessboard',
+          position: fen,
+          boardOrientation: playerColor,
+          onPieceDrop: ({ sourceSquare, targetSquare }) =>
+            onPieceDrop(sourceSquare as Square, targetSquare as Square),
+          onSquareClick: ({ square }) => onSquareClick(square as Square),
+          onSquareRightClick: ({ square }) => onSquareRightClick(square as Square),
+          squareStyles: {
+            ...optionSquares,
+            ...rightClickedSquares,
+          },
+          boardStyle: {
+            ...responsiveBoardStyle(560, 260),
+          },
+          allowDragging: isMyTurn && !isThinking,
+        })}
       />
 
       {/* Check indicator */}

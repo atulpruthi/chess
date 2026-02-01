@@ -102,8 +102,8 @@ export const BotSelection: React.FC<BotSelectionProps> = ({ onStartGame }) => {
             }`}
           >
             <div className="text-5xl mb-2">♔</div>
-            <div className="text-xl font-bold text-white">White</div>
-            <div className="text-sm text-gray-400 mt-1">You move first</div>
+            <div className="text-xl font-bold text-white">Play as White</div>
+            <div className="text-sm text-gray-400 mt-1">You make the first move</div>
           </button>
           
           <button
@@ -115,8 +115,8 @@ export const BotSelection: React.FC<BotSelectionProps> = ({ onStartGame }) => {
             }`}
           >
             <div className="text-5xl mb-2">♚</div>
-            <div className="text-xl font-bold text-white">Black</div>
-            <div className="text-sm text-gray-400 mt-1">Bot moves first</div>
+            <div className="text-xl font-bold text-white">Play as Black</div>
+            <div className="text-sm text-gray-400 mt-1">Bot makes the first move</div>
           </button>
         </div>
       </div>

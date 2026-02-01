@@ -85,9 +85,18 @@ export const GameLobby = () => {
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-8 text-center">
+        <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-8 text-center max-w-md">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-white/60">Connecting to server...</p>
+          <p className="text-white/60 mb-4">Connecting to game server...</p>
+          <p className="text-white/40 text-sm">
+            If this takes too long, make sure the backend server is running on port 5001
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+          >
+            Retry Connection
+          </button>
         </div>
       </div>
     );
@@ -100,12 +109,22 @@ export const GameLobby = () => {
           <div className="flex items-center justify-between mb-4">
             <div></div>
             <h1 className="text-4xl font-bold text-white">Game Lobby</h1>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-            >
-              📊 Dashboard
-            </button>
+            <div className="flex gap-2">
+              {(user?.role === 'admin' || user?.role === 'moderator') && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                >
+                  👑 Admin
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              >
+                📊 Dashboard
+              </button>
+            </div>
           </div>
           <p className="text-white/60">Welcome, {user?.username}</p>
         </div>
@@ -137,6 +156,12 @@ export const GameLobby = () => {
             }`}
           >
             🎮 Custom Game
+          </button>
+          <button
+            onClick={() => navigate('/local')}
+            className="px-8 py-3 font-semibold rounded-xl transition-all bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"
+          >
+            🤖 Play vs Bot
           </button>
         </div>
 
@@ -201,7 +226,9 @@ export const GameLobby = () => {
                           {room.players[0]?.username}'s Game
                         </p>
                         <p className="text-white/60 text-sm">
-                          {room.timeControl || room.gameMode} • {room.players.length}/2 players
+                          {(room.timeControl
+                            ? `${Math.floor(room.timeControl.initial / 60)}+${room.timeControl.increment}`
+                            : getTimeControlLabel(room.gameMode))} • {room.players.length}/2 players
                           {room.isRated && <span className="ml-2 text-yellow-400">⭐ Rated</span>}
                         </p>
                       </div>
@@ -216,10 +243,9 @@ export const GameLobby = () => {
                   ))
                 )}
               </div>
+            </div>
               </div>
             )}
-            </div>
-          )}
           </div>
 
           {/* Online Users Section */}

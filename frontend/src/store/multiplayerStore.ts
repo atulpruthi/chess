@@ -16,6 +16,7 @@ interface GameRoom {
   status: 'waiting' | 'active' | 'completed';
   winner?: 'white' | 'black' | 'draw';
   gameMode: string;
+  isRated?: boolean;
   timeControl?: {
     initial: number; // seconds
     increment: number; // seconds

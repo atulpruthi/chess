@@ -68,7 +68,7 @@ const Leaderboard: React.FC = () => {
   };
 
   const isCurrentUser = (userId: number) => {
-    return user?.id === userId;
+    return user?.id === String(userId);
   };
 
   if (loading) {

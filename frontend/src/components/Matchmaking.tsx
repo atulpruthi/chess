@@ -54,13 +54,15 @@ export const Matchmaking = () => {
   }, [socket, navigate, setCurrentRoom, setSearching]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (isSearching) {
       interval = setInterval(() => {
         setSearchTime(prev => prev + 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isSearching]);
 
   const handleFindMatch = () => {

@@ -12,9 +12,12 @@ class SocketService {
       return this.socket;
     }
 
+    console.log('🔌 Attempting to connect to:', SOCKET_URL);
+    console.log('🔑 Auth token:', token ? 'Present' : 'Missing');
+
     this.socket = io(SOCKET_URL, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'], // Allow polling as fallback
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

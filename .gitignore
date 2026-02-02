@@ -51,3 +51,6 @@ uploads/
 # Cache
 .cache/
 .parcel-cache/
+
+# Generated UI snapshots
+frontend/ChatGPT Image*.png

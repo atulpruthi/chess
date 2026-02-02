@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { appCenteredClass, appPageClass, buttonSecondaryClass } from '../styles/appTheme';
 
 interface GameHistoryItem {
   id: number;
@@ -142,14 +143,14 @@ const GameHistory: React.FC = () => {
 
   if (loading && page === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className={appCenteredClass}>
         <div className="text-white text-xl">Loading game history...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className={appPageClass}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -160,7 +161,7 @@ const GameHistory: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className={`${buttonSecondaryClass} px-6 py-2`}
             >
               Back to Dashboard
             </button>
@@ -174,7 +175,7 @@ const GameHistory: React.FC = () => {
               <div className="text-gray-400 text-lg">No games found</div>
               <button
                 onClick={() => navigate('/')}
-                className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                className={`${buttonSecondaryClass} mt-4 px-6 py-2`}
               >
                 Play Your First Game
               </button>

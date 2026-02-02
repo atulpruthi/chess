@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { appCenteredClass, appPageClass, buttonSecondaryClass } from '../styles/appTheme';
 
 interface LeaderboardEntry {
   rank: number;
@@ -73,14 +74,14 @@ const Leaderboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className={appCenteredClass}>
         <div className="text-white text-xl">Loading leaderboard...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className={appPageClass}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -91,7 +92,7 @@ const Leaderboard: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className={`${buttonSecondaryClass} px-6 py-2`}
             >
               Back to Dashboard
             </button>

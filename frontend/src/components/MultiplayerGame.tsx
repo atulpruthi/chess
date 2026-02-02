@@ -7,6 +7,7 @@ import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
 import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { appCenteredClass, appPageClass } from '../styles/appTheme';
 
 export const MultiplayerGame = () => {
   const navigate = useNavigate();
@@ -145,7 +146,7 @@ export const MultiplayerGame = () => {
 
   if (!currentRoom) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className={appCenteredClass}>
         <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-8 text-center">
           <p className="text-white text-xl">Loading game...</p>
         </div>
@@ -154,7 +155,7 @@ export const MultiplayerGame = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-8">
+    <div className={appPageClass}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { appCenteredClass, appPageClass, buttonSecondaryClass, glassCardClass, glassCardSoftClass } from '../styles/appTheme';
 
 interface DashboardStats {
   total_users: number;
@@ -210,14 +211,14 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className={appCenteredClass}>
         <div className="text-white">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className={appPageClass}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -227,7 +228,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/lobby')}
-            className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+            className={`${buttonSecondaryClass} px-6 py-2`}
           >
             Back to Game Lobby
           </button>
@@ -239,8 +240,8 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setActiveTab('overview')}
             className={`px-6 py-3 rounded-lg font-semibold ${
               activeTab === 'overview'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-white/10'
             }`}
           >
             Overview
@@ -249,8 +250,8 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setActiveTab('users')}
             className={`px-6 py-3 rounded-lg font-semibold ${
               activeTab === 'users'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-white/10'
             }`}
           >
             Users
@@ -259,8 +260,8 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setActiveTab('games')}
             className={`px-6 py-3 rounded-lg font-semibold ${
               activeTab === 'games'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-white/10'
             }`}
           >
             Games
@@ -270,21 +271,21 @@ const AdminDashboard: React.FC = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className={`${glassCardClass} p-6`}>
               <h3 className="text-gray-400 text-sm mb-2">Total Users</h3>
               <p className="text-3xl font-bold text-white">{stats.total_users}</p>
               <p className="text-green-400 text-sm mt-2">+{stats.new_users_week} this week</p>
             </div>
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className={`${glassCardClass} p-6`}>
               <h3 className="text-gray-400 text-sm mb-2">Total Games</h3>
               <p className="text-3xl font-bold text-white">{stats.total_games}</p>
               <p className="text-blue-400 text-sm mt-2">{stats.games_today} today</p>
             </div>
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className={`${glassCardClass} p-6`}>
               <h3 className="text-gray-400 text-sm mb-2">Banned Users</h3>
               <p className="text-3xl font-bold text-white">{stats.banned_users}</p>
             </div>
-            <div className="bg-gray-800 rounded-lg p-6">
+            <div className={`${glassCardClass} p-6`}>
               <h3 className="text-gray-400 text-sm mb-2">Commentaries</h3>
               <p className="text-3xl font-bold text-white">{stats.total_commentaries}</p>
             </div>
@@ -300,13 +301,13 @@ const AdminDashboard: React.FC = () => {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none"
+                className="px-4 py-2 bg-white/10 text-white rounded-xl border border-white/10 focus:border-blue-500 focus:outline-none"
               />
             </div>
 
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className={`${glassCardSoftClass} overflow-hidden`}>
               <table className="w-full">
-                <thead className="bg-gray-900">
+                <thead className="bg-white/5">
                   <tr>
                     <th className="px-6 py-3 text-left text-white">Username</th>
                     <th className="px-6 py-3 text-left text-white">Email</th>

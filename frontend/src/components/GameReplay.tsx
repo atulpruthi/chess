@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { appCenteredClass, appPageClass, buttonSecondaryClass } from '../styles/appTheme';
 
 interface GameData {
   id: number;
@@ -167,7 +168,7 @@ const GameReplay: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className={appCenteredClass}>
         <div className="text-white text-xl">Loading game...</div>
       </div>
     );
@@ -175,12 +176,12 @@ const GameReplay: React.FC = () => {
 
   if (!gameData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+      <div className={appCenteredClass}>
         <div className="text-center">
           <div className="text-white text-xl mb-4">Game not found</div>
           <button
             onClick={() => navigate('/game-history')}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            className={`${buttonSecondaryClass} px-6 py-2`}
           >
             Back to Game History
           </button>
@@ -190,7 +191,7 @@ const GameReplay: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
+    <div className={appPageClass}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -201,7 +202,7 @@ const GameReplay: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/game-history')}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+              className={`${buttonSecondaryClass} px-6 py-2`}
             >
               Back to History
             </button>

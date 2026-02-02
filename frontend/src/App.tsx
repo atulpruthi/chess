@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ChessBoard from './components/ChessBoard';
 import GameStatus from './components/GameStatus';
 import MoveHistory from './components/MoveHistory';
@@ -15,11 +16,13 @@ import { MultiplayerChat } from './components/MultiplayerChat';
 import { useAuthStore } from './store/authStore';
 import { useBotGameStore } from './store/botGameStore';
 import { useMultiplayerGameStore } from './store/multiplayerGameStore';
+import { appShellClass, glassCardSoftClass, buttonDangerClass, buttonSecondaryClass, buttonPrimaryClass } from './styles/appTheme';
 import './App.css';
 
 type GameMode = 'local' | 'bot' | 'multiplayer' | 'selection';
 
 function App() {
+  const navigate = useNavigate();
   const [showProfile, setShowProfile] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>('selection');
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -54,16 +57,22 @@ function App() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
+      <div className={`${appShellClass} py-8 px-4`}>
         <div className="container mx-auto">
           {/* Header */}
           <header className="text-center mb-8">
             <div className="flex justify-between items-center max-w-7xl mx-auto mb-4">
               <div className="flex gap-2">
+                <button
+                  onClick={() => navigate('/lobby')}
+                  className={`${buttonSecondaryClass} px-4 py-2`}
+                >
+                  ← Game Lobby
+                </button>
                 {!showProfile && gameMode !== 'selection' && (
                   <button
                     onClick={handleBackToMenu}
-                    className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                    className={`${buttonSecondaryClass} px-4 py-2`}
                   >
                     ← Game Menu
                   </button>
@@ -76,7 +85,7 @@ function App() {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setShowProfile(!showProfile)}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors"
+                    className={`flex items-center gap-2 px-4 py-2 ${glassCardSoftClass} hover:bg-white/[0.06] transition-colors`}
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
                       {user?.username.charAt(0).toUpperCase()}
@@ -85,7 +94,7 @@ function App() {
                   </button>
                   <button
                     onClick={logout}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className={`${buttonDangerClass} px-4 py-2`}
                   >
                     Logout
                   </button>
@@ -101,7 +110,7 @@ function App() {
             <div className="max-w-7xl mx-auto">
               <button
                 onClick={() => setShowProfile(false)}
-                className="mb-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                className={`${buttonSecondaryClass} mb-4 px-4 py-2`}
               >
                 ← Back to Game
               </button>
@@ -113,7 +122,7 @@ function App() {
               <div className="grid md:grid-cols-3 gap-6">
                 <button
                   onClick={handleNewLocalGame}
-                  className="p-8 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border-2 border-slate-600 hover:border-purple-500 group"
+                  className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-purple-500/50 group`}
                 >
                   <div className="text-6xl mb-4">♟️</div>
                   <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
@@ -126,7 +135,7 @@ function App() {
 
                 <button
                   onClick={handleNewBotGame}
-                  className="p-8 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border-2 border-slate-600 hover:border-blue-500 group"
+                  className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-blue-500/50 group`}
                 >
                   <div className="text-6xl mb-4">🤖</div>
                   <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
@@ -139,7 +148,7 @@ function App() {
 
                 <button
                   onClick={handleStartMultiplayer}
-                  className="p-8 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all border-2 border-slate-600 hover:border-green-500 group"
+                  className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-emerald-500/40 group`}
                 >
                   <div className="text-6xl mb-4">🌐</div>
                   <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-green-400 transition-colors">
@@ -171,7 +180,7 @@ function App() {
                 {/* Right Panel - Chat and Move History */}
                 <div className="lg:w-80 space-y-6">
                   <MultiplayerChat />
-                  <div className="bg-slate-800 rounded-lg p-6 shadow-xl">
+                  <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
                     <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {multiplayerMoveHistory.map((move, index) => (
@@ -191,10 +200,10 @@ function App() {
                 {/* Left Panel - Bot Game Status */}
                 <div className="lg:w-80 space-y-6">
                   <BotGameStatus />
-                  <div className="bg-slate-800 rounded-lg p-4">
+                  <div className={`${glassCardSoftClass} p-4`}>
                     <button
                       onClick={handleBackToMenu}
-                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                      className={`${buttonPrimaryClass} w-full py-3`}
                     >
                       New Bot Game
                     </button>
@@ -208,7 +217,7 @@ function App() {
 
                 {/* Right Panel - Move History */}
                 <div className="lg:w-80">
-                  <div className="bg-slate-800 rounded-lg p-6 shadow-xl">
+                  <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
                     <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {botMoveHistory.map((move, index) => (

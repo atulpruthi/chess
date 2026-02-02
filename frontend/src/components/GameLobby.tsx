@@ -84,83 +84,84 @@ export const GameLobby = () => {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-8 text-center max-w-md">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-white/60 mb-4">Connecting to game server...</p>
-          <p className="text-white/40 text-sm">
-            If this takes too long, make sure the backend server is running on port 5001
+      <div className="min-h-screen flex items-center justify-center p-6 bg-[#0b0f14] [background-image:radial-gradient(ellipse_at_top,_rgba(99,102,241,0.22),transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(168,85,247,0.18),transparent_55%)]">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-8 shadow-[0_16px_50px_rgba(0,0,0,0.55)]">
+          <div className="flex items-center justify-center mb-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-white/10 border-t-purple-400"></div>
+          </div>
+          <h1 className="text-white text-xl font-semibold text-center">Connecting…</h1>
+          <p className="text-white/60 text-sm text-center mt-2">
+            Connecting to the game server.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-          >
-            Retry Connection
-          </button>
+          <p className="text-white/40 text-xs text-center mt-3">
+            If this takes too long, make sure the backend is running on port 5001.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="h-10 px-5 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div></div>
-            <h1 className="text-4xl font-bold text-white">Game Lobby</h1>
-            <div className="flex gap-2">
-              {(user?.role === 'admin' || user?.role === 'moderator') && (
-                <button
-                  onClick={() => navigate('/admin')}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                >
-                  👑 Admin
-                </button>
-              )}
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-              >
-                📊 Dashboard
-              </button>
+    <div className="min-h-screen bg-[#0b0f14] [background-image:radial-gradient(ellipse_at_top,_rgba(99,102,241,0.22),transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(168,85,247,0.18),transparent_55%)] text-[15px] leading-[1.5]">
+      <div className="lobby-container">
+        <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-3">
+              
+              <div className="lobby-header">
+                <h1 className="text-white tracking-tight">Game Lobby</h1>
+                <p>
+                  Welcome, <span className="text-white font-medium" onClick={() => navigate('/dashboard')}>{user?.username}</span>
+                </p>
+              </div>
             </div>
           </div>
-          <p className="text-white/60">Welcome, {user?.username}</p>
-        </div>
+
+          <div className="flex flex-wrap gap-2 justify-start md:justify-end">
+            
+            {(user?.role === 'admin' || user?.role === 'moderator') && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="h-10 px-4 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
+              >
+                Admin
+              </button>
+            )}
+          </div>
+        </header>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl backdrop-blur-xl">
-            <p className="text-red-400 text-center">{error}</p>
+          <div className="mb-8 rounded-2xl border border-red-500/25 bg-red-500/10 backdrop-blur-xl px-4 py-3">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 h-2 w-2 rounded-full bg-red-400" />
+              <p className="text-red-200/90">{error}</p>
+            </div>
           </div>
         )}
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 justify-center">
+        <div className="action-bar">
           <button
             onClick={() => setSelectedTab('matchmaking')}
-            className={`px-8 py-3 font-semibold rounded-xl transition-all ${
-              selectedTab === 'matchmaking'
-                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/30'
-                : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
-            }`}
+            className={selectedTab === 'matchmaking' ? 'btn-primary' : 'btn-secondary'}
           >
-            🎯 Find Match
+            🔍 Find Match
           </button>
           <button
             onClick={() => setSelectedTab('custom')}
-            className={`px-8 py-3 font-semibold rounded-xl transition-all ${
-              selectedTab === 'custom'
-                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/30'
-                : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
-            }`}
+            className={selectedTab === 'custom' ? 'btn-primary' : 'btn-secondary'}
           >
-            🎮 Custom Game
+            ➕ Create Game
           </button>
-          <button
-            onClick={() => navigate('/local')}
-            className="px-8 py-3 font-semibold rounded-xl transition-all bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"
-          >
+          <button onClick={() => navigate('/local')} className="btn-secondary">
             🤖 Play vs Bot
           </button>
         </div>
@@ -171,110 +172,156 @@ export const GameLobby = () => {
             {selectedTab === 'matchmaking' ? (
               <Matchmaking />
             ) : (
-              <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-                <h2 className="text-2xl font-semibold text-white mb-6">Create Custom Game</h2>
-                
-                <div className="mb-6">
-                  <label className="block text-white/80 mb-3 font-medium">Time Control</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {['bullet', 'blitz', 'rapid', 'classical'].map((control) => (
-                      <button
-                        key={control}
-                    onClick={() => setSelectedTimeControl(control)}
-                    className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${
-                      selectedTimeControl === control
-                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/30'
-                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    <div className="text-sm uppercase tracking-wider">{control}</div>
-                    <div className="text-xs opacity-60">{getTimeControlLabel(control)}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+              <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl p-6 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+                <div className="flex items-start justify-between gap-4 mb-8">
+                  <div>
+                    <h2 className="text-[22px] font-semibold text-white">Create a custom game</h2>
+                    <p className="text-white/55 mt-1">Choose a time control and publish a room.</p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-2 text-[14px] text-white/50">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    <span>Connected</span>
+                  </div>
+                </div>
 
-            <button
-              onClick={handleCreateRoom}
-              disabled={isSearching}
-              className="w-full py-4 px-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-2xl hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSearching ? (
-                <span className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Creating Room...
-                </span>
-              ) : (
-                'Create Game'
-              )}
-            </button>
-
-            {/* Available Rooms */}
-            <div className="mt-8">
-              <h3 className="text-xl font-semibold text-white mb-4">Available Games</h3>
-              <div className="space-y-3">
-                {availableRooms.length === 0 ? (
-                  <p className="text-white/40 text-center py-8">No games available. Create one!</p>
-                ) : (
-                  availableRooms.map((room) => (
-                    <div
-                      key={room.id}
-                      className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all duration-200"
-                    >
-                      <div>
-                        <p className="text-white font-medium">
-                          {room.players[0]?.username}'s Game
-                        </p>
-                        <p className="text-white/60 text-sm">
-                          {(room.timeControl
-                            ? `${Math.floor(room.timeControl.initial / 60)}+${room.timeControl.increment}`
-                            : getTimeControlLabel(room.gameMode))} • {room.players.length}/2 players
-                          {room.isRated && <span className="ml-2 text-yellow-400">⭐ Rated</span>}
-                        </p>
-                      </div>
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-white/80 font-medium">Time control</label>
+                    <span className="text-[14px] text-white/45">{getTimeControlLabel(selectedTimeControl)}</span>
+                  </div>
+                  <div className="time-controls">
+                    {(
+                      [
+                        { key: 'bullet', label: 'Bullet' },
+                        { key: 'blitz', label: 'Blitz' },
+                        { key: 'rapid', label: 'Rapid' },
+                        { key: 'classical', label: 'Classical' },
+                      ] as const
+                    ).map(({ key, label }) => (
                       <button
-                        onClick={() => handleJoinRoom(room.id)}
-                        disabled={room.players.length >= 2 || isSearching}
-                        className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-medium rounded-xl hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        key={key}
+                        type="button"
+                        onClick={() => setSelectedTimeControl(key)}
+                        className={`time-card ${selectedTimeControl === key ? 'active' : ''}`}
+                        aria-pressed={selectedTimeControl === key}
                       >
-                        Join
+                        <h4 className="text-white font-semibold">{label}</h4>
+                        <span className="text-white/70 text-[14px]">{getTimeControlLabel(key)}</span>
                       </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCreateRoom}
+                  disabled={isSearching}
+                  className="w-full h-12 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-white font-semibold hover:shadow-[0_14px_40px_rgba(99,102,241,0.35)] transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSearching ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-t-white" />
+                      Creating room…
+                    </span>
+                  ) : (
+                    'Create game'
+                  )}
+                </button>
+
+                {/* Available Rooms */}
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[20px] font-semibold text-white">Available games</h3>
+                    <span className="text-[14px] text-white/45">{availableRooms.length} rooms</span>
+                  </div>
+
+                  {availableRooms.length === 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+                      <p className="text-white/70 font-medium">No open rooms yet</p>
+                      <p className="text-white/45 text-sm mt-1">Create one above to start playing.</p>
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {availableRooms.map((room) => (
+                        <div
+                          key={room.id}
+                          className="card-lift flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 hover:bg-white/[0.08] transition-colors"
+                        >
+                          <div className="min-w-0 flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/90 font-bold">
+                              {(room.players?.[0]?.username?.[0] || 'G').toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-white font-semibold truncate">
+                                {room.players[0]?.username}'s game
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2 text-[14px] text-white/55 mt-1">
+                                <span className="px-2 py-0.5 rounded-full border border-white/10 bg-white/[0.04]">
+                                  {room.timeControl
+                                    ? `${Math.floor(room.timeControl.initial / 60)}+${room.timeControl.increment}`
+                                    : getTimeControlLabel(room.gameMode)}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full border border-white/10 bg-white/[0.04]">
+                                  {room.players.length}/2 players
+                                </span>
+                                {room.isRated && (
+                                  <span className="px-2 py-0.5 rounded-full border border-yellow-400/25 bg-yellow-400/10 text-yellow-200">
+                                    Rated
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleJoinRoom(room.id)}
+                            disabled={room.players.length >= 2 || isSearching}
+                            className="h-10 px-5 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Join
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
           {/* Online Users Section */}
-          <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-            <h2 className="text-2xl font-semibold text-white mb-6">
-              Online Players
-              <span className="text-white/60 text-sm ml-2">({onlineUsers.length})</span>
-            </h2>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+          <aside className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl p-6 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-semibold text-white">Online players</h2>
+                <div className="text-white/55 text-sm mt-1">Who’s currently connected. - {onlineUsers.length}</div>
+              </div>
+              
+            </div>
+
+            <div className="online-players">
+              <h3>Players</h3>
+              <p>Currently online</p>
+
               {onlineUsers.length === 0 ? (
-                <p className="text-white/40 text-center py-8">No players online</p>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+                  <div className="text-white/70 font-medium">No players online</div>
+                  <div className="text-white/45 text-sm mt-1">Check back in a moment.</div>
+                </div>
               ) : (
-                onlineUsers.map((player) => (
-                  <div
-                    key={player.id}
-                    className="flex items-center space-x-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200"
-                  >
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{player.username}</p>
-                      {player.rating && (
-                        <p className="text-white/60 text-xs">Rating: {player.rating}</p>
-                      )}
+                <div className="space-y-2 max-h-96 overflow-y-auto p-1">
+                  {onlineUsers.map((player) => (
+                    <div key={player.id} className="online-player-row card-lift">
+                      <span className="player-status" />
+                      <div className="min-w-0 truncate">
+                        <span className="player-name truncate">{player.username}</span>
+                        <span className="player-rating tabular-nums">{player.rating ?? '—'}</span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

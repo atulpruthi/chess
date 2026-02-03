@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../hooks/useSocket';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
@@ -7,12 +7,28 @@ import { Matchmaking } from './Matchmaking';
 
 export const GameLobby = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuthStore();
   const { socket, isConnected, createRoom, joinRoom } = useSocket();
   const { availableRooms, setAvailableRooms, setCurrentRoom, isSearching, setSearching, error, setError } = useMultiplayerStore();
   const [selectedTimeControl, setSelectedTimeControl] = useState<string>('blitz');
   const [selectedTab, setSelectedTab] = useState<'matchmaking' | 'custom'>('matchmaking');
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'matchmaking' || tab === 'custom') {
+      setSelectedTab(tab);
+    }
+  }, [location.search]);
+
+  const setLobbyTab = (tab: 'matchmaking' | 'custom') => {
+    setSelectedTab(tab);
+    const params = new URLSearchParams(location.search);
+    params.set('tab', tab);
+    navigate({ pathname: '/lobby', search: params.toString() }, { replace: true });
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -84,7 +100,7 @@ export const GameLobby = () => {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-[#0b0f14] [background-image:radial-gradient(ellipse_at_top,_rgba(99,102,241,0.22),transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(168,85,247,0.18),transparent_55%)]">
+      <div className="lobby-shell flex items-center justify-center p-6">
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-8 shadow-[0_16px_50px_rgba(0,0,0,0.55)]">
           <div className="flex items-center justify-center mb-6">
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-white/10 border-t-purple-400"></div>
@@ -110,36 +126,40 @@ export const GameLobby = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f14] [background-image:radial-gradient(ellipse_at_top,_rgba(99,102,241,0.22),transparent_55%),radial-gradient(ellipse_at_bottom,_rgba(168,85,247,0.18),transparent_55%)] text-[15px] leading-[1.5]">
-      <div className="lobby-container">
-        <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-3">
-              
-              <div className="lobby-header">
-                <h1 className="text-white tracking-tight">Game Lobby</h1>
-                <p>
-                  Welcome, <span className="text-white font-medium" onClick={() => navigate('/dashboard')}>{user?.username}</span>
-                </p>
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+        <div className="max-w-[1100px] mx-auto">
+          <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="lobby-header">
+                  <h2>
+                    <span
+                      className="text-white font-medium cursor-pointer"
+                      onClick={() => navigate('/dashboard')}
+                    >
+                      {user?.username}
+                    </span>
+                  </h2>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-2 justify-start md:justify-end">
-            
-            {(user?.role === 'admin' || user?.role === 'moderator') && (
-              <button
-                onClick={() => navigate('/admin')}
-                className="h-10 px-4 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
-              >
-                Admin
-              </button>
-            )}
-          </div>
-        </header>
+            <div className="flex flex-wrap gap-2 justify-start md:justify-end">
+              {(user?.role === 'admin' || user?.role === 'moderator') && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="h-10 px-4 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
+                >
+                  Admin
+                </button>
+              )}
+            </div>
+          </header>
+        </div>
 
         {error && (
-          <div className="mb-8 rounded-2xl border border-red-500/25 bg-red-500/10 backdrop-blur-xl px-4 py-3">
+          <div className="max-w-[1100px] mx-auto mb-8 rounded-2xl border border-red-500/25 bg-red-500/10 backdrop-blur-xl px-4 py-3">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 h-2 w-2 rounded-full bg-red-400" />
               <p className="text-red-200/90">{error}</p>
@@ -147,26 +167,41 @@ export const GameLobby = () => {
           </div>
         )}
 
-        {/* Tab Navigation */}
-        <div className="action-bar">
-          <button
-            onClick={() => setSelectedTab('matchmaking')}
-            className={selectedTab === 'matchmaking' ? 'btn-primary' : 'btn-secondary'}
-          >
-            🔍 Find Match
-          </button>
-          <button
-            onClick={() => setSelectedTab('custom')}
-            className={selectedTab === 'custom' ? 'btn-primary' : 'btn-secondary'}
-          >
-            ➕ Create Game
-          </button>
-          <button onClick={() => navigate('/local')} className="btn-secondary">
-            🤖 Play vs Bot
-          </button>
-        </div>
+        <div className="lobby-layout">
+          <aside className="lobby-sidebar">
+            <div className="lobby-sidebar-nav">
+              <button
+                onClick={() => setLobbyTab('matchmaking')}
+                className={`${selectedTab === 'matchmaking' ? 'btn-primary' : 'btn-secondary'} sidebar-btn`}
+              >
+                🔍 Find Match
+              </button>
+              <button
+                onClick={() => setLobbyTab('custom')}
+                className={`${selectedTab === 'custom' ? 'btn-primary' : 'btn-secondary'} sidebar-btn`}
+              >
+                ➕ Create Game
+              </button>
+              <button
+                onClick={() => navigate('/local?mode=multiplayer')}
+                className="btn-secondary sidebar-btn"
+              >
+                🌐 Online Multiplayer
+              </button>
+              <button
+                onClick={() => navigate('/local?mode=local')}
+                className="btn-secondary sidebar-btn"
+              >
+                ♟️ Local Game
+              </button>
+              <button onClick={() => navigate('/local?mode=bot')} className="btn-secondary sidebar-btn">
+                🤖 Play vs Bot
+              </button>
+            </div>
+          </aside>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lobby-main">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Section */}
           <div className="lg:col-span-2">
             {selectedTab === 'matchmaking' ? (
@@ -211,11 +246,11 @@ export const GameLobby = () => {
                     ))}
                   </div>
                 </div>
-
+                <div className="mt-5 flex justify-center">
                 <button
                   onClick={handleCreateRoom}
                   disabled={isSearching}
-                  className="w-full h-12 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 text-white font-semibold hover:shadow-[0_14px_40px_rgba(99,102,241,0.35)] transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="find-match-btn transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSearching ? (
                     <span className="flex items-center justify-center gap-2">
@@ -223,10 +258,10 @@ export const GameLobby = () => {
                       Creating room…
                     </span>
                   ) : (
-                    'Create game'
+                    'Create Game'
                   )}
                 </button>
-
+                </div>
                 {/* Available Rooms */}
                 <div className="mt-8">
                   <div className="flex items-center justify-between mb-4">
@@ -293,7 +328,7 @@ export const GameLobby = () => {
             <div className="flex items-end justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-semibold text-white">Online players</h2>
-                <div className="text-white/55 text-sm mt-1">Who’s currently connected. - {onlineUsers.length}</div>
+                <div className="text-white/55 text-sm mt-1">Who’s currently connected - {onlineUsers.length}</div>
               </div>
               
             </div>
@@ -322,6 +357,8 @@ export const GameLobby = () => {
               )}
             </div>
           </aside>
+            </div>
+          </div>
         </div>
       </div>
     </div>

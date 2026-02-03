@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { AuthPage } from './components/AuthPage.tsx'
@@ -18,6 +18,7 @@ import { useAuthStore } from './store/authStore.ts'
 
 const Router = () => {
   const { isAuthenticated } = useAuthStore();
+  const location = useLocation();
 
   return (
     <Routes>
@@ -45,7 +46,11 @@ const Router = () => {
         path="/local"
         element={
           <ProtectedRoute>
-            <App />
+            {new URLSearchParams(location.search).get('mode') ? (
+              <App />
+            ) : (
+              <Navigate to="/lobby" replace />
+            )}
           </ProtectedRoute>
         }
       />

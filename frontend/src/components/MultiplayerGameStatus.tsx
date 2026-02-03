@@ -79,7 +79,11 @@ export const MultiplayerGameStatus: React.FC = () => {
         <div className="flex justify-between items-center">
           <span>Playing as:</span>
           <span className="font-semibold text-white">
-            {playerColor === 'white' ? '♔ White' : '♚ Black'}
+            {playerColor === null
+              ? 'Assigning…'
+              : playerColor === 'white'
+                ? '♔ White'
+                : '♚ Black'}
           </span>
         </div>
 

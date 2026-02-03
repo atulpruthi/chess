@@ -155,15 +155,18 @@ export const Matchmaking = () => {
               </div>
             </div>
           </div>
-
+        
           {/* Find Match Button */}
-          <button
-            onClick={handleFindMatch}
-            disabled={!isConnected}
-            className="find-match-btn transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Find Match
-          </button>
+          <div className="mt-5 flex justify-center">
+              <button
+                onClick={handleFindMatch}
+                disabled={!isConnected}
+                className="find-match-btn transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Find Match
+              </button>
+            
+          </div>
         </>
       ) : (
         <div className="text-center py-8">

@@ -126,18 +126,20 @@ export const MultiplayerChessBoard: React.FC = () => {
   };
 
   const isMyTurn = (playerColor === 'white' && turn === 'w') || (playerColor === 'black' && turn === 'b');
+  const boardOrientation = playerColor === 'black' ? 'black' : 'white';
 
   return (
     <div className="relative">
       <Chessboard
+        key={`multiplayer-board-${playerColor ?? 'pending'}`}
         options={chessComOptions({
-          id: 'multiplayer-chessboard',
+          id: playerColor ? `multiplayer-chessboard-${playerColor}` : 'multiplayer-chessboard',
           position: fen,
           onPieceDrop: ({ sourceSquare, targetSquare }) =>
             onPieceDrop(sourceSquare as Square, targetSquare as Square),
           onSquareClick: ({ square }) => onSquareClick(square as Square),
           onSquareRightClick: ({ square }) => onSquareRightClick(square as Square),
-          boardOrientation: playerColor || 'white',
+          boardOrientation,
           squareStyles: {
             ...optionSquares,
             ...rightClickedSquares,

@@ -5,10 +5,8 @@ import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 
 const TIME_CONTROLS = [
-  { id: 'bullet', name: 'Bullet', time: '1+0', duration: '1-2 min' },
-  { id: 'blitz', name: 'Blitz', time: '3+2', duration: '5-10 min' },
-  { id: 'rapid', name: 'Rapid', time: '10+0', duration: '10-20 min' },
-  { id: 'classical', name: 'Classical', time: '30+0', duration: '30-60 min' },
+  { id: 'rapid', name: 'Rapid (10 minutes)', time: '10+0', duration: '10 minutes' },
+  { id: 'classical', name: 'Classical (30 minutes)', time: '30+0', duration: '30 minutes' },
 ];
 
 export const Matchmaking = () => {
@@ -17,7 +15,7 @@ export const Matchmaking = () => {
   const { socket, isConnected } = useSocket();
   const { setCurrentRoom, setSearching, isSearching } = useMultiplayerStore();
   
-  const [selectedTimeControl, setSelectedTimeControl] = useState('blitz');
+  const [selectedTimeControl, setSelectedTimeControl] = useState('rapid');
   const [isRated, setIsRated] = useState(true);
   const [searchTime, setSearchTime] = useState(0);
 
@@ -116,7 +114,7 @@ export const Matchmaking = () => {
           {/* Time Control Selection */}
           <div className="mb-6">
             <label className="block text-white/80 mb-3 font-medium">Time Control</label>
-            <div className="time-controls">
+            <div className="time-controls time-controls--two">
               {TIME_CONTROLS.map((control) => (
                 <button
                   key={control.id}
@@ -125,9 +123,7 @@ export const Matchmaking = () => {
                   className={`time-card ${selectedTimeControl === control.id ? 'active' : ''}`}
                   aria-pressed={selectedTimeControl === control.id}
                 >
-                  <h4 className="text-white font-semibold">{control.name}</h4>
-                  <span className="text-white/70 text-[14px]">{control.time}</span>
-                  <div className="text-white/50 text-[14px] mt-1">{control.duration}</div>
+                  <h4 className="text-white">{control.name}</h4>
                 </button>
               ))}
             </div>

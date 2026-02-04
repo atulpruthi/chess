@@ -17,6 +17,7 @@ import { useAuthStore } from './store/authStore';
 import { useBotGameStore } from './store/botGameStore';
 import { useMultiplayerGameStore } from './store/multiplayerGameStore';
 import { appShellClass, glassCardSoftClass, buttonSecondaryClass, buttonPrimaryClass } from './styles/appTheme';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './components/icons/NavIcons';
 import './App.css';
 
 type GameMode = 'local' | 'bot' | 'multiplayer' | 'selection';
@@ -27,7 +28,7 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>('selection');
   const [botOnlyMenu, setBotOnlyMenu] = useState(false);
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const { resetGame: resetBotGame, moveHistory: botMoveHistory } = useBotGameStore();
   const { resetGame: resetMultiplayerGame, moveHistory: multiplayerMoveHistory } = useMultiplayerGameStore();
 
@@ -92,23 +93,8 @@ function App() {
         <div className={useLobbyShell ? 'max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8' : 'container mx-auto'}>
           {useLobbyShell ? (
             <div className="max-w-[1100px] mx-auto">
-              <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8">
-                {urlMode === 'multiplayer' || urlMode === 'local' || urlMode === 'bot' ? (
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <div className="lobby-header">
-                        <h2>
-                          <span
-                            className="text-white font-medium cursor-pointer"
-                            onClick={() => navigate('/dashboard')}
-                          >
-                            {user?.username}
-                          </span>
-                        </h2>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
+              <header className="flex flex-col items-start gap-4 mb-8">
+                {urlMode === 'multiplayer' || urlMode === 'local' || urlMode === 'bot' ? null : (
                   <div className="lobby-header">
                     <h1 className="text-white tracking-tight">Play vs Bot</h1>
                     <p>
@@ -154,30 +140,60 @@ function App() {
           ) : useLobbyShell ? (
             <div className="lobby-layout">
               <aside className="lobby-sidebar">
+                <button
+                  type="button"
+                  className="sidebar-user"
+                  onClick={() => navigate('/dashboard')}
+                  aria-label="Open dashboard"
+                >
+                  <div className="sidebar-user-avatar">
+                    {(user?.username?.[0] ?? 'U').toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="sidebar-user-name">{user?.username ?? 'User'}</div>
+                    <div className="sidebar-user-hint">Dashboard</div>
+                  </div>
+                </button>
+
                 <div className="lobby-sidebar-nav">
                   <button onClick={() => goLobbyTab('matchmaking')} className="btn-secondary sidebar-btn">
-                    🔍 Find Match
+                    <IconMagnifier className="nav-icon" />
+                    <span>Find Match</span>
                   </button>
                   <button onClick={() => goLobbyTab('custom')} className="btn-secondary sidebar-btn">
-                    ➕ Create Game
+                    <IconPlus className="nav-icon" />
+                    <span>Create Game</span>
                   </button>
                   <button
                     onClick={() => navigate('/local?mode=multiplayer')}
                     className={`${urlMode === 'multiplayer' ? 'btn-primary' : 'btn-secondary'} sidebar-btn`}
                   >
-                    🌐 Online Multiplayer
+                    <IconGlobe className="nav-icon" />
+                    <span>Online Multiplayer</span>
                   </button>
                   <button
                     onClick={() => navigate('/local?mode=local')}
                     className={`${urlMode === 'local' ? 'btn-primary' : 'btn-secondary'} sidebar-btn`}
                   >
-                    ♟️ Local Game
+                    <IconChessboard className="nav-icon" />
+                    <span>Local Game</span>
                   </button>
                   <button
                     onClick={() => navigate('/local?mode=bot')}
                     className={`${urlMode === 'bot' ? 'btn-primary' : 'btn-secondary'} sidebar-btn`}
                   >
-                    🤖 Play vs Bot
+                    <IconRobot className="nav-icon" />
+                    <span>Play vs Bot</span>
+                  </button>
+                </div>
+
+                <div className="lobby-sidebar-footer">
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="btn-secondary sidebar-btn sidebar-btn--logout"
+                  >
+                    <span>Logout</span>
                   </button>
                 </div>
               </aside>
@@ -193,7 +209,7 @@ function App() {
                             onClick={handleNewLocalGame}
                             className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-purple-500/50 group`}
                           >
-                            <div className="text-6xl mb-4">♟️</div>
+                            <IconChessboard className="kid-hero-icon" />
                             <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
                               Local Game
                             </h3>
@@ -206,7 +222,7 @@ function App() {
                             onClick={handleNewBotGame}
                             className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-blue-500/50 group`}
                           >
-                            <div className="text-6xl mb-4">🤖</div>
+                            <IconRobot className="kid-hero-icon" />
                             <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
                               Play vs Bot
                             </h3>
@@ -219,7 +235,7 @@ function App() {
                             onClick={handleStartMultiplayer}
                             className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-emerald-500/40 group`}
                           >
-                            <div className="text-6xl mb-4">🌐</div>
+                            <IconGlobe className="kid-hero-icon" />
                             <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-green-400 transition-colors">
                               Online Multiplayer
                             </h3>
@@ -340,7 +356,7 @@ function App() {
                       onClick={handleNewLocalGame}
                       className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-purple-500/50 group`}
                     >
-                      <div className="text-6xl mb-4">♟️</div>
+                      <IconChessboard className="kid-hero-icon" />
                       <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
                         Local Game
                       </h3>
@@ -353,7 +369,7 @@ function App() {
                       onClick={handleNewBotGame}
                       className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-blue-500/50 group`}
                     >
-                      <div className="text-6xl mb-4">🤖</div>
+                      <IconRobot className="kid-hero-icon" />
                       <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
                         Play vs Bot
                       </h3>
@@ -366,7 +382,7 @@ function App() {
                       onClick={handleStartMultiplayer}
                       className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-emerald-500/40 group`}
                     >
-                      <div className="text-6xl mb-4">🌐</div>
+                      <IconGlobe className="kid-hero-icon" />
                       <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-green-400 transition-colors">
                         Online Multiplayer
                       </h3>

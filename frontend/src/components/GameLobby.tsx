@@ -4,14 +4,15 @@ import { useSocket } from '../hooks/useSocket';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { Matchmaking } from './Matchmaking';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './icons/NavIcons';
 
 export const GameLobby = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { socket, isConnected, createRoom, joinRoom } = useSocket();
   const { availableRooms, setAvailableRooms, setCurrentRoom, isSearching, setSearching, error, setError } = useMultiplayerStore();
-  const [selectedTimeControl, setSelectedTimeControl] = useState<string>('blitz');
+  const [selectedTimeControl, setSelectedTimeControl] = useState<string>('rapid');
   const [selectedTab, setSelectedTab] = useState<'matchmaking' | 'custom'>('matchmaking');
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
 
@@ -129,23 +130,8 @@ export const GameLobby = () => {
     <div className="lobby-shell">
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
         <div className="max-w-[1100px] mx-auto">
-          <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="lobby-header">
-                  <h2>
-                    <span
-                      className="text-white font-medium cursor-pointer"
-                      onClick={() => navigate('/dashboard')}
-                    >
-                      {user?.username}
-                    </span>
-                  </h2>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-start md:justify-end">
+          <header className="flex flex-col items-start gap-4 mb-8">
+            <div className="flex flex-wrap gap-2 justify-start">
               {(user?.role === 'admin' || user?.role === 'moderator') && (
                 <button
                   onClick={() => navigate('/admin')}
@@ -169,33 +155,63 @@ export const GameLobby = () => {
 
         <div className="lobby-layout">
           <aside className="lobby-sidebar">
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate('/dashboard')}
+              aria-label="Open dashboard"
+            >
+              <div className="sidebar-user-avatar">
+                {(user?.username?.[0] ?? 'U').toUpperCase()}
+              </div>
+              <div>
+                <div className="sidebar-user-name">{user?.username ?? 'User'}</div>
+                <div className="sidebar-user-hint">Dashboard</div>
+              </div>
+            </button>
+
             <div className="lobby-sidebar-nav">
               <button
                 onClick={() => setLobbyTab('matchmaking')}
                 className={`${selectedTab === 'matchmaking' ? 'btn-primary' : 'btn-secondary'} sidebar-btn`}
               >
-                🔍 Find Match
+                <IconMagnifier className="nav-icon" />
+                <span>Find Match</span>
               </button>
               <button
                 onClick={() => setLobbyTab('custom')}
                 className={`${selectedTab === 'custom' ? 'btn-primary' : 'btn-secondary'} sidebar-btn`}
               >
-                ➕ Create Game
+                <IconPlus className="nav-icon" />
+                <span>Create Game</span>
               </button>
               <button
                 onClick={() => navigate('/local?mode=multiplayer')}
                 className="btn-secondary sidebar-btn"
               >
-                🌐 Online Multiplayer
+                <IconGlobe className="nav-icon" />
+                <span>Online Multiplayer</span>
               </button>
               <button
                 onClick={() => navigate('/local?mode=local')}
                 className="btn-secondary sidebar-btn"
               >
-                ♟️ Local Game
+                <IconChessboard className="nav-icon" />
+                <span>Local Game</span>
               </button>
               <button onClick={() => navigate('/local?mode=bot')} className="btn-secondary sidebar-btn">
-                🤖 Play vs Bot
+                <IconRobot className="nav-icon" />
+                <span>Play vs Bot</span>
+              </button>
+            </div>
+
+            <div className="lobby-sidebar-footer">
+              <button
+                type="button"
+                onClick={logout}
+                className="btn-secondary sidebar-btn sidebar-btn--logout"
+              >
+                <span>Logout</span>
               </button>
             </div>
           </aside>
@@ -222,15 +238,12 @@ export const GameLobby = () => {
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-3">
                     <label className="block text-white/80 font-medium">Time control</label>
-                    <span className="text-[14px] text-white/45">{getTimeControlLabel(selectedTimeControl)}</span>
                   </div>
-                  <div className="time-controls">
+                  <div className="time-controls time-controls--two">
                     {(
                       [
-                        { key: 'bullet', label: 'Bullet' },
-                        { key: 'blitz', label: 'Blitz' },
-                        { key: 'rapid', label: 'Rapid' },
-                        { key: 'classical', label: 'Classical' },
+                        { key: 'rapid', label: 'Rapid (10 minutes)' },
+                        { key: 'classical', label: 'Classical (30 minutes)' },
                       ] as const
                     ).map(({ key, label }) => (
                       <button
@@ -240,8 +253,7 @@ export const GameLobby = () => {
                         className={`time-card ${selectedTimeControl === key ? 'active' : ''}`}
                         aria-pressed={selectedTimeControl === key}
                       >
-                        <h4 className="text-white font-semibold">{label}</h4>
-                        <span className="text-white/70 text-[14px]">{getTimeControlLabel(key)}</span>
+                        <h4 className="text-white">{label}</h4>
                       </button>
                     ))}
                   </div>

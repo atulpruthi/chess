@@ -7,7 +7,7 @@ import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
 import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
-import { appCenteredClass, appPageClass } from '../styles/appTheme';
+import { glassCardSoftClass } from '../styles/appTheme';
 
 export const MultiplayerGame = () => {
   const navigate = useNavigate();
@@ -58,6 +58,12 @@ export const MultiplayerGame = () => {
       alert(`Game Over: ${data.reason}`);
     });
 
+    socket.on('ratingUpdate', (data: { oldRating: number; newRating: number; change: number }) => {
+      const changeText = data.change > 0 ? `+${data.change}` : `${data.change}`;
+      console.log(`Rating updated: ${data.oldRating} → ${data.newRating} (${changeText})`);
+      // You can show a toast notification here if you have a toast library
+    });
+
     socket.on('drawOffered', (data: { from: 'white' | 'black' }) => {
       setDrawOffer({ from: data.from, status: 'pending' });
       setShowDrawDialog(true);
@@ -82,6 +88,7 @@ export const MultiplayerGame = () => {
     return () => {
       socket.off('moveMade');
       socket.off('gameOver');
+      socket.off('ratingUpdate');
       socket.off('drawOffered');
       socket.off('drawResponse');
       socket.off('playerDisconnected');
@@ -107,7 +114,9 @@ export const MultiplayerGame = () => {
 
       if (move) {
         setGame(gameCopy);
-        sendMove(move.san);
+        const newFen = gameCopy.fen();
+        const newPgn = gameCopy.pgn();
+        sendMove(move.san, newFen, newPgn);
         return true;
       }
     } catch (error) {
@@ -146,17 +155,18 @@ export const MultiplayerGame = () => {
 
   if (!currentRoom) {
     return (
-      <div className={appCenteredClass}>
-        <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-8 text-center">
-          <p className="text-white text-xl">Loading game...</p>
+      <div className="lobby-shell flex items-center justify-center p-6">
+        <div className={`${glassCardSoftClass} w-full max-w-md p-8 shadow-[0_16px_50px_rgba(0,0,0,0.55)] text-center`}>
+          <p className="text-white text-xl font-semibold">Loading game...</p>
+          <p className="text-white/60 text-sm mt-2">Preparing your multiplayer room.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={appPageClass}>
-      <div className="max-w-7xl mx-auto">
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -171,87 +181,63 @@ export const MultiplayerGame = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Panel - Players & Status */}
-          <div className="space-y-6">
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Players</h3>
-              <div className="space-y-3">
-                {currentRoom.players.map((player) => (
-                  <div
-                    key={player.id}
-                    className={`p-4 rounded-2xl ${
-                      player.color === currentRoom.currentTurn
-                        ? 'bg-purple-500/20 border border-purple-500/30'
-                        : 'bg-white/5 border border-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white font-medium">{player.username}</p>
-                        <p className="text-white/60 text-sm capitalize">{player.color}</p>
-                      </div>
-                      {player.color === currentRoom.currentTurn && (
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      )}
+        <div className="space-y-6">
+          {/* Players section (top) */}
+          <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Players</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {currentRoom.players.map((player) => (
+                <div
+                  key={player.id}
+                  className={`p-4 rounded-2xl ${
+                    player.color === currentRoom.currentTurn
+                      ? 'bg-purple-500/20 border border-purple-500/30'
+                      : 'bg-white/5 border border-white/10'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">{player.username}</p>
+                      <p className="text-white/60 text-sm capitalize">{player.color}</p>
                     </div>
+                    {player.color === currentRoom.currentTurn && (
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                    )}
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chessboard row (board left, move history right) */}
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
+            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
+              <Chessboard
+                options={chessComOptions({
+                  id: 'multiplayer-room-chessboard',
+                  position: game.fen(),
+                  onPieceDrop: ({ sourceSquare, targetSquare }) =>
+                    onDrop(sourceSquare as Square, targetSquare as Square),
+                  boardOrientation,
+                  boardStyle: {
+                    ...responsiveBoardStyle(682, 240),
+                  },
+                })}
+              />
+              <div className="mt-4 text-center">
+                <p className="text-white/80">
+                  {currentRoom.status === 'waiting' ? (
+                    'Waiting for opponent...'
+                  ) : currentRoom.status === 'completed' ? (
+                    `Game Over${currentRoom.winner ? ` - ${currentRoom.winner} wins!` : ' - Draw'}`
+                  ) : (
+                    `${currentRoom.currentTurn}'s turn`
+                  )}
+                </p>
               </div>
             </div>
 
-            {/* Game Controls */}
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6 space-y-3">
-              <h3 className="text-xl font-semibold text-white mb-4">Game Controls</h3>
-              <button
-                onClick={handleOfferDraw}
-                disabled={currentRoom.status !== 'active'}
-                className="w-full px-6 py-3 bg-blue-500/20 border border-blue-500/30 text-blue-400 font-medium rounded-xl hover:bg-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Offer Draw
-              </button>
-              <button
-                onClick={handleResign}
-                disabled={currentRoom.status !== 'active'}
-                className="w-full px-6 py-3 bg-red-500/20 border border-red-500/30 text-red-400 font-medium rounded-xl hover:bg-red-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Resign
-              </button>
-            </div>
-          </div>
-
-          {/* Center - Chessboard */}
-          <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-            <Chessboard
-              options={chessComOptions({
-                id: 'multiplayer-room-chessboard',
-                position: game.fen(),
-                onPieceDrop: ({ sourceSquare, targetSquare }) =>
-                  onDrop(sourceSquare as Square, targetSquare as Square),
-                boardOrientation,
-                boardStyle: {
-                  ...responsiveBoardStyle(620, 240),
-                },
-              })}
-            />
-            <div className="mt-4 text-center">
-              <p className="text-white/80">
-                {currentRoom.status === 'waiting' ? (
-                  'Waiting for opponent...'
-                ) : currentRoom.status === 'completed' ? (
-                  `Game Over${currentRoom.winner ? ` - ${currentRoom.winner} wins!` : ' - Draw'}`
-                ) : (
-                  `${currentRoom.currentTurn}'s turn`
-                )}
-              </p>
-            </div>
-          </div>
-
-          {/* Right Panel - Chat & Moves */}
-          <div className="space-y-6">
-            <GameChat />
-            
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6 max-h-64 overflow-y-auto">
+            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6 max-h-[520px] overflow-y-auto">
               <h3 className="text-xl font-semibold text-white mb-4">Move History</h3>
               <div className="space-y-2">
                 {currentRoom.moves.length === 0 ? (
@@ -263,6 +249,31 @@ export const MultiplayerGame = () => {
                     </div>
                   ))
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom row (chat left, controls right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <GameChat />
+
+            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
+              <h3 className="text-xl font-semibold text-white mb-4">Game Controls</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={handleOfferDraw}
+                  disabled={currentRoom.status !== 'active'}
+                  className="btn-secondary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Offer Draw
+                </button>
+                <button
+                  onClick={handleResign}
+                  disabled={currentRoom.status !== 'active'}
+                  className="btn-secondary sidebar-btn--logout w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Resign
+                </button>
               </div>
             </div>
           </div>

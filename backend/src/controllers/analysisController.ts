@@ -7,6 +7,8 @@ export const analyzeGame = async (req: Request, res: Response) => {
     const gameId = parseInt(String(req.params.gameId));
     const depth = parseInt(req.body.depth) || 20;
 
+    console.log(`🔍 Analyzing game ${gameId} with depth ${depth}`);
+
     if (isNaN(gameId)) {
       return res.status(400).json({ error: 'Invalid game ID' });
     }
@@ -14,6 +16,7 @@ export const analyzeGame = async (req: Request, res: Response) => {
     // Check if analysis already exists
     const existing = await GameAnalysisService.getGameAnalysis(gameId);
     if (existing && existing.analysisCompleted) {
+      console.log(`✅ Analysis already exists for game ${gameId}`);
       return res.json({
         message: 'Analysis already exists',
         analysis: existing,
@@ -21,15 +24,18 @@ export const analyzeGame = async (req: Request, res: Response) => {
     }
 
     // Start analysis (this can take a while)
+    console.log(`⏳ Starting analysis for game ${gameId}...`);
     const analysis = await GameAnalysisService.analyzeGame(gameId, depth);
+    console.log(`✅ Analysis completed for game ${gameId}`);
 
     res.json({
       message: 'Game analysis completed',
       analysis,
     });
   } catch (error) {
-    console.error('Error analyzing game:', error);
-    res.status(500).json({ error: 'Failed to analyze game' });
+    console.error('❌ Error analyzing game:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to analyze game';
+    res.status(500).json({ error: errorMessage });
   }
 };
 

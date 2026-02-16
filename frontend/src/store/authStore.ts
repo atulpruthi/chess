@@ -99,6 +99,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Clear old localStorage token if it exists
+        localStorage.removeItem('token');
         set({
           user: null,
           token: null,

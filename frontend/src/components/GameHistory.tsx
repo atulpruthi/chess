@@ -2,27 +2,44 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { appCenteredClass, appPageClass, buttonSecondaryClass } from '../styles/appTheme';
+import { config } from '../config';
 
 interface GameHistoryItem {
   id: number;
-  whitePlayerId: number;
-  blackPlayerId: number;
-  whiteUsername: string;
-  blackUsername: string;
-  whiteAvatar?: string;
-  blackAvatar?: string;
-  gameType: string;
-  timeControl?: string;
+  whitePlayer: {
+    id: number;
+    username: string;
+    avatar?: string;
+    ratingBefore?: number;
+    ratingAfter?: number;
+    ratingChange?: number;
+  };
+  blackPlayer: {
+    id: number;
+    username: string;
+    avatar?: string;
+    ratingBefore?: number;
+    ratingAfter?: number;
+    ratingChange?: number;
+  };
   result: string;
+  timeControl?: string;
   isRated: boolean;
   totalMoves: number;
-  createdAt: string;
   completedAt: string;
-  pgn: string;
-  userColor: 'white' | 'black';
-  userRatingBefore?: number;
-  userRatingAfter?: number;
-  userRatingChange?: number;
+  isWin: boolean;
+  isDraw: boolean;
+  playerColor: 'white' | 'black';
+}
+
+interface MatchHistoryResponse {
+  games: GameHistoryItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalGames: number;
+    hasMore: boolean;
+  };
 }
 
 const GameHistory: React.FC = () => {
@@ -30,8 +47,10 @@ const GameHistory: React.FC = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<GameHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [timeControlFilter, setTimeControlFilter] = useState<string>('');
   const gamesPerPage = 20;
 
   useEffect(() => {
@@ -41,22 +60,23 @@ const GameHistory: React.FC = () => {
     }
 
     fetchGames();
-  }, [user, navigate, page]);
+  }, [user, navigate, page, timeControlFilter]);
 
   const fetchGames = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const offset = page * gamesPerPage;
+      const timeControlParam = timeControlFilter ? `&timeControl=${timeControlFilter}` : '';
       const response = await fetch(
-        `http://localhost:5001/api/stats/users/${user.id}/history?limit=${gamesPerPage}&offset=${offset}`
+        `${config.apiUrl}/api/games/user/${user.id}/history?page=${page}&limit=${gamesPerPage}${timeControlParam}`
       );
 
       if (response.ok) {
-        const data = await response.json();
-        setGames(data);
-        setHasMore(data.length === gamesPerPage);
+        const data: MatchHistoryResponse = await response.json();
+        setGames(data.games);
+        setTotalPages(data.pagination.totalPages);
+        setHasMore(data.pagination.hasMore);
       }
     } catch (error) {
       console.error('Error fetching game history:', error);
@@ -66,19 +86,13 @@ const GameHistory: React.FC = () => {
   };
 
   const getResultBadge = (game: GameHistoryItem) => {
-    const isUserWhite = game.userColor === 'white';
-    const userWon =
-      (game.result === 'white' && isUserWhite) ||
-      (game.result === 'black' && !isUserWhite);
-    const isDraw = game.result === 'draw';
-
-    if (userWon) {
+    if (game.isWin) {
       return (
         <span className="px-3 py-1 bg-emerald-500 text-white text-sm font-semibold rounded-full">
           Victory
         </span>
       );
-    } else if (isDraw) {
+    } else if (game.isDraw) {
       return (
         <span className="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full">
           Draw
@@ -94,9 +108,13 @@ const GameHistory: React.FC = () => {
   };
 
   const getRatingChange = (game: GameHistoryItem) => {
-    if (!game.userRatingChange || !game.isRated) return null;
+    if (!game.isRated) return null;
 
-    const change = game.userRatingChange;
+    const player = game.playerColor === 'white' ? game.whitePlayer : game.blackPlayer;
+    const change = player.ratingChange || 0;
+    
+    if (change === 0) return null;
+
     const color = change > 0 ? 'text-emerald-400' : 'text-red-400';
     const sign = change > 0 ? '+' : '';
 
@@ -108,15 +126,11 @@ const GameHistory: React.FC = () => {
   };
 
   const getOpponentName = (game: GameHistoryItem) => {
-    return game.userColor === 'white' ? game.blackUsername : game.whiteUsername;
+    return game.playerColor === 'white' ? game.blackPlayer.username : game.whitePlayer.username;
   };
 
   const getTimeControlIcon = (timeControl?: string) => {
     switch (timeControl) {
-      case 'bullet':
-        return '⚡';
-      case 'blitz':
-        return '⚔️';
       case 'rapid':
         return '🎯';
       case 'classical':
@@ -141,29 +155,40 @@ const GameHistory: React.FC = () => {
     navigate(`/game-replay/${gameId}`);
   };
 
-  if (loading && page === 0) {
+  if (loading && page === 1) {
     return (
-      <div className={appCenteredClass}>
+      <div className="lobby-shell flex items-center justify-center p-6">
         <div className="text-white text-xl">Loading game history...</div>
       </div>
     );
   }
 
   return (
-    <div className={appPageClass}>
-      <div className="max-w-6xl mx-auto">
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Game History</h1>
-              <p className="text-gray-300">Review your past games</p>
+              <p className="text-white/70">Review your past games</p>
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className={`${buttonSecondaryClass} px-6 py-2`}
+              className="btn-secondary"
             >
               Back to Dashboard
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={() => setTimeControlFilter('')}
+              className={`time-card ${timeControlFilter === '' ? 'active' : ''}`}
+              style={{ padding: '12px 24px', fontSize: '16px' }}
+            >
+              <h4 className="text-white" style={{ margin: 0, fontSize: '16px' }}>All Games</h4>
             </button>
           </div>
         </div>
@@ -171,11 +196,11 @@ const GameHistory: React.FC = () => {
         {/* Games List */}
         <div className="space-y-4">
           {games.length === 0 ? (
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-12 border border-white/20 text-center">
-              <div className="text-gray-400 text-lg">No games found</div>
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl p-12 border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] text-center">
+              <div className="text-white/60 text-lg">No games found</div>
               <button
                 onClick={() => navigate('/')}
-                className={`${buttonSecondaryClass} mt-4 px-6 py-2`}
+                className="find-match-btn transition-all duration-200" style={{ marginTop: '24px', width: 'auto', paddingLeft: '48px', paddingRight: '48px' }}
               >
                 Play Your First Game
               </button>
@@ -184,7 +209,7 @@ const GameHistory: React.FC = () => {
             games.map((game) => (
               <div
                 key={game.id}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-500/50 transition cursor-pointer"
+                className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl p-6 border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] hover:border-purple-500/50 transition cursor-pointer"
                 onClick={() => handleViewGame(game.id)}
               >
                 <div className="flex items-center justify-between">
@@ -207,22 +232,32 @@ const GameHistory: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <div className="flex items-center gap-4 text-sm text-white/60">
                         <span className="capitalize">{game.timeControl || 'Custom'}</span>
                         <span>•</span>
                         <span>{game.totalMoves} moves</span>
                         <span>•</span>
-                        <span>Playing as {game.userColor}</span>
+                        <span>Playing as {game.playerColor}</span>
                         <span>•</span>
                         <span>{formatDate(game.completedAt)}</span>
                       </div>
 
-                      {game.isRated && game.userRatingBefore && game.userRatingAfter && (
+                      {game.isRated && (
                         <div className="mt-2 text-sm">
-                          <span className="text-gray-400">Rating: </span>
-                          <span className="text-white">{game.userRatingBefore}</span>
-                          <span className="text-gray-400 mx-2">→</span>
-                          <span className="text-white">{game.userRatingAfter}</span>
+                          <span className="text-white/60">Rating: </span>
+                          {game.playerColor === 'white' ? (
+                            <>
+                              <span className="text-white">{game.whitePlayer.ratingBefore || 1200}</span>
+                              <span className="text-white/40 mx-2">→</span>
+                              <span className="text-white">{game.whitePlayer.ratingAfter || 1200}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-white">{game.blackPlayer.ratingBefore || 1200}</span>
+                              <span className="text-white/40 mx-2">→</span>
+                              <span className="text-white">{game.blackPlayer.ratingAfter || 1200}</span>
+                            </>
+                          )}
                           {' '}
                           {getRatingChange(game)}
                         </div>
@@ -237,7 +272,7 @@ const GameHistory: React.FC = () => {
                         e.stopPropagation();
                         navigate(`/game-analysis/${game.id}`);
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                      className="h-10 px-5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all active:scale-[0.97]"
                     >
                       📊 Analyze
                     </button>
@@ -246,7 +281,7 @@ const GameHistory: React.FC = () => {
                         e.stopPropagation();
                         handleViewGame(game.id);
                       }}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                      className="h-10 px-5 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-all active:scale-[0.97]"
                     >
                       View Game →
                     </button>
@@ -261,21 +296,31 @@ const GameHistory: React.FC = () => {
         {games.length > 0 && (
           <div className="mt-8 flex items-center justify-center gap-4">
             <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-              className="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] flex items-center justify-center font-semibold shadow-lg"
+              style={{ minWidth: '48px', height: '40px' }}
             >
-              Previous
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="11 17 6 12 11 7"></polyline>
+                <polyline points="18 17 13 12 18 7"></polyline>
+              </svg>
             </button>
 
-            <span className="text-white">Page {page + 1}</span>
+            <span className="text-white font-semibold text-lg">
+              Page {page} of {totalPages}
+            </span>
 
             <button
               onClick={() => setPage(page + 1)}
               disabled={!hasMore}
-              className="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] flex items-center justify-center font-semibold shadow-lg"
+              style={{ minWidth: '48px', height: '40px' }}
             >
-              Next
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="13 17 18 12 13 7"></polyline>
+                <polyline points="6 17 11 12 6 7"></polyline>
+              </svg>
             </button>
           </div>
         )}

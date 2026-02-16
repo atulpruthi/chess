@@ -239,7 +239,7 @@ const GameReplay: React.FC = () => {
                     position,
                     allowDragging: false,
                     boardStyle: {
-                      ...responsiveBoardStyle(620, 260),
+                      ...responsiveBoardStyle(682, 260),
                     },
                   })}
                 />

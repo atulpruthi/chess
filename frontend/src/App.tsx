@@ -4,11 +4,13 @@ import ChessBoard from './components/ChessBoard';
 import GameStatus from './components/GameStatus';
 import MoveHistory from './components/MoveHistory';
 import GameControls from './components/GameControls';
+import GameTips from './components/GameTips';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { UserProfile } from './components/UserProfile';
 import { BotSelection } from './components/BotSelection';
 import { BotChessBoard } from './components/BotChessBoard';
 import { BotGameStatus } from './components/BotGameStatus';
+import { BotGameReview } from './components/BotGameReview';
 import { MultiplayerLobby } from './components/MultiplayerLobby';
 import { MultiplayerChessBoard } from './components/MultiplayerChessBoard';
 import { MultiplayerGameStatus } from './components/MultiplayerGameStatus';
@@ -28,8 +30,9 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>('selection');
   const [botOnlyMenu, setBotOnlyMenu] = useState(false);
+  const [showBotReview, setShowBotReview] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { resetGame: resetBotGame, moveHistory: botMoveHistory } = useBotGameStore();
+  const { resetGame: resetBotGame, moveHistory: botMoveHistory, gameOver: botGameOver } = useBotGameStore();
   const { resetGame: resetMultiplayerGame, moveHistory: multiplayerMoveHistory } = useMultiplayerGameStore();
 
   const handleNewLocalGame = () => {
@@ -252,21 +255,13 @@ function App() {
                 ) : gameMode === 'multiplayer' ? (
                   <>
                     {/* Multiplayer Game Area */}
-                    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-                      {/* Left Panel - Game Status */}
-                      <div className="lg:w-80 space-y-6">
-                        <MultiplayerLobby onGameStart={() => {}} />
-                        <MultiplayerGameStatus />
-                      </div>
+                    <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[minmax(0,1fr)_320px] overflow-x-auto">
+                      {/* Left Panel - Chess Board */}
+                      <div className="space-y-6">
+                        <div className="w-full flex justify-center items-start mt-2.5">
+                          <MultiplayerChessBoard />
+                        </div>
 
-                      {/* Center - Chess Board */}
-                      <div className="flex-1 flex justify-center items-start">
-                        <MultiplayerChessBoard />
-                      </div>
-
-                      {/* Right Panel - Chat and Move History */}
-                      <div className="lg:w-80 space-y-6">
-                        <MultiplayerChat />
                         <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
                           <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
                           <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -278,63 +273,134 @@ function App() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Right Panel - Lobby + Status + Chat + History */}
+                      <div className="space-y-6">
+                        <MultiplayerLobby onGameStart={() => {}} />
+                        <MultiplayerGameStatus />
+                        <MultiplayerChat />
+                      </div>
                     </div>
                   </>
                 ) : gameMode === 'bot' ? (
                   <>
                     {/* Bot Game Area */}
-                    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-                      {/* Left Panel - Bot Game Status */}
-                      <div className="lg:w-80 space-y-6">
-                        <BotGameStatus />
-                        <div className={`${glassCardSoftClass} p-4`}>
-                          <button
-                            onClick={handleBackToMenu}
-                            className={`${buttonPrimaryClass} w-full py-3`}
-                          >
-                            New Bot Game
-                          </button>
+                    <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[minmax(0,1fr)_320px] overflow-x-auto">
+                      {/* Left Panel - Chess Board + Status */}
+                      <div className="space-y-4">
+                        <div className="w-full flex justify-center items-start mt-2.5">
+                          <BotChessBoard />
                         </div>
-                      </div>
-
-                      {/* Center - Chess Board */}
-                      <div className="flex-1 flex justify-center items-start">
-                        <BotChessBoard />
-                      </div>
-
-                      {/* Right Panel - Move History */}
-                      <div className="lg:w-80">
-                        <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
-                          <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
-                          <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {botMoveHistory.map((move, index) => (
-                              <div key={index} className="text-gray-300">
-                                {Math.floor(index / 2) + 1}. {move}
-                              </div>
-                            ))}
+                        <BotGameStatus />
+                        
+                        {/* Game Actions */}
+                        {!botGameOver && (
+                          <div className="flex gap-4 justify-center">
+                            <button
+                              onClick={() => {
+                                const botStore = useBotGameStore.getState();
+                                botStore.offerDraw();
+                              }}
+                              className="find-match-btn"
+                              style={{ width: 'auto', paddingLeft: '32px', paddingRight: '32px' }}
+                            >
+                              🤝 Offer Draw
+                            </button>
+                            <button
+                              onClick={() => {
+                                const botStore = useBotGameStore.getState();
+                                botStore.resign();
+                              }}
+                              className="find-match-btn"
+                              style={{ 
+                                width: 'auto', 
+                                paddingLeft: '32px', 
+                                paddingRight: '32px',
+                                background: 'linear-gradient(180deg, #ff6b6b 0%, #ee5a52 55%, #dc4b3e 100%)'
+                              }}
+                            >
+                              🏳️ Resign
+                            </button>
                           </div>
+                        )}
+                      </div>
+
+                      {/* Right Panel - History */}
+                      <div className="space-y-6">
+                        <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
+                          <h3 className="text-xl font-bold text-white mb-4 text-center">Move History</h3>
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {botMoveHistory.length === 0 ? (
+                              <div className="text-gray-400 text-center py-4">No moves yet</div>
+                            ) : (
+                              <table className="w-full text-sm">
+                                <tbody>
+                                  {Array.from({ length: Math.ceil(botMoveHistory.length / 2) }, (_, i) => {
+                                    const moveNumber = i + 1;
+                                    const whiteMove = botMoveHistory[i * 2];
+                                    const blackMove = botMoveHistory[i * 2 + 1];
+                                    return (
+                                      <tr key={moveNumber} className="border-b border-white/5">
+                                        <td className="py-2 px-2 text-gray-400 font-medium w-10">
+                                          {moveNumber}.
+                                        </td>
+                                        <td className="py-2 px-2 text-white font-mono w-24">
+                                          {whiteMove}
+                                        </td>
+                                        <td className="py-2 px-2 text-gray-300 font-mono w-24">
+                                          {blackMove || ''}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                          
+                          {/* Game Review Button */}
+                          {botGameOver && botMoveHistory.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-white/10">
+                              <button
+                                onClick={() => setShowBotReview(true)}
+                                className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                              >
+                                <span>🎬</span>
+                                <span>Review Game</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Game Review Modal */}
+                    {showBotReview && (
+                      <BotGameReview onClose={() => setShowBotReview(false)} />
+                    )}
                   </>
                 ) : (
                   <>
                     {/* Local Game Area */}
-                    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-                      {/* Left Panel - Game Status */}
-                      <div className="lg:w-80 space-y-6">
-                        <GameStatus />
+                    <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[minmax(0,1fr)_320px] overflow-x-auto">
+                      {/* Left Panel - Chess Board + Tips */}
+                      <div className="space-y-6">
+                        <div className="w-full flex justify-center items-start mt-2.5">
+                          <ChessBoard />
+                        </div>
+
+                        <div className="flex justify-start">
+                          <div className="w-full max-w-sm">
+                            <GameTips />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Panel - Controls + Status + History */}
+                      <div className="space-y-6">
                         <GameControls />
-                      </div>
-
-                      {/* Center - Chess Board */}
-                      <div className="flex-1 flex justify-center items-start">
-                        <ChessBoard />
-                      </div>
-
-                      {/* Right Panel - Move History */}
-                      <div className="lg:w-80">
                         <MoveHistory />
+                        <GameStatus />
                       </div>
                     </div>
 
@@ -399,21 +465,13 @@ function App() {
           ) : gameMode === 'multiplayer' ? (
             <>
               {/* Multiplayer Game Area */}
-              <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-                {/* Left Panel - Game Status */}
-                <div className="lg:w-80 space-y-6">
-                  <MultiplayerLobby onGameStart={() => {}} />
-                  <MultiplayerGameStatus />
-                </div>
+              <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[minmax(0,1fr)_320px] overflow-x-auto">
+                {/* Left Panel - Chess Board */}
+                <div className="space-y-6">
+                  <div className="w-full flex justify-center items-start mt-2.5">
+                    <MultiplayerChessBoard />
+                  </div>
 
-                {/* Center - Chess Board */}
-                <div className="flex-1 flex justify-center items-start">
-                  <MultiplayerChessBoard />
-                </div>
-
-                {/* Right Panel - Chat and Move History */}
-                <div className="lg:w-80 space-y-6">
-                  <MultiplayerChat />
                   <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
                     <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -425,14 +483,21 @@ function App() {
                     </div>
                   </div>
                 </div>
+
+                {/* Right Panel - Lobby + Status + Chat + History */}
+                <div className="space-y-6">
+                  <MultiplayerLobby onGameStart={() => {}} />
+                  <MultiplayerGameStatus />
+                  <MultiplayerChat />
+                </div>
               </div>
             </>
           ) : gameMode === 'bot' ? (
             <>
               {/* Bot Game Area */}
-              <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-                {/* Left Panel - Bot Game Status */}
-                <div className="lg:w-80 space-y-6">
+              <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[320px_minmax(0,1fr)] overflow-x-auto">
+                {/* Left Panel - Status + Actions + History */}
+                <div className="space-y-6">
                   <BotGameStatus />
                   <div className={`${glassCardSoftClass} p-4`}>
                     <button
@@ -442,15 +507,6 @@ function App() {
                       New Bot Game
                     </button>
                   </div>
-                </div>
-
-                {/* Center - Chess Board */}
-                <div className="flex-1 flex justify-center items-start">
-                  <BotChessBoard />
-                </div>
-
-                {/* Right Panel - Move History */}
-                <div className="lg:w-80">
                   <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
                     <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -462,26 +518,37 @@ function App() {
                     </div>
                   </div>
                 </div>
+
+                {/* Right Panel - Chess Board */}
+                <div className="space-y-6">
+                  <div className="w-full flex justify-center items-start mt-2.5 mx-3">
+                    <BotChessBoard />
+                  </div>
+                </div>
               </div>
             </>
           ) : (
             <>
               {/* Local Game Area */}
-              <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-                {/* Left Panel - Game Status */}
-                <div className="lg:w-80 space-y-6">
-                  <GameStatus />
+              <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[320px_minmax(0,1fr)] overflow-x-auto">
+                {/* Left Panel - Controls + Status */}
+                <div className="space-y-6">
                   <GameControls />
-                </div>
-
-                {/* Center - Chess Board */}
-                <div className="flex-1 flex justify-center items-start">
-                  <ChessBoard />
-                </div>
-
-                {/* Right Panel - Move History */}
-                <div className="lg:w-80">
                   <MoveHistory />
+                  <GameStatus />
+                </div>
+
+                {/* Right Panel - Chess Board + Tips + Move History */}
+                <div className="space-y-6">
+                  <div className="w-full flex justify-center items-start mt-2.5 mx-3">
+                    <ChessBoard />
+                  </div>
+
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-sm">
+                      <GameTips />
+                    </div>
+                  </div>
                 </div>
               </div>
 

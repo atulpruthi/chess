@@ -18,20 +18,26 @@ export class StockfishService {
   }
 
   private initialize(): void {
+    console.log('Initializing Stockfish service...');
     this.readyPromise = new Promise((resolve, reject) => {
       try {
         // Spawn Stockfish process
         this.process = spawn('stockfish');
 
         if (!this.process.stdout || !this.process.stderr) {
-          reject(new Error('Failed to create Stockfish process streams'));
+          const error = new Error('Failed to create Stockfish process streams');
+          console.error(error.message);
+          reject(error);
           return;
         }
+
+        console.log('Stockfish process spawned, waiting for UCI...');
 
         // Listen for ready signal
         this.process.stdout.on('data', (data: Buffer) => {
           const output = data.toString();
           if (output.includes('uciok')) {
+            console.log('✅ Stockfish initialized successfully');
             this.isReady = true;
             resolve();
           }
@@ -42,13 +48,28 @@ export class StockfishService {
         });
 
         this.process.on('error', (error) => {
-          console.error('Stockfish process error:', error);
+          console.error('❌ Stockfish process error:', error);
           reject(error);
+        });
+
+        this.process.on('exit', (code) => {
+          console.log(`Stockfish process exited with code ${code}`);
+          this.isReady = false;
         });
 
         // Initialize UCI mode
         this.sendCommand('uci');
+
+        // Timeout for initialization
+        setTimeout(() => {
+          if (!this.isReady) {
+            const error = new Error('Stockfish initialization timeout');
+            console.error(error.message);
+            reject(error);
+          }
+        }, 5000);
       } catch (error) {
+        console.error('Failed to initialize Stockfish:', error);
         reject(error);
       }
     });
@@ -96,6 +117,14 @@ export class StockfishService {
       }
 
       let bestMove = '';
+      let timeoutId: NodeJS.Timeout;
+
+      const cleanup = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (this.process?.stdout) {
+          this.process.stdout.removeListener('data', dataHandler);
+        }
+      };
 
       const dataHandler = (data: Buffer) => {
         const output = data.toString();
@@ -106,8 +135,9 @@ export class StockfishService {
             const match = line.match(/bestmove (\w+)/);
             if (match) {
               bestMove = match[1];
-              this.process?.stdout?.removeListener('data', dataHandler);
+              cleanup();
               resolve(bestMove);
+              return;
             }
           }
         }
@@ -130,13 +160,13 @@ export class StockfishService {
         this.sendCommand(`go depth ${config.depth}`);
       }
 
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        if (!bestMove) {
-          this.process?.stdout?.removeListener('data', dataHandler);
-          reject(new Error('Stockfish timeout'));
-        }
-      }, 10000);
+      // Timeout after 15 seconds (giving extra time beyond moveTime)
+      timeoutId = setTimeout(() => {
+        cleanup();
+        const error = new Error(`Stockfish timeout after 15s (difficulty: ${difficulty})`);
+        console.error(error.message);
+        reject(error);
+      }, 15000);
     });
   }
 

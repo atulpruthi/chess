@@ -3,6 +3,7 @@ import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { gameTimerService, TIME_CONTROLS } from './GameTimerService';
 import { eloService } from './EloService';
+import { gameService } from './GameService';
 import { query } from '../config/database';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -139,7 +140,7 @@ class SocketService {
       });
 
       // Make move
-      socket.on('makeMove', (data: { move: string }) => {
+      socket.on('makeMove', (data: { move: string; fen: string; pgn: string }) => {
         this.handleMakeMove(socket, data);
       });
 
@@ -161,6 +162,11 @@ class SocketService {
       // Resign
       socket.on('resign', () => {
         this.handleResign(socket);
+      });
+
+      // Game over (checkmate/stalemate from client)
+      socket.on('gameOver', (data: { winner: 'white' | 'black' | 'draw'; reason: string; fen: string; pgn: string }) => {
+        this.handleGameOver(socket, data);
       });
 
       // Join matchmaking queue (old events for compatibility)
@@ -327,7 +333,7 @@ class SocketService {
     });
   }
 
-  private handleMakeMove(socket: UserSocket, data: { move: string }) {
+  private async handleMakeMove(socket: UserSocket, data: { move: string; fen: string; pgn: string }) {
     if (!socket.userId) return;
 
     // Find the game room the socket is in
@@ -356,6 +362,10 @@ class SocketService {
       if (timeCheck.expired) {
         gameRoom.status = 'completed';
         const winner = timeCheck.loser === 'white' ? 'black' : 'white';
+        
+        // Save game to database
+        await this.saveGameResult(gameRoom, roomId, winner, 'Time expired');
+        
         this.io.to(roomId).emit('gameOver', { 
           winner, 
           reason: 'Time expired',
@@ -368,13 +378,15 @@ class SocketService {
       }
     }
 
-    // Add move to history
+    // Update game state with new FEN and PGN
+    gameRoom.fen = data.fen;
+    gameRoom.pgn = data.pgn;
     gameRoom.moveHistory.push(data.move);
 
     // Broadcast move to opponent with updated times
     socket.to(roomId).emit('moveMade', {
       move: data.move,
-      fen: gameRoom.fen,
+      fen: data.fen,
       whiteTime: gameRoom.whiteTime,
       blackTime: gameRoom.blackTime,
     });
@@ -418,10 +430,14 @@ class SocketService {
   private handleDrawResponse(socket: UserSocket, accept: boolean) {
     if (!socket.userId) return;
 
-    this.gameRooms.forEach((game, roomId) => {
+    this.gameRooms.forEach(async (game, roomId) => {
       if (game.whitePlayer.userId === socket.userId || game.blackPlayer.userId === socket.userId) {
         if (accept) {
           game.status = 'completed';
+          
+          // Save game to database
+          await this.saveGameResult(game, roomId, 'draw', 'Draw by agreement');
+          
           this.io.to(roomId).emit('gameOver', { winner: 'draw', reason: 'Draw by agreement' });
           this.gameRooms.delete(roomId);
         } else {
@@ -434,15 +450,111 @@ class SocketService {
   private handleResign(socket: UserSocket) {
     if (!socket.userId) return;
 
-    this.gameRooms.forEach((game, roomId) => {
+    this.gameRooms.forEach(async (game, roomId) => {
       if (game.whitePlayer.userId === socket.userId || game.blackPlayer.userId === socket.userId) {
         game.status = 'completed';
         const winner = game.whitePlayer.userId === socket.userId ? 'black' : 'white';
+        
+        // Save game to database
+        await this.saveGameResult(game, roomId, winner, 'Resignation');
+        
         this.io.to(roomId).emit('gameOver', { winner, reason: 'Resignation' });
         this.gameRooms.delete(roomId);
         this.broadcastRoomList();
       }
     });
+  }
+
+  private handleGameOver(socket: UserSocket, data: { winner: 'white' | 'black' | 'draw'; reason: string; fen: string; pgn: string }) {
+    if (!socket.userId) return;
+
+    this.gameRooms.forEach(async (game, roomId) => {
+      if (game.whitePlayer.userId === socket.userId || game.blackPlayer.userId === socket.userId) {
+        game.status = 'completed';
+        game.fen = data.fen;
+        game.pgn = data.pgn;
+        
+        // Save game to database
+        await this.saveGameResult(game, roomId, data.winner, data.reason);
+        
+        this.io.to(roomId).emit('gameOver', { 
+          winner: data.winner, 
+          reason: data.reason,
+          fen: data.fen,
+          pgn: data.pgn
+        });
+        
+        gameTimerService.stopTimer(roomId);
+        this.gameRooms.delete(roomId);
+        this.broadcastRoomList();
+      }
+    });
+  }
+
+  /**
+   * Save game result to database with rating updates
+   */
+  private async saveGameResult(
+    game: GameRoom,
+    roomId: string,
+    winner: 'white' | 'black' | 'draw',
+    reason: string
+  ): Promise<void> {
+    try {
+      // Only save if both players are present and game is rated
+      if (!game.whitePlayer.userId || !game.blackPlayer.userId) return;
+      if (!game.isRated) return;
+
+      const whiteRating = game.whitePlayer.rating || 1200;
+      const blackRating = game.blackPlayer.rating || 1200;
+
+      const savedGame = await gameService.saveCompletedGame({
+        roomId,
+        whitePlayer: {
+          userId: game.whitePlayer.userId,
+          username: game.whitePlayer.username,
+          rating: whiteRating,
+        },
+        blackPlayer: {
+          userId: game.blackPlayer.userId,
+          username: game.blackPlayer.username,
+          rating: blackRating,
+        },
+        winner,
+        reason,
+        pgn: game.pgn || '',
+        fen: game.fen,
+        moveHistory: game.moveHistory,
+        timeControl: game.timeControl,
+        isRated: game.isRated || false,
+        whiteTimeRemaining: game.whiteTime,
+        blackTimeRemaining: game.blackTime,
+      });
+
+      // Emit rating updates to both players
+      const whiteSocket = this.io.sockets.sockets.get(game.whitePlayer.socketId);
+      const blackSocket = this.io.sockets.sockets.get(game.blackPlayer.socketId);
+
+      if (whiteSocket) {
+        whiteSocket.emit('ratingUpdate', {
+          oldRating: whiteRating,
+          newRating: savedGame.whiteNewRating,
+          change: savedGame.whiteRatingChange,
+        });
+      }
+
+      if (blackSocket) {
+        blackSocket.emit('ratingUpdate', {
+          oldRating: blackRating,
+          newRating: savedGame.blackNewRating,
+          change: savedGame.blackRatingChange,
+        });
+      }
+
+      console.log(`Game ${savedGame.gameId} saved. White: ${whiteRating} -> ${savedGame.whiteNewRating} (${savedGame.whiteRatingChange}), Black: ${blackRating} -> ${savedGame.blackNewRating} (${savedGame.blackRatingChange})`);
+    } catch (error) {
+      console.error('Error saving game result:', error);
+    }
   }
 
   private broadcastRoomList() {

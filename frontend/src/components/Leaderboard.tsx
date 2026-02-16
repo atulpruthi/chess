@@ -74,25 +74,25 @@ const Leaderboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={appCenteredClass}>
+      <div className="lobby-shell flex items-center justify-center p-6">
         <div className="text-white text-xl">Loading leaderboard...</div>
       </div>
     );
   }
 
   return (
-    <div className={appPageClass}>
-      <div className="max-w-6xl mx-auto">
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">🏆 Leaderboard</h1>
-              <p className="text-gray-300">Top players ranked by rating</p>
+            <p className="text-white/70">Top players ranked by rating</p>
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className={`${buttonSecondaryClass} px-6 py-2`}
+              className="h-10 px-5 rounded-xl bg-white/10 border border-white/10 text-white font-semibold hover:bg-white/15 transition-all active:scale-[0.97]"
             >
               Back to Dashboard
             </button>
@@ -106,10 +106,10 @@ const Leaderboard: React.FC = () => {
               <button
                 key={tc.value || 'all'}
                 onClick={() => setSelectedTimeControl(tc.value)}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
+                className={`px-4 py-2 rounded-xl font-semibold transition ${
                   selectedTimeControl === tc.value
                     ? 'bg-purple-600 text-white'
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    : 'bg-white/10 border border-white/10 text-white/70 hover:bg-white/15'
                 }`}
               >
                 {tc.label}
@@ -119,9 +119,9 @@ const Leaderboard: React.FC = () => {
         </div>
 
         {/* Leaderboard Table */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden">
+        <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] overflow-hidden">
           {leaderboard.length === 0 ? (
-            <div className="p-12 text-center text-gray-400">
+            <div className="p-12 text-center text-white/60">
               No players found for this time control
             </div>
           ) : (
@@ -129,25 +129,25 @@ const Leaderboard: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-white/5 border-b border-white/10">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
                       Rank
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
                       Player
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">
                       Rating
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">
                       Games
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">
                       Win Rate
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">
                       W/D/L
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">
                       Streak
                     </th>
                   </tr>
@@ -186,7 +186,7 @@ const Leaderboard: React.FC = () => {
                               )}
                             </div>
                             {entry.lastGameAt && (
-                              <div className="text-xs text-gray-400">
+                              <div className="text-xs text-white/40">
                                 Last game: {new Date(entry.lastGameAt).toLocaleDateString()}
                               </div>
                             )}
@@ -213,11 +213,11 @@ const Leaderboard: React.FC = () => {
 
                       {/* W/D/L */}
                       <td className="px-6 py-4 text-center">
-                        <div className="text-sm text-gray-300">
+                        <div className="text-sm text-white/70">
                           <span className="text-emerald-400">{entry.gamesWon}</span>
-                          <span className="text-gray-500"> / </span>
+                          <span className="text-white/40"> / </span>
                           <span className="text-blue-400">{entry.gamesDrawn}</span>
-                          <span className="text-gray-500"> / </span>
+                          <span className="text-white/40"> / </span>
                           <span className="text-red-400">{entry.gamesLost}</span>
                         </div>
                       </td>
@@ -237,8 +237,8 @@ const Leaderboard: React.FC = () => {
         </div>
 
         {/* Info box */}
-        <div className="mt-6 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-          <div className="text-sm text-gray-400 text-center">
+        <div className="mt-6 card-lift rounded-2xl bg-white/[0.03] backdrop-blur-xl p-4 border border-white/10">
+          <div className="text-sm text-white/60 text-center">
             Rankings are updated in real-time based on rated games. Play more games to climb the leaderboard!
           </div>
         </div>

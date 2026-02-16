@@ -144,7 +144,7 @@ export default function ChessBoard() {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(560, 240),
+            ...responsiveBoardStyle(616, 240),
             borderRadius: '8px',
           },
         })}

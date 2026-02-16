@@ -31,6 +31,9 @@ interface BotGameState {
   undoMove: () => void;
   setPromotionSquare: (from: string | null, to: string | null) => void;
   promoteAndMove: (from: string, to: string, piece: string) => Promise<void>;
+  resign: () => void;
+  offerDraw: () => void;
+  resetThinkingState: () => void;
 }
 
 const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -78,12 +81,19 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
       });
 
       const { game } = response.data;
-      const chess = new Chess(game.fen);
+      const chess = new Chess();
+      
+      // Load PGN if available (e.g., when bot makes first move)
+      if (game.pgn) {
+        chess.loadPgn(game.pgn);
+      } else if (game.fen && game.fen !== initialFen) {
+        chess.load(game.fen);
+      }
 
       set({
         gameId: game.id,
         chess,
-        fen: game.fen,
+        fen: chess.fen(),
         moveHistory: chess.history(),
         capturedPieces: updateCapturedPieces(chess),
         turn: chess.turn(),
@@ -104,7 +114,13 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
   },
 
   makeMove: async (move: { from: string; to: string; promotion?: string }) => {
-    const { chess, gameId, difficulty } = get();
+    const { chess, gameId, difficulty, isThinking } = get();
+    
+    // Prevent multiple concurrent moves
+    if (isThinking) {
+      console.warn('Already processing a move');
+      return;
+    }
     
     try {
       // Make move locally first for immediate feedback
@@ -127,20 +143,29 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
         isThinking: true,
       });
 
-      // Send move to server and get bot's response
-      const response = await api.post(`/api/bot/${gameId}/move`, {
+      // Send move to server and get bot's response with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Bot move timeout')), 30000) // 30 second timeout
+      );
+      
+      const responsePromise = api.post(`/api/bot/${gameId}/move`, {
         move: result.san,
         difficulty,
       });
 
-      const { fen, gameOver, result: gameResult } = response.data;
+      const response = await Promise.race([responsePromise, timeoutPromise]) as any;
 
-      // Update with server response
-      const newChess = new Chess(fen);
+      const { fen, pgn, gameOver, result: gameResult } = response.data;
+
+      // Update with server response - use PGN to maintain full move history
+      const newChess = new Chess();
+      if (pgn) {
+        newChess.loadPgn(pgn);
+      }
       
       set({
         chess: newChess,
-        fen,
+        fen: newChess.fen(),
         moveHistory: newChess.history(),
         capturedPieces: updateCapturedPieces(newChess),
         turn: newChess.turn(),
@@ -186,11 +211,29 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
   },
 
   undoMove: () => {
-    const { chess } = get();
+    const { chess, moveHistory, isThinking } = get();
+    
+    // Can't undo if thinking or if there aren't at least 2 moves (player + bot)
+    if (isThinking) {
+      console.warn('Cannot undo while bot is thinking');
+      return;
+    }
+    
+    if (moveHistory.length < 2) {
+      console.warn('Not enough moves to undo');
+      return;
+    }
     
     // Undo twice (player's move and bot's move)
-    chess.undo();
-    chess.undo();
+    const move1 = chess.undo();
+    const move2 = chess.undo();
+    
+    if (!move1 || !move2) {
+      // If undo failed, restore the state
+      if (move1) chess.move(move1);
+      console.error('Failed to undo moves');
+      return;
+    }
     
     set({
       chess,
@@ -202,6 +245,9 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
       isCheckmate: chess.isCheckmate(),
       isStalemate: chess.isStalemate(),
       isDraw: chess.isDraw(),
+      isThinking: false,
+      gameOver: false,
+      result: null,
     });
   },
 
@@ -213,5 +259,42 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
   promoteAndMove: async (from: string, to: string, piece: string) => {
     await get().makeMove({ from, to, promotion: piece });
     set({ promotionSquare: null } as any);
+  },
+
+  resign: () => {
+    const { playerColor, gameId } = get();
+    if (!gameId) return;
+
+    const result = playerColor === 'white' ? 'black' : 'white';
+    
+    // Call backend to save the resignation
+    api.post(`/api/bot/${gameId}/end`, { action: 'resign' })
+      .catch(error => console.error('Failed to save resignation:', error));
+    
+    set({
+      gameOver: true,
+      result,
+    });
+  },
+
+  offerDraw: () => {
+    const { gameId } = get();
+    if (!gameId) return;
+
+    // Call backend to save the draw
+    api.post(`/api/bot/${gameId}/end`, { action: 'draw' })
+      .catch(error => console.error('Failed to save draw:', error));
+    
+    // In bot game, draw is automatically accepted
+    set({
+      gameOver: true,
+      isDraw: true,
+      result: 'draw',
+    });
+  },
+
+  resetThinkingState: () => {
+    // Emergency function to reset thinking state if bot gets stuck
+    set({ isThinking: false });
   },
 }));

@@ -1,30 +1,25 @@
 import React from 'react';
 import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
+import { glassCardSoftClass } from '../styles/appTheme';
 
 export const MultiplayerLobby: React.FC<{ onGameStart: () => void }> = ({ onGameStart }) => {
   const { isSearching, startSearching, cancelSearch } = useMultiplayerGameStore();
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 bg-slate-800 rounded-lg shadow-xl">
-      <h2 className="text-4xl font-bold text-white mb-2 text-center">
-        👥 Online Multiplayer
-      </h2>
-      <p className="text-gray-400 text-center mb-8">
-        Find an opponent and play in real-time
-      </p>
+    <div className={`w-full p-6 shadow-[0_14px_50px_rgba(0,0,0,0.45)]`}>
+      <h2 className="text-[22px] font-semibold text-white mb-2 text-center">👥 Online Multiplayer</h2>
+      <p className="text-white/55 text-center mb-8">Find an opponent and play in real-time</p>
 
       {!isSearching ? (
         <div className="text-center">
-          <div className="mb-8 p-6 bg-slate-700 rounded-lg">
-            <div className="text-6xl mb-4">🎮</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Quick Match</h3>
-            <p className="text-gray-300 mb-4">
-              Get matched with a random player of similar skill level
-            </p>
-            <p className="text-sm text-gray-400">
-              • Random color assignment<br />
-              • Standard rules<br />
-              • Real-time gameplay
+          <div className="card-lift mb-8 p-6 rounded-3xl bg-white/[0.03] backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.35)]">
+            <div className="text-5xl mb-4">🎮</div>
+            <h3 className="text-[20px] font-semibold text-white mb-2">Quick Match</h3>
+            <p className="text-white/60 mb-4">Get matched with a random player of similar skill level</p>
+            <p className="text-[14px] text-white/45 leading-relaxed">
+              • Random color assignment
+              <br />• Standard rules
+              <br />• Real-time gameplay
             </p>
           </div>
 
@@ -33,25 +28,24 @@ export const MultiplayerLobby: React.FC<{ onGameStart: () => void }> = ({ onGame
               startSearching();
               onGameStart();
             }}
-            className="px-12 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white text-xl font-bold rounded-lg hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-800 transition-all shadow-lg"
+            className="find-match-btn find-match-btn--full transition-all duration-200"
           >
             Find Match
           </button>
         </div>
       ) : (
-        <div className="text-center py-12">
-          <div className="mb-6">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+        <div className="text-center py-8">
+          <div className="relative w-24 h-24 mx-auto mb-6">
+            <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full"></div> 
+            <div className="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <h3 className="text-2xl font-bold text-white mb-2">
-            Searching for opponent...
-          </h3>
-          <p className="text-gray-400 mb-6">
-            This usually takes less than a minute
-          </p>
+
+          <h3 className="text-[24px] font-bold text-white mb-2">Searching for opponent...</h3>
+          <p className="text-white/60 mb-1">This usually takes less than a minute</p>
+          <p className="text-white/40 text-[14px] mb-6">Looking for players near your rating</p>
           <button
             onClick={cancelSearch}
-            className="px-8 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-all"
+            className="px-8 py-3 bg-red-500/20 border border-red-500/30 text-red-200 font-medium rounded-xl hover:bg-red-500/30 transition-all active:scale-[0.97]"
           >
             Cancel Search
           </button>

@@ -145,7 +145,7 @@ export const MultiplayerChessBoard: React.FC = () => {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(560, 260),
+            ...responsiveBoardStyle(616, 260),
           },
           allowDragging: isMyTurn && !opponentDisconnected,
         })}

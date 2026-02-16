@@ -1,8 +1,8 @@
 # Chess Website - Development Phases
 
-**Project**: Chess Website with Bots, Multiplayer, Reviews, Commentary & Video Generation  
-**Timeline**: 22 weeks (~5.5 months)  
-**Last Updated**: January 17, 2026
+**Project**: Chess Website with Bots, Multiplayer, Reviews & Commentary  
+**Timeline**: 18 weeks (~4.5 months)  
+**Last Updated**: December 2024
 
 ---
 
@@ -144,9 +144,9 @@
 - [x] Create game modes UI
 - [x] Implement draw offers
 - [x] Add resignation functionality
-- [ ] Create match history tracking
-- [ ] Update game completion with ELO calculations
-- [ ] Save rating changes to database
+- [x] Create match history tracking
+- [x] Update game completion with ELO calculations
+- [x] Save rating changes to database
 
 ### Deliverables
 - ✅ Working matchmaking system
@@ -154,8 +154,8 @@
 - ✅ Rating system implemented
 - ✅ Game timer with increments
 - ✅ Rating-based matchmaking (±200 ELO)
-- 🔄 Match history tracking (pending)
-- 🔄 ELO updates on game completion (pending)
+- ✅ Match history tracking (completed)
+- ✅ ELO updates on game completion (completed)
 
 ---
 
@@ -323,361 +323,110 @@ GET    /api/analysis/bookmarks/positions ✅
 
 ---
 
-## **Phase 9: Video Generation System** (Week 14-16)
-
-### Goals
-- Automated video generation from chess games
-- Multiple resolution support
-- Social media ready formats
-- Professional video output with commentary
-
-### 9.1: Video Infrastructure Setup
-- [ ] Setup FFmpeg on server
-- [ ] Configure video processing queue (Bull/BullMQ)
-- [ ] Setup S3/Cloud Storage for videos
-- [ ] Implement CDN for video delivery
-- [ ] Create video processing worker service
-- [ ] Setup Redis for job queue management
-- [ ] Configure video encoding profiles
-- [ ] Setup temporary storage cleanup
-
-### 9.2: Video Rendering Engine
-- [ ] Install and configure canvas/node-canvas
-- [ ] Create chess board renderer (headless)
-- [ ] Implement piece movement animations
-- [ ] Add move highlighting effects
-- [ ] Create evaluation bar overlay
-- [ ] Implement timer/clock display
-- [ ] Add player names and ratings overlay
-- [ ] Create move notation display
-- [ ] Implement smooth transitions between moves
-
-### 9.3: Video Configuration System
-
-```typescript
-// filepath: backend/models/VideoConfig.ts
-interface VideoConfig {
-  id: string;
-  gameId: string;
-  userId: string;
-  
-  // Resolution presets
-  resolution: {
-    preset: 'vertical-9-16' | 'square-1-1' | 'horizontal-16-9' | 'custom';
-    width: number;  // 1080, 1920, 720, etc.
-    height: number; // 1920, 1080, 720, etc.
-  };
-  
-  // Duration settings
-  duration: {
-    type: 'auto' | 'fixed' | 'custom';
-    secondsPerMove: number; // 0.5 - 5 seconds
-    totalDuration?: number; // for fixed duration
-  };
-  
-  // Visual settings
-  theme: {
-    boardStyle: 'classic' | 'modern' | 'wood' | 'marble';
-    pieceSet: 'classic' | 'neo' | 'alpha' | 'cburnett';
-    backgroundColor: string;
-    overlayStyle: 'minimal' | 'standard' | 'detailed';
-  };
-  
-  // Audio settings
-  audio: {
-    backgroundMusic?: string;
-    voiceCommentary?: boolean;
-    moveSound: boolean;
-    captureSound: boolean;
-    checkSound: boolean;
-  };
-  
-  // Content settings
-  content: {
-    showEvaluation: boolean;
-    showBestMove: boolean;
-    showMoveNumbers: boolean;
-    showPlayerInfo: boolean;
-    showClock: boolean;
-    showOpening: boolean;
-    highlightBrilliancies: boolean;
-    highlightBlunders: boolean;
-  };
-  
-  // Text overlay
-  text: {
-    title?: string;
-    watermark?: string;
-    customText?: string;
-    font: string;
-    fontSize: number;
-  };
-  
-  // Social media presets
-  socialPreset?: 'youtube-short' | 'tiktok' | 'instagram-reel' | 'instagram-post' | 'twitter' | 'youtube-standard';
-  
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress: number; // 0-100
-  outputUrl?: string;
-  createdAt: Date;
-  completedAt?: Date;
-}
-
-// Social media presets
-const SOCIAL_PRESETS = {
-  'youtube-short': { width: 1080, height: 1920, maxDuration: 60 },
-  'tiktok': { width: 1080, height: 1920, maxDuration: 180 },
-  'instagram-reel': { width: 1080, height: 1920, maxDuration: 90 },
-  'instagram-post': { width: 1080, height: 1080, maxDuration: 60 },
-  'twitter': { width: 1280, height: 720, maxDuration: 140 },
-  'youtube-standard': { width: 1920, height: 1080, maxDuration: null }
-};
-```
-
-### 9.4: Video Generation Pipeline
-
-```typescript
-// filepath: backend/services/VideoGenerationService.ts
-class VideoGenerationService {
-  // Core generation methods
-  async generateVideo(config: VideoConfig): Promise<VideoJob>;
-  async renderFrame(position: ChessPosition, moveNumber: number): Promise<Buffer>;
-  async createIntroFrame(gameInfo: GameInfo): Promise<Buffer>;
-  async createOutroFrame(result: GameResult): Promise<Buffer>;
-  
-  // Frame composition
-  async compositeEvaluationBar(frame: Buffer, evaluation: number): Promise<Buffer>;
-  async addMoveAnnotation(frame: Buffer, move: string, classification: string): Promise<Buffer>;
-  async addPlayerOverlay(frame: Buffer, players: PlayerInfo): Promise<Buffer>;
-  async addTimerOverlay(frame: Buffer, times: ClockTimes): Promise<Buffer>;
-  
-  // Video assembly
-  async assembleFrames(frames: Buffer[], config: VideoConfig): Promise<string>;
-  async addAudioTrack(videoPath: string, audioConfig: AudioConfig): Promise<string>;
-  async addVoiceCommentary(videoPath: string, commentary: string[]): Promise<string>;
-  
-  // Resolution handling
-  async encodeVideo(inputPath: string, resolution: Resolution): Promise<string>;
-  async generateMultipleResolutions(videoPath: string): Promise<Map<string, string>>;
-}
-```
-
-### 9.5: Video Generation UI
-- [ ] Create video generation wizard
-- [ ] Add resolution selector with previews
-- [ ] Implement theme/style selector
-- [ ] Add audio options interface
-- [ ] Create overlay customization panel
-- [ ] Implement social media preset buttons
-- [ ] Add real-time preview (sample frames)
-- [ ] Create progress tracking UI
-- [ ] Implement video player for completed videos
-- [ ] Add download/share options
-- [ ] Create video gallery/library
-
-### 9.6: Advanced Video Features
-- [ ] Implement highlight reels (best moments only)
-- [ ] Add slow-motion for critical moves
-- [ ] Create split-screen comparison (player vs best move)
-- [ ] Implement zoom effects on important squares
-- [ ] Add tactical puzzle segments
-- [ ] Create before/after position comparison
-- [ ] Implement picture-in-picture player cams
-- [ ] Add game statistics overlays (accuracy, time usage)
-- [ ] Create animated opening/ending titles
-- [ ] Implement subtitle/caption generation
-
-### 9.7: Text-to-Speech Integration
-- [ ] Integrate Google Cloud TTS / AWS Polly / ElevenLabs
-- [ ] Generate AI voice commentary from analysis
-- [ ] Support multiple languages/accents
-- [ ] Add voice customization options
-- [ ] Implement synchronized voiceover timing
-- [ ] Create commentary script templates
-- [ ] Add emotion/emphasis in critical moments
-
-### 9.8: Video Templates System
-- [ ] Create "Brilliant Moment" template
-- [ ] Add "Comeback Victory" template
-- [ ] Implement "Blunder Compilation" template
-- [ ] Create "Opening Lesson" template
-- [ ] Add "Endgame Technique" template
-- [ ] Implement "Tactical Puzzle" template
-- [ ] Create "Game Summary" template
-- [ ] Add custom template builder
-
-### 9.9: API Endpoints
-```
-POST   /api/videos/generate
-GET    /api/videos/:id/status
-GET    /api/videos/:id/download
-DELETE /api/videos/:id
-GET    /api/videos/user/:userId
-POST   /api/videos/:id/share
-GET    /api/videos/templates
-POST   /api/videos/preview
-GET    /api/videos/:id/resolutions
-POST   /api/videos/:id/regenerate
-```
-
-### 9.10: Database Schema
-
-```typescript
-// filepath: backend/models/VideoGeneration.ts
-interface VideoGeneration {
-  id: string;
-  gameId: string;
-  userId: string;
-  config: VideoConfig;
-  status: 'queued' | 'processing' | 'encoding' | 'completed' | 'failed';
-  progress: number;
-  
-  // Output files
-  outputs: {
-    resolution: string; // "1080x1920", "1920x1080", etc.
-    url: string;
-    size: number; // bytes
-    duration: number; // seconds
-    format: 'mp4' | 'webm';
-  }[];
-  
-  // Processing metadata
-  processingStarted?: Date;
-  processingCompleted?: Date;
-  processingTime?: number; // seconds
-  errorMessage?: string;
-  
-  // Stats
-  views: number;
-  downloads: number;
-  shares: number;
-  
-  createdAt: Date;
-  expiresAt?: Date; // for temporary videos
-}
-
-interface VideoTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: 'highlight' | 'lesson' | 'summary' | 'puzzle' | 'custom';
-  config: Partial<VideoConfig>;
-  thumbnail: string;
-  popularity: number;
-  isPremium: boolean;
-}
-```
-
-### 9.11: Video Processing Optimization
-- [ ] Implement parallel frame rendering
-- [ ] Add frame caching for common positions
-- [ ] Use GPU acceleration where available
-- [ ] Implement progressive video generation
-- [ ] Add priority queue for premium users
-- [ ] Create batch video generation
-- [ ] Implement automatic quality adjustment
-- [ ] Add video compression optimization
-- [ ] Create thumbnail generation
-- [ ] Implement video preview generation (first 5 seconds)
-
-### 9.12: Social Media Integration
-- [ ] Direct upload to YouTube
-- [ ] Direct upload to TikTok
-- [ ] Direct upload to Instagram
-- [ ] Direct upload to Twitter/X
-- [ ] Generate optimal hashtags
-- [ ] Create auto-generated descriptions
-- [ ] Schedule posts
-- [ ] Track social media performance
-- [ ] Implement cross-posting
-
-### Deliverables
-- Full video generation pipeline
-- Multiple resolution support (9:16, 16:9, 1:1)
-- Social media preset templates
-- AI voice commentary
-- Video customization UI
-- Queue-based processing system
-- Cloud storage integration
-- Direct social media sharing
-
----
-
-## **Phase 10: Polish & Advanced Features** (Week 17-18)
+## **Phase 9: Polish & Advanced Features** (Week 14-15)
 
 ### Goals
 - Enhanced UX and additional features
 - Performance optimization
+- Mobile responsiveness
 
-### Tasks
+### 9.1: UI/UX Enhancements
 - [ ] Add move highlighting and hints
-- [ ] Implement sound effects
-- [ ] Add animations for moves
-- [ ] Create tutorial/onboarding
-- [ ] Add practice puzzles
-- [ ] Implement game analysis (best moves)
-- [ ] Add export game (PGN format with commentary)
-- [ ] Mobile responsive design
-- [ ] Performance optimization
-- [ ] Add loading states and error handling
-- [ ] Implement share game reviews on social media
+- [ ] Implement sound effects for moves
+- [ ] Add smooth animations for piece movements
+- [ ] Improve loading states and transitions
+- [ ] Add error handling and user feedback
+- [ ] Implement theme customization
+- [ ] Add keyboard shortcuts
+- [ ] Improve accessibility (ARIA labels, screen readers)
+
+### 9.2: Tutorial and Onboarding
+- [ ] Create interactive tutorial for new players
+- [ ] Add tooltips and help system
+- [ ] Implement guided first game
+- [ ] Create chess rules reference
+- [ ] Add video tutorials (embedded YouTube)
+- [ ] Implement contextual help
+
+### 9.3: Practice and Puzzles
+- [ ] Create tactical puzzle database
+- [ ] Implement daily puzzle feature
+- [ ] Add puzzle difficulty levels
+- [ ] Track puzzle solving statistics
+- [ ] Create puzzle themes (pins, forks, checkmates)
+- [ ] Implement puzzle rating system
+
+### 9.4: Game Analysis Enhancement
+- [ ] Add best move suggestions
+- [ ] Implement game analysis (accuracy, mistakes)
+- [ ] Create opening identification
+- [ ] Add export game in PGN format with commentary
+- [ ] Implement share game feature
 - [ ] Add print/PDF export for annotated games
-- [ ] Optimize video generation performance
-- [ ] Add video generation presets
-- [ ] Create video sharing analytics
+
+### 9.5: Mobile Responsiveness
+- [ ] Optimize layout for mobile devices
+- [ ] Add touch gesture support
+- [ ] Implement responsive chessboard
+- [ ] Mobile-friendly navigation
+- [ ] Test on various screen sizes
+- [ ] Optimize performance for mobile
+
+### 9.6: Performance Optimization
+- [ ] Code splitting and lazy loading
+- [ ] Optimize bundle size
+- [ ] Implement caching strategies
+- [ ] Database query optimization
+- [ ] WebSocket connection optimization
+- [ ] Reduce initial load time
+- [ ] Add progressive web app features
 
 ### Deliverables
 - Polished user experience
 - Mobile-friendly interface
-- Additional engaging features
-- Optimized video generation
+- Practice puzzles and learning tools
+- Enhanced game analysis
+- Optimized performance
 
 ---
 
-## **Phase 11: Commentary & Review Enhancements** (Week 19)
+## **Phase 10: Commentary & Review Enhancements** (Week 16-17)
 
 ### Goals
 - Advanced commentary features
 - Community engagement tools
 
-### 11.1: Advanced Commentary Features
-- [ ] Video commentary recording/upload
+### 10.1: Advanced Commentary Features
 - [ ] Live streaming with commentary
 - [ ] Multi-language commentary support
 - [ ] Voice-to-text annotation
 - [ ] Collaborative commentary (multiple authors)
 - [ ] Commentary playlist creation
 - [ ] Famous games library with GM commentary
-- [ ] Sync video commentary with game moves
 
-### 11.2: Learning & Training
+### 10.2: Learning & Training
 - [ ] "Learn from your mistakes" dashboard
 - [ ] Personalized training puzzles from your games
 - [ ] Opening repertoire builder based on games
 - [ ] Weakness identification system
 - [ ] Progress tracking over time
 - [ ] Study plans based on game reviews
-- [ ] Generate training videos from mistakes
 
-### 11.3: Social Features
+### 10.3: Social Features
 - [ ] Follow favorite commentators
 - [ ] Commentary feed (like social media)
 - [ ] Game review contests
 - [ ] "Review of the week" feature
 - [ ] Badges for quality commentary
 - [ ] Tip/reward system for good reviews
-- [ ] Video challenge system
-- [ ] Viral video tracking
 
-### 11.4: Coach/Student System
+### 10.4: Coach/Student System
 - [ ] Coach dashboard for reviewing student games
 - [ ] Assignment system (review specific games)
 - [ ] Private commentary (coach-only)
 - [ ] Progress reports generation
 - [ ] Lesson scheduling integration
 - [ ] Video call integration for live review
-- [ ] Generate personalized training videos
-- [ ] Batch video generation for students
 
 ### Deliverables
 - Advanced commentary system
@@ -687,10 +436,10 @@ interface VideoTemplate {
 
 ---
 
-## **Phase 12: Testing & Bug Fixes** (Week 20-21)
+## **Phase 11: Testing & Bug Fixes** (Week 18)
 
 ### Goals
-- Comprehensive testing including review and video features
+- Comprehensive testing including review features
 - Bug fixes and stability
 
 ### Tasks
@@ -699,28 +448,22 @@ interface VideoTemplate {
 - [ ] Test WebSocket reliability
 - [ ] Test Stockfish analysis performance
 - [ ] Test AI commentary generation
-- [ ] Test video generation pipeline
-- [ ] Test video encoding at different resolutions
-- [ ] Load test video queue system
-- [ ] Test cloud storage integration
 - [ ] Cross-browser testing
 - [ ] Mobile device testing
-- [ ] Load testing (concurrent games + analysis + videos)
+- [ ] Load testing (concurrent games + analysis)
 - [ ] Security audit
 - [ ] Fix critical bugs
 - [ ] Code review and refactoring
 - [ ] Test commentary moderation system
-- [ ] Performance testing video generation
 
 ### Deliverables
 - Test coverage >80%
 - Major bugs resolved
 - Stable application with all features
-- Video generation tested at scale
 
 ---
 
-## **Phase 13: Deployment & Launch** (Week 22)
+## **Phase 12: Deployment & Launch** (Week 19)
 
 ### Goals
 - Production deployment
@@ -733,44 +476,25 @@ interface VideoTemplate {
 - [ ] Deploy backend (AWS/Railway/Render)
 - [ ] Setup Stockfish server/container
 - [ ] Configure AI API keys (OpenAI/Claude)
-- [ ] Setup video processing workers (AWS ECS/Lambda)
-- [ ] Configure FFmpeg on server
-- [ ] Setup S3/CloudStorage for videos
-- [ ] Configure CDN for video delivery (CloudFront/Cloudflare)
 - [ ] Setup domain and SSL
 - [ ] Configure environment variables
 - [ ] Setup error tracking (Sentry)
 - [ ] Setup analytics (Google Analytics)
-- [ ] Setup video analytics tracking
 - [ ] Create backup strategy
 - [ ] Write deployment documentation
 - [ ] Launch beta version
 - [ ] Setup content moderation tools
-- [ ] Configure video storage lifecycle policies
 
 ### Deliverables
 - Live production website
 - Monitoring in place
 - Documentation complete
 - Review system operational
-- Video generation system live
-- Cloud infrastructure scaled
+- Scalable infrastructure
 
 ---
 
 ## **Future Enhancements** (Post-Launch)
-
-### Video Generation
-- [ ] AI-generated highlight reels (auto-detect best moments)
-- [ ] Live streaming video generation
-- [ ] Collaborative video editing
-- [ ] Green screen support for custom backgrounds
-- [ ] AR/VR video formats
-- [ ] 3D animated chess pieces
-- [ ] Professional broadcasting templates
-- [ ] Multi-game compilation videos
-- [ ] Championship-style video packages
-- [ ] Sponsored content templates
 
 ### Game Review & Commentary
 - [ ] Grandmaster commentary marketplace
@@ -795,14 +519,13 @@ interface VideoTemplate {
 ## **Resource Requirements**
 
 ### Team Size
-**4-5 developers:**
+**3-4 developers:**
 - 2 Full-stack developers
 - 1 AI/ML specialist
-- 1 Video/Graphics engineer
 - 1 DevOps engineer
 
 ### Timeline
-**22 weeks (~5.5 months)**
+**19 weeks (~4.5 months)**
 
 ### Technology Stack
 
@@ -819,53 +542,42 @@ interface VideoTemplate {
 - PostgreSQL
 - Socket.io
 - Redis
-- BullMQ
 
 **Chess & AI:**
 - chess.js
 - Stockfish (UCI)
 - OpenAI/Claude API
 
-**Video Processing:**
-- FFmpeg
-- node-canvas
-- Bull/BullMQ
-- Google Cloud TTS / AWS Polly / ElevenLabs
-
 **Infrastructure:**
-- AWS S3 / Google Cloud Storage
-- CloudFront / Cloudflare CDN
-- AWS EC2/ECS (video workers)
-- Redis (queue management)
+- AWS/Google Cloud hosting
+- Database hosting (PostgreSQL)
+- Redis for session management
 
 ### Budget Considerations
 
 **Infrastructure:**
-- Cloud hosting (EC2/ECS instances for video processing)
+- Cloud hosting (compute instances)
 - Domain & SSL certificates
-- Redis hosting for queue management
+- Redis hosting for sessions
 
 **API Services:**
 - AI API costs (OpenAI/Claude)
-- Text-to-Speech API (Google/AWS/ElevenLabs)
 - Stockfish server resources
 
 **Storage & Bandwidth:**
-- Video storage (AWS S3 - high volume)
-- CDN bandwidth for video delivery
 - Database hosting
+- CDN bandwidth
+- Static asset storage
 
 **Additional:**
-- Video processing compute (GPU instances recommended)
 - Content moderation tools
 - Analytics and monitoring tools
 
 ### Infrastructure Scaling
-- Horizontal scaling for video workers
-- Auto-scaling based on queue depth
-- Separate worker pools for different resolutions
-- Priority lanes for premium users
-- Storage lifecycle policies (archive old videos)
+- Horizontal scaling for API servers
+- Database read replicas
+- Caching strategies
+- Load balancing
 
 ---
 
@@ -900,69 +612,26 @@ interface VideoTemplate {
 └─────────────────────────────────────────────────────┘
 ```
 
-### Video Generation Architecture
-
-```
-┌─────────────────────────────────────────────────────┐
-│                  User Interface                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
-│  │ Config   │  │ Preview  │  │ Progress │          │
-│  │ Wizard   │  │ Panel    │  │ Tracker  │          │
-│  └──────────┘  └──────────┘  └──────────┘          │
-└─────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────┐
-│              Video Generation API                    │
-│  POST /api/videos/generate                          │
-└─────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────┐
-│              Redis Job Queue (BullMQ)               │
-│  Priority: Premium > Standard > Batch               │
-└─────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────┐
-│           Video Processing Workers (Pool)            │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
-│  │ Worker 1 │  │ Worker 2 │  │ Worker N │          │
-│  │ (GPU)    │  │ (GPU)    │  │ (CPU)    │          │
-│  └──────────┘  └──────────┘  └──────────┘          │
-│                                                      │
-│  Steps per Worker:                                   │
-│  1. Render frames (node-canvas)                     │
-│  2. Generate audio (TTS)                            │
-│  3. Encode video (FFmpeg)                           │
-│  4. Upload to S3                                    │
-│  5. Generate thumbnails                             │
-└─────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────┐
-│            Cloud Storage + CDN                       │
-│  S3 Bucket → CloudFront → User                      │
-└─────────────────────────────────────────────────────┘
-```
-
 ---
 
 ## **Key Performance Metrics**
 
-### Video Generation KPIs
-- Average processing time per resolution
-- Queue wait time
-- Success/failure rate
-- Storage usage per user
-- CDN bandwidth usage
-- Cost per video generated
-- User satisfaction with video quality
-- Social media share rate
-- Video view/download statistics
+### Application KPIs
+- Active users (daily/monthly)
+- Game completion rate
+- Average game duration
+- User retention rate
+- Bot game engagement
+- Multiplayer matching time
+- Analysis request volume
+- Commentary quality ratings
 
-### Optimization Goals
-- 1080p video in < 2 minutes
-- 4K video in < 5 minutes
-- Queue processing: 100+ concurrent jobs
-- 99.9% success rate
-- < 5% storage cost increase month-over-month
+### Performance Goals
+- Page load time < 2 seconds
+- Game move latency < 100ms
+- Analysis completion < 30 seconds
+- 99.9% uptime
+- Support 1000+ concurrent games
 
 ---
 
@@ -993,20 +662,6 @@ GET    /api/games/:id/variations
 POST   /api/games/:id/bookmark-position
 ```
 
-### Video Endpoints
-```
-POST   /api/videos/generate
-GET    /api/videos/:id/status
-GET    /api/videos/:id/download
-DELETE /api/videos/:id
-GET    /api/videos/user/:userId
-POST   /api/videos/:id/share
-GET    /api/videos/templates
-POST   /api/videos/preview
-GET    /api/videos/:id/resolutions
-POST   /api/videos/:id/regenerate
-```
-
 ### WebSocket Events
 ```
 connect       → Join game room
@@ -1024,29 +679,24 @@ chat_message  → Send chat message
 ### Free Tier
 - Basic gameplay (bot & multiplayer)
 - Limited game analysis
-- Standard video generation (720p)
-- 5 videos per month
 - Community commentary access
+- Basic statistics
 
 ### Premium Tier ($9.99/month)
 - Unlimited game analysis
 - Deep engine analysis (higher depth)
 - Unlimited AI commentary
-- HD video generation (1080p, 4K)
-- Unlimited videos
-- Priority video processing
 - Ad-free experience
 - Advanced statistics
+- Priority support
 
 ### Pro Tier ($29.99/month)
 - All Premium features
 - Coach tools
 - Student management
-- Custom branding on videos
 - API access
-- Bulk video generation
 - White-label options
-- Priority support
+- Dedicated support
 
 ### Additional Revenue
 - Expert commentator marketplace
@@ -1060,16 +710,16 @@ chat_message  → Send chat message
 ## **Risk Management**
 
 ### Technical Risks
-- **Video processing costs**: Monitor and optimize worker efficiency
 - **API rate limits**: Implement caching and fallback strategies
-- **Storage costs**: Lifecycle policies and compression
+- **Storage costs**: Optimize database and asset storage
 - **Scalability**: Load testing before launch
+- **Third-party dependencies**: Monitor Stockfish and AI API reliability
 
 ### Business Risks
-- **Competition**: Unique features (video gen, AI commentary)
-- **User adoption**: Focus on social sharing and virality
+- **Competition**: Unique features (AI commentary, game reviews)
+- **User adoption**: Focus on social sharing and engagement
 - **Content moderation**: Automated + human moderation
-- **Copyright**: Clear terms of service for generated content
+- **Data privacy**: Compliance with GDPR and data protection laws
 
 ### Mitigation Strategies
 - Start with basic features, iterate based on feedback
@@ -1085,20 +735,20 @@ chat_message  → Send chat message
 ### Launch Targets (First 3 months)
 - 10,000+ registered users
 - 50,000+ games played
-- 5,000+ videos generated
+- 5,000+ game reviews created
 - 1,000+ daily active users
 - 20% retention rate
 
 ### Growth Targets (First year)
 - 100,000+ registered users
 - 1M+ games played
-- 100,000+ videos generated
+- 100,000+ game reviews created
 - 10,000+ daily active users
 - 40% retention rate
 - 5% conversion to premium
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: January 17, 2026  
-**Status**: Planning Phase
+**Document Version**: 2.0  
+**Last Updated**: December 2024  
+**Status**: In Progress - Phase 8 Completed

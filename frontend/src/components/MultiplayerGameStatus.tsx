@@ -103,7 +103,7 @@ export const MultiplayerGameStatus: React.FC = () => {
           </p>
           <button
             onClick={acceptDraw}
-            className="w-full py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition-colors"
+            className="btn-primary w-full"
           >
             Accept Draw
           </button>
@@ -115,13 +115,13 @@ export const MultiplayerGameStatus: React.FC = () => {
         <div className="mt-4 space-y-2">
           <button
             onClick={offerDraw}
-            className="w-full py-2 bg-slate-700 text-white font-semibold rounded-lg hover:bg-slate-600 transition-colors"
+            className="btn-secondary w-full"
           >
             Offer Draw
           </button>
           <button
             onClick={resign}
-            className="w-full py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+            className="btn-secondary sidebar-btn--logout w-full" style={{marginTop: '5px'}}
           >
             Resign
           </button>

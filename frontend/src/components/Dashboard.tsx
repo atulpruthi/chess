@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-import { appCenteredClass, appPageClass, buttonSecondaryClass } from '../styles/appTheme';
+import { appCenteredClass, appShellClass } from '../styles/appTheme';
 
 interface UserStats {
   gamesPlayed: number;
@@ -80,10 +80,21 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const clampPercent = (value: number) => {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, value));
+  };
+
   const getWinRate = () => {
     const s = stats || displayStats;
     if (!s || s.gamesPlayed === 0) return 0;
     return ((s.gamesWon / s.gamesPlayed) * 100).toFixed(1);
+  };
+
+  const getWinRateValue = () => {
+    const s = stats || displayStats;
+    if (!s || s.gamesPlayed === 0) return 0;
+    return clampPercent((s.gamesWon / s.gamesPlayed) * 100);
   };
 
   const getDrawRate = () => {
@@ -92,16 +103,28 @@ const Dashboard: React.FC = () => {
     return ((s.gamesDrawn / s.gamesPlayed) * 100).toFixed(1);
   };
 
+  const getDrawRateValue = () => {
+    const s = stats || displayStats;
+    if (!s || s.gamesPlayed === 0) return 0;
+    return clampPercent((s.gamesDrawn / s.gamesPlayed) * 100);
+  };
+
   const getLossRate = () => {
     const s = stats || displayStats;
     if (!s || s.gamesPlayed === 0) return 0;
     return ((s.gamesLost / s.gamesPlayed) * 100).toFixed(1);
   };
 
+  const getLossRateValue = () => {
+    const s = stats || displayStats;
+    if (!s || s.gamesPlayed === 0) return 0;
+    return clampPercent((s.gamesLost / s.gamesPlayed) * 100);
+  };
+
   if (loading) {
     return (
       <div className={appCenteredClass}>
-        <div className="text-white text-xl">Loading dashboard...</div>
+        <div className="text-slate-700 text-xl font-semibold">Loading dashboard...</div>
       </div>
     );
   }
@@ -109,7 +132,7 @@ const Dashboard: React.FC = () => {
   if (!user) {
     return (
       <div className={appCenteredClass}>
-        <div className="text-white text-xl">Please log in</div>
+        <div className="text-slate-700 text-xl font-semibold">Please log in</div>
       </div>
     );
   }
@@ -133,126 +156,141 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className={appPageClass}>
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+        <header className="flex flex-col gap-4 md:gap-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
-              <p className="text-gray-300">Welcome back, {user.username}!</p>
+              <div className="text-[30px] font-extrabold">
+                {user?.username}
+              </div>
+              <div>
+                Rating <span className="font-normal">{user.rating ?? '—'}</span> · Global Rank{' '}
+                <span className="font-normal">#{rank || '---'}</span>
+              </div>
             </div>
-            <button
-              onClick={() => navigate('/')}
-              className={`${buttonSecondaryClass} px-6 py-2`}
-            >
-              Back to Game
-            </button>
-          </div>
-        </div>
 
-        {/* Key Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {/* Rating Card */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="text-gray-300 text-sm mb-2">Current Rating</div>
-            <div className="text-4xl font-bold text-white mb-2">{user.rating}</div>
-            <div className="text-sm text-gray-400">
-              Global Rank: #{rank || '---'}
+            <div className="flex flex-wrap" style={{ marginTop: '20px' }}>
+              {(user?.role === 'admin' || user?.role === 'moderator') && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="h-11 px-5 rounded-2xl bg-red-600 text-white font-semibold shadow-sm hover:bg-red-700 transition-colors"
+                >
+                  Admin
+                </button>
+              )}
+
+              <button
+                onClick={() => navigate('/lobby')}
+                className="btn-secondary"
+              >
+                Back to Lobby
+              </button>
+
+              <button
+                onClick={() => navigate('/')}
+                className="btn-secondary"
+              >
+                Back to Game
+              </button>
             </div>
           </div>
 
-          {/* Games Played Card */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="text-gray-300 text-sm mb-2">Games Played</div>
-            <div className="text-4xl font-bold text-white mb-2">{displayStats.gamesPlayed}</div>
-            <div className="text-sm text-emerald-400">
+          <div className="text-slate-500 text-sm" style={{ marginTop: '20px' }} >All-time stats and recent performance</div>
+        </header>
+
+        <section className="flex w-full gap-7 overflow-x-auto overflow-y-visible py-3 px-2 mb-8" style={{marginTop: '20px'}}>
+          <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-8 py-10 text-center shadow-[0_14px_50px_rgba(0,0,0,0.45)] flex-1 min-w-[280px]">
+            <div className="text-[14px] font-semibold tracking-widest text-white/60 mb-8">GAMES PLAYED</div>
+            <div className="text-[88px] font-bold leading-none text-orange-400 mb-6">{displayStats.gamesPlayed}</div>
+            <div className="text-base text-white/60">
               {displayStats.multiplayerGames} multiplayer • {displayStats.botGames} vs bot
             </div>
           </div>
 
-          {/* Win Rate Card */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="text-gray-300 text-sm mb-2">Win Rate</div>
-            <div className="text-4xl font-bold text-emerald-400 mb-2">{getWinRate()}%</div>
-            <div className="text-sm text-gray-400">
+          <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-8 py-10 text-center shadow-[0_14px_50px_rgba(0,0,0,0.45)] flex-1 min-w-[280px]">
+            <div className="text-[14px] font-semibold tracking-widest text-white/60 mb-8">WIN RATE</div>
+            <div className="text-[88px] font-bold leading-none text-blue-400 mb-6">{getWinRate()}%</div>
+            <div className="text-base text-white/60">
               {displayStats.gamesWon}W • {displayStats.gamesDrawn}D • {displayStats.gamesLost}L
             </div>
           </div>
 
-          {/* Win Streak Card */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="text-gray-300 text-sm mb-2">Win Streak</div>
-            <div className="text-4xl font-bold text-orange-400 mb-2">
-              🔥 {displayStats.currentWinStreak}
-            </div>
-            <div className="text-sm text-gray-400">
-              Best: {displayStats.bestWinStreak}
-            </div>
+          <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-8 py-10 text-center shadow-[0_14px_50px_rgba(0,0,0,0.45)] flex-1 min-w-[280px]">
+            <div className="text-[14px] font-semibold tracking-widest text-white/60 mb-8">WIN STREAK</div>
+            <div className="text-[88px] font-bold leading-none text-green-400 mb-6">{displayStats.currentWinStreak}</div>
+            <div className="text-base text-white/60">Best: {displayStats.bestWinStreak}</div>
           </div>
-        </div>
+        </section>
 
         {/* Detailed Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{marginTop: '20px'}}>
           {/* Performance Stats */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-6">Performance</h2>
-            
-            <div className="space-y-4">
-              {/* Win/Draw/Loss Distribution */}
-              <div>
-                <div className="flex justify-between text-sm text-gray-300 mb-2">
-                  <span>Wins</span>
-                  <span>{displayStats.gamesWon} ({getWinRate()}%)</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-emerald-500 h-2 rounded-full"
-                    style={{ width: `${getWinRate()}%` }}
-                  ></div>
-                </div>
-              </div>
+          <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-10 py-12 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+            <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60">PERFORMANCE</div>
+            <div className="h-px bg-white/10 mt-6 mb-10" />
 
+            <div className="space-y-9">
               <div>
-                <div className="flex justify-between text-sm text-gray-300 mb-2">
-                  <span>Draws</span>
-                  <span>{displayStats.gamesDrawn} ({getDrawRate()}%)</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full"
-                    style={{ width: `${getDrawRate()}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm text-gray-300 mb-2">
-                  <span>Losses</span>
-                  <span>{displayStats.gamesLost} ({getLossRate()}%)</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-red-500 h-2 rounded-full"
-                    style={{ width: `${getLossRate()}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Rating Range */}
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm text-gray-400">Peak Rating</div>
-                    <div className="text-2xl font-bold text-emerald-400">
-                      {displayStats.highestRating}
-                    </div>
+                <div className="flex items-end justify-between mb-4">
+                  <div className="text-2xl font-medium text-white/80">Wins</div>
+                  <div className="text-2xl">
+                    <span className="font-semibold text-white">{displayStats.gamesWon}</span>{' '}
+                    <span className="text-white/60 font-medium">({getWinRate()}%)</span>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400">Lowest Rating</div>
-                    <div className="text-2xl font-bold text-red-400">
-                      {displayStats.lowestRating}
-                    </div>
+                </div>
+
+                <div className="w-full h-5 rounded-full bg-white/10 shadow-inner overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_10px_22px_rgba(16,185,129,0.25)]"
+                    style={{ width: `${getWinRateValue()}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-end justify-between mb-4">
+                  <div className="text-2xl font-medium text-white/80">Draws</div>
+                  <div className="text-2xl">
+                    <span className="font-semibold text-white">{displayStats.gamesDrawn}</span>{' '}
+                    <span className="text-white/60 font-medium">({getDrawRate()}%)</span>
+                  </div>
+                </div>
+
+                <div className="w-full h-5 rounded-full bg-white/10 shadow-inner overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_10px_22px_rgba(37,99,235,0.22)]"
+                    style={{ width: `${getDrawRateValue()}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-end justify-between mb-4">
+                  <div className="text-2xl font-medium text-white/80">Losses</div>
+                  <div className="text-2xl">
+                    <span className="font-semibold text-white">{displayStats.gamesLost}</span>{' '}
+                    <span className="text-white/60 font-medium">({getLossRate()}%)</span>
+                  </div>
+                </div>
+
+                <div className="w-full h-5 rounded-full bg-white/10 shadow-inner overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-red-500 via-red-400 to-rose-300 shadow-[0_10px_22px_rgba(239,68,68,0.22)]"
+                    style={{ width: `${getLossRateValue()}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-10 mt-2 border-t border-white/10">
+                <div className="grid grid-cols-2 divide-x divide-white/10">
+                  <div className="text-center">
+                    <div className="text-xl text-white/60">Peak Rating</div>
+                    <div className="mt-2 text-5xl font-semibold text-emerald-400">{displayStats.highestRating}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl text-white/60">Lowest Rating</div>
+                    <div className="mt-2 text-5xl font-semibold text-red-400">{displayStats.lowestRating}</div>
                   </div>
                 </div>
               </div>
@@ -260,75 +298,55 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Time Controls */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-6">Time Controls</h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">⚡</div>
+          <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-10 py-12 shadow-[0_14px_50px_rgba(0,0,0,0.45)]" style={{marginTop: '20px'}}>
+            <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60">TIME CONTROLS</div>
+            <div className="h-px bg-white/10 mt-6 mb-10" />
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between px-6 py-5 rounded-[22px] bg-white/[0.04] border border-white/10 shadow-[0_14px_34px_rgba(0,0,0,0.25)]">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.06] border border-white/10 grid place-items-center text-2xl">🎯</div>
                   <div>
-                    <div className="text-white font-semibold">Bullet</div>
-                    <div className="text-sm text-gray-400">1+0 minutes</div>
+                    <div className="text-xl font-medium text-white">Rapid</div>
+                    <div className="text-sm text-white/60">10+0 minutes</div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white">{displayStats.bulletGames}</div>
+                <div className="text-3xl font-semibold text-white">{displayStats.rapidGames}</div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">⚔️</div>
+              <div className="flex items-center justify-between px-6 py-5 rounded-[22px] bg-white/[0.04] border border-white/10 shadow-[0_14px_34px_rgba(0,0,0,0.25)]">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.06] border border-white/10 grid place-items-center text-2xl">👑</div>
                   <div>
-                    <div className="text-white font-semibold">Blitz</div>
-                    <div className="text-sm text-gray-400">3+2 minutes</div>
+                    <div className="text-xl font-medium text-white">Classical</div>
+                    <div className="text-sm text-white/60">30+0 minutes</div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white">{displayStats.blitzGames}</div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">🎯</div>
-                  <div>
-                    <div className="text-white font-semibold">Rapid</div>
-                    <div className="text-sm text-gray-400">10+0 minutes</div>
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-white">{displayStats.rapidGames}</div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">👑</div>
-                  <div>
-                    <div className="text-white font-semibold">Classical</div>
-                    <div className="text-sm text-gray-400">30+0 minutes</div>
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-white">{displayStats.classicalGames}</div>
+                <div className="text-3xl font-semibold text-white">{displayStats.classicalGames}</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Achievements */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Achievements</h2>
-          
+        <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-8 py-10 shadow-[0_14px_50px_rgba(0,0,0,0.45)]" style={{marginTop: '20px'}}>
+          <div className="text-[14px] font-semibold tracking-widest text-white/60 mb-8">ACHIEVEMENTS</div>
+
           {achievements.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
-              No achievements unlocked yet. Keep playing to earn them!
+            <div className="text-center py-8">
+              <div className="text-white font-semibold">No achievements unlocked yet.</div>
+              <div className="text-white/60 text-sm mt-1">Keep playing to earn them!</div>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {achievements.map((achievement) => (
                 <div
                   key={achievement.id}
-                  className="bg-white/5 rounded-lg p-4 text-center border border-white/10 hover:border-purple-500/50 transition"
+                  className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="text-4xl mb-2">{achievement.icon}</div>
                   <div className="text-white font-semibold mb-1">{achievement.name}</div>
-                  <div className="text-xs text-gray-400 mb-2">{achievement.description}</div>
+                  <div className="text-xs text-white/60 mb-2">{achievement.description}</div>
                   <div className="text-xs text-purple-400">
                     {new Date(achievement.unlockedAt).toLocaleDateString()}
                   </div>
@@ -339,22 +357,22 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex w-full gap-4 mt-8">
           <button
             onClick={() => navigate('/game-history')}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 rounded-xl transition"
+            className="btn-secondary flex-1 whitespace-nowrap"
           >
             📜 View Game History
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-xl transition"
+            className="btn-secondary flex-1 whitespace-nowrap"
           >
             🏆 View Leaderboard
           </button>
           <button
             onClick={() => navigate('/profile')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl transition"
+            className="btn-secondary flex-1 whitespace-nowrap"
           >
             👤 Edit Profile
           </button>

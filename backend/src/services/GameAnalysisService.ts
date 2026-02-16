@@ -206,7 +206,7 @@ class GameAnalysisService {
     const analysis = analysisResult.rows[0];
 
     const movesResult = await pool.query(
-      `SELECT * FROM move_analysis WHERE analysis_id = $1 ORDER BY move_number, player_color`,
+      `SELECT * FROM move_analysis WHERE analysis_id = $1 ORDER BY move_number ASC, player_color DESC`,
       [analysis.id]
     );
 
@@ -221,10 +221,13 @@ class GameAnalysisService {
       accuracyBlack: analysis.accuracy_black,
       analysisCompleted: analysis.analysis_completed,
       moves: movesResult.rows.map(row => ({
+        id: row.id,
         moveNumber: row.move_number,
         playerColor: row.player_color,
         moveSan: row.move_san,
         moveUci: row.move_uci,
+        fenBefore: row.fen_before,
+        fenAfter: row.fen_after,
         evaluation: row.evaluation,
         mateIn: row.mate_in,
         bestMoveSan: row.best_move_san,
@@ -235,7 +238,7 @@ class GameAnalysisService {
         isBookMove: row.is_book_move,
         isForced: row.is_forced,
       })),
-      createdAt: analysis.created_at,
+      analyzedAt: analysis.created_at,
     };
   }
 

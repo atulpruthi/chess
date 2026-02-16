@@ -85,8 +85,8 @@ class SocketService {
     this.socket?.emit('leaveRoom');
   }
 
-  makeMove(move: string): void {
-    this.socket?.emit('makeMove', { move });
+  makeMove(move: string, fen: string, pgn: string): void {
+    this.socket?.emit('makeMove', { move, fen, pgn });
   }
 
   sendChatMessage(message: string): void {

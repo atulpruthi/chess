@@ -211,24 +211,24 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={appCenteredClass}>
+      <div className="lobby-shell flex items-center justify-center p-6">
         <div className="text-white">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className={appPageClass}>
-      <div className="max-w-7xl mx-auto">
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Admin Dashboard</h1>
-            <p className="text-gray-400">Welcome, {user?.username} ({user?.role})</p>
+            <p className="text-white/70">Welcome, {user?.username} ({user?.role})</p>
           </div>
           <button
             onClick={() => navigate('/lobby')}
-            className={`${buttonSecondaryClass} px-6 py-2`}
+            className="h-10 px-5 rounded-xl bg-white/10 border border-white/10 text-white font-semibold hover:bg-white/15 transition-all active:scale-[0.97]"
           >
             Back to Game Lobby
           </button>
@@ -238,30 +238,30 @@ const AdminDashboard: React.FC = () => {
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-6 py-3 rounded-lg font-semibold ${
+            className={`px-6 py-3 rounded-xl font-semibold transition ${
               activeTab === 'overview'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-white/10'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white/10 text-white/70 hover:bg-white/15 border border-white/10'
             }`}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-6 py-3 rounded-lg font-semibold ${
+            className={`px-6 py-3 rounded-xl font-semibold transition ${
               activeTab === 'users'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-white/10'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white/10 text-white/70 hover:bg-white/15 border border-white/10'
             }`}
           >
             Users
           </button>
           <button
             onClick={() => setActiveTab('games')}
-            className={`px-6 py-3 rounded-lg font-semibold ${
+            className={`px-6 py-3 rounded-xl font-semibold transition ${
               activeTab === 'games'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/10 text-gray-300 hover:bg-white/15 border border-white/10'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white/10 text-white/70 hover:bg-white/15 border border-white/10'
             }`}
           >
             Games
@@ -271,22 +271,22 @@ const AdminDashboard: React.FC = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className={`${glassCardClass} p-6`}>
-              <h3 className="text-gray-400 text-sm mb-2">Total Users</h3>
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 p-6 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+              <h3 className="text-white/60 text-sm mb-2">Total Users</h3>
               <p className="text-3xl font-bold text-white">{stats.total_users}</p>
               <p className="text-green-400 text-sm mt-2">+{stats.new_users_week} this week</p>
             </div>
-            <div className={`${glassCardClass} p-6`}>
-              <h3 className="text-gray-400 text-sm mb-2">Total Games</h3>
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 p-6 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+              <h3 className="text-white/60 text-sm mb-2">Total Games</h3>
               <p className="text-3xl font-bold text-white">{stats.total_games}</p>
               <p className="text-blue-400 text-sm mt-2">{stats.games_today} today</p>
             </div>
-            <div className={`${glassCardClass} p-6`}>
-              <h3 className="text-gray-400 text-sm mb-2">Banned Users</h3>
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 p-6 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+              <h3 className="text-white/60 text-sm mb-2">Banned Users</h3>
               <p className="text-3xl font-bold text-white">{stats.banned_users}</p>
             </div>
-            <div className={`${glassCardClass} p-6`}>
-              <h3 className="text-gray-400 text-sm mb-2">Commentaries</h3>
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 p-6 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+              <h3 className="text-white/60 text-sm mb-2">Commentaries</h3>
               <p className="text-3xl font-bold text-white">{stats.total_commentaries}</p>
             </div>
           </div>
@@ -301,11 +301,11 @@ const AdminDashboard: React.FC = () => {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-2 bg-white/10 text-white rounded-xl border border-white/10 focus:border-blue-500 focus:outline-none"
+                className="px-4 py-2 bg-white/[0.04] text-white rounded-xl border border-white/10 focus:border-purple-500 focus:outline-none"
               />
             </div>
 
-            <div className={`${glassCardSoftClass} overflow-hidden`}>
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] overflow-hidden">
               <table className="w-full">
                 <thead className="bg-white/5">
                   <tr>
@@ -322,13 +322,13 @@ const AdminDashboard: React.FC = () => {
                   {users.map((u) => (
                     <tr key={u.id} className="border-t border-gray-700">
                       <td className="px-6 py-4 text-white">{u.username}</td>
-                      <td className="px-6 py-4 text-gray-400">{u.email}</td>
+                      <td className="px-6 py-4 text-white/70">{u.email}</td>
                       <td className="px-6 py-4">
                         <select
                           value={u.role}
                           onChange={(e) => handleRoleChange(u.id, e.target.value)}
                           disabled={user?.role !== 'admin'}
-                          className="bg-gray-700 text-white px-2 py-1 rounded"
+                          className="bg-white/[0.04] border border-white/10 text-white px-2 py-1 rounded"
                         >
                           <option value="user">User</option>
                           <option value="moderator">Moderator</option>
@@ -386,7 +386,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+                className="px-4 py-2 bg-white/10 border border-white/10 text-white rounded-xl hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 Previous
               </button>
@@ -396,7 +396,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+                className="px-4 py-2 bg-white/10 border border-white/10 text-white rounded-xl hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 Next
               </button>
@@ -407,9 +407,9 @@ const AdminDashboard: React.FC = () => {
         {/* Games Tab */}
         {activeTab === 'games' && (
           <div>
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] overflow-hidden">
               <table className="w-full">
-                <thead className="bg-gray-900">
+                <thead className="bg-white/5">
                   <tr>
                     <th className="px-6 py-3 text-left text-white">ID</th>
                     <th className="px-6 py-3 text-left text-white">Players</th>
@@ -420,14 +420,14 @@ const AdminDashboard: React.FC = () => {
                 </thead>
                 <tbody>
                   {games.map((game) => (
-                    <tr key={game.id} className="border-t border-gray-700">
+                    <tr key={game.id} className="border-t border-white/10">
                       <td className="px-6 py-4 text-white">{game.id}</td>
                       <td className="px-6 py-4 text-white">
                         {game.white_player} vs {game.black_player}
                       </td>
                       <td className="px-6 py-4 text-white">{game.result}</td>
                       <td className="px-6 py-4 text-white">{game.time_control}</td>
-                      <td className="px-6 py-4 text-gray-400">
+                      <td className="px-6 py-4 text-white/70">
                         {new Date(game.created_at).toLocaleDateString()}
                       </td>
                     </tr>
@@ -441,7 +441,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+                className="px-4 py-2 bg-white/10 border border-white/10 text-white rounded-xl hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 Previous
               </button>
@@ -451,7 +451,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+                className="px-4 py-2 bg-white/10 border border-white/10 text-white rounded-xl hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 Next
               </button>

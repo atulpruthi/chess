@@ -74,7 +74,7 @@ export const BotSelection: React.FC<BotSelectionProps> = ({ onStartGame }) => {
                 className={`time-card ${isSelected ? 'active' : ''}`}
                 aria-pressed={isSelected}
               >
-                <h4 className="text-white font-semibold">
+                <h4 className="text-white">
                   {info.icon} {info.name}
                 </h4>
                 <span>{info.description}</span>
@@ -94,8 +94,7 @@ export const BotSelection: React.FC<BotSelectionProps> = ({ onStartGame }) => {
             className={`time-card ${selectedColor === 'white' ? 'active' : ''}`}
             aria-pressed={selectedColor === 'white'}
           >
-            <h4 className="text-white font-semibold">♔ White</h4>
-            <span>You move first</span>
+            <h4 className="text-white">♔ White</h4>
           </button>
 
           <button
@@ -104,8 +103,7 @@ export const BotSelection: React.FC<BotSelectionProps> = ({ onStartGame }) => {
             className={`time-card ${selectedColor === 'black' ? 'active' : ''}`}
             aria-pressed={selectedColor === 'black'}
           >
-            <h4 className="text-white font-semibold">♚ Black</h4>
-            <span>Bot moves first</span>
+            <h4 className="text-white">♚ Black</h4>
           </button>
         </div>
       </div>

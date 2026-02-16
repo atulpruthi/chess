@@ -80,6 +80,7 @@ export function responsiveBoardStyle(
   viewportPaddingPx = 220,
 ): React.CSSProperties {
   return {
-    width: `min(92vw, calc(100vh - ${viewportPaddingPx}px), ${maxPx}px)`,
+    width: `min(92vw, 90vh, calc(100vh - ${viewportPaddingPx}px), ${maxPx}px)`,
+    maxHeight: '90vh',
   };
 }

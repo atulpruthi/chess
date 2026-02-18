@@ -15,8 +15,10 @@ export const getGameById = async (req: Request, res: Response) => {
         g.*,
         w.username as white_username,
         w.avatar_url as white_avatar,
+        w.rating as white_current_rating,
         b.username as black_username,
-        b.avatar_url as black_avatar
+        b.avatar_url as black_avatar,
+        b.rating as black_current_rating
       FROM games g
       LEFT JOIN users w ON g.white_player_id = w.id
       LEFT JOIN users b ON g.black_player_id = b.id
@@ -46,10 +48,10 @@ export const getGameById = async (req: Request, res: Response) => {
       pgn: game.pgn,
       createdAt: game.created_at,
       completedAt: game.completed_at,
-      whiteRatingBefore: game.white_rating_before,
+      whiteRatingBefore: game.white_rating_before || game.white_current_rating,
       whiteRatingAfter: game.white_rating_after,
       whiteRatingChange: game.white_rating_change,
-      blackRatingBefore: game.black_rating_before,
+      blackRatingBefore: game.black_rating_before || game.black_current_rating,
       blackRatingAfter: game.black_rating_after,
       blackRatingChange: game.black_rating_change,
     });

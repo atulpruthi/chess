@@ -19,7 +19,7 @@ interface MoveAnalysis {
   bestMoveSan: string | null;
   bestMoveUci: string | null;
   centipawnLoss: number;
-  classification: 'brilliant' | 'great' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
+  classification: 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
   isBookMove: boolean;
   isForced: boolean;
 }
@@ -63,6 +63,7 @@ const GameAnalysis: React.FC = () => {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const chessboardRef = useRef<HTMLDivElement>(null);
   const moveRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const moveListRef = useRef<HTMLDivElement>(null);
 
   console.log('GameAnalysis render - analysis:', analysis, 'isAnalyzing:', isAnalyzing, 'loadingError:', loadingError);
 
@@ -188,7 +189,9 @@ const GameAnalysis: React.FC = () => {
       switch (classification) {
         case 'brilliant': return 'Brilliant move!';
         case 'great': return 'Great move!';
+        case 'best': return 'Best move!';
         case 'good': return 'Good move';
+        case 'sacrifice': return 'Sacrifice!';
         case 'inaccuracy': return 'Inaccuracy';
         case 'mistake': return 'Mistake';
         case 'blunder': return 'Blunder!';
@@ -210,6 +213,13 @@ const GameAnalysis: React.FC = () => {
       };
     }
   }, [currentMoveIndex, analysis]);
+
+  // Scroll move list to bottom on initial load
+  useEffect(() => {
+    if (analysis && moveListRef.current) {
+      moveListRef.current.scrollTop = moveListRef.current.scrollHeight;
+    }
+  }, [analysis]);
 
   // Auto-scroll to highlighted move in Move List
   useEffect(() => {
@@ -350,37 +360,13 @@ const GameAnalysis: React.FC = () => {
     }
   };
 
-  const getClassificationColor = (classification: string) => {
-    switch (classification) {
-      case 'brilliant': return 'text-cyan-400';
-      case 'great': return 'text-green-400';
-      case 'good': return 'text-blue-400';
-      case 'inaccuracy': return 'text-yellow-400';
-      case 'mistake': return 'text-orange-400';
-      case 'blunder': return 'text-red-400';
-      case 'book': return 'text-purple-400';
-      default: return 'text-gray-400';
-    }
-  };
-
-  const getClassificationIcon = (classification: string) => {
-    switch (classification) {
-      case 'brilliant': return '!!';
-      case 'great': return '!';
-      case 'good': return '✓';
-      case 'inaccuracy': return '?!';
-      case 'mistake': return '?';
-      case 'blunder': return '??';
-      case 'book': return '📖';
-      default: return '·';
-    }
-  };
-
   const getClassificationText = (classification: string) => {
     switch (classification) {
       case 'brilliant': return 'Brilliant!! ✨';
       case 'great': return 'Great Move! ⭐';
+      case 'best': return 'Best Move! ⬆️';
       case 'good': return 'Good Move ✓';
+      case 'sacrifice': return 'Sacrifice! ⚔️';
       case 'inaccuracy': return 'Inaccuracy ?! ⚠️';
       case 'mistake': return 'Mistake ? ❌';
       case 'blunder': return 'Blunder ?? 💥';
@@ -546,7 +532,7 @@ const GameAnalysis: React.FC = () => {
         <div className="mb-4 flex justify-between items-center">
           <button
             onClick={() => navigate('/game-history')}
-            className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+            className="btn-secondary"
           >
             ← Back
           </button>
@@ -649,7 +635,7 @@ const GameAnalysis: React.FC = () => {
                 {/* Moves List */}
                 <div className="bg-gray-800 rounded-lg p-4">
                   <h3 className="text-lg font-bold">Move List</h3>
-                  <div className="space-y-2 overflow-y-auto" style={{ height: '150px' }}>
+                  <div ref={moveListRef} className="space-y-2 overflow-y-auto" style={{ height: '150px' }}>
                     {/* Header */}
                     <div className="flex items-center pb-2 border-b border-gray-600 font-bold text-sm text-gray-400 sticky top-0 bg-gray-800 z-10">
                       <div style={{ width: '50px' }}>#</div>
@@ -692,19 +678,9 @@ const GameAnalysis: React.FC = () => {
                           >
                             {whiteMove && (
                               <>
-                                {/* Classification symbol in top-right corner */}
-                                <div 
-                                  className={`absolute top-1 right-1 text-xs font-bold ${getClassificationColor(whiteMove.classification)}`}
-                                  style={{
-                                    fontSize: '14px',
-                                    textShadow: '0 1px 2px rgba(0,0,0,0.5)'
-                                  }}
-                                >
-                                  {getClassificationIcon(whiteMove.classification)}
-                                </div>
                                 <div className="flex justify-between items-center gap-1">
                                   <span className="flex items-center gap-1 font-mono">
-                                    <span className="text-lg">{getPieceIcon(whiteMove.moveSan, 'white')}</span>
+                                    <span style={{ fontSize: '36px', lineHeight: '1' }}>{getPieceIcon(whiteMove.moveSan, 'white')}</span>
                                     <span>{whiteMove.moveSan}</span>
                                   </span>
                                   <span className="text-xs text-gray-400">
@@ -734,19 +710,9 @@ const GameAnalysis: React.FC = () => {
                           >
                             {blackMove && (
                               <>
-                                {/* Classification symbol in top-right corner */}
-                                <div 
-                                  className={`absolute top-1 right-1 text-xs font-bold ${getClassificationColor(blackMove.classification)}`}
-                                  style={{
-                                    fontSize: '14px',
-                                    textShadow: '0 1px 2px rgba(0,0,0,0.5)'
-                                  }}
-                                >
-                                  {getClassificationIcon(blackMove.classification)}
-                                </div>
                                 <div className="flex items-center justify-between gap-1">
                                   <span className="flex items-center gap-1 font-mono">
-                                    <span className="text-lg">{getPieceIcon(blackMove.moveSan, 'black')}</span>
+                                    <span style={{ fontSize: '36px', lineHeight: '1' }}>{getPieceIcon(blackMove.moveSan, 'black')}</span>
                                     <span>{blackMove.moveSan}</span>
                                   </span>
                                   <span className="text-xs text-gray-400">

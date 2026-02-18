@@ -32,11 +32,34 @@ const ClassificationBadge: React.FC<{ classification: string }> = ({ classificat
             <text x="20" y="28" fontSize="24" fontWeight="bold" fill="white" textAnchor="middle">!</text>
           </svg>
         );
+      case 'best':
+        return (
+          <svg {...svgBase}>
+            <circle cx="20" cy="20" r="18" fill="#10b981" stroke="#065f46" strokeWidth="2"/>
+            {/* Upward arrow */}
+            <path d="M 20 10 L 14 18 L 17 18 L 17 28 L 23 28 L 23 18 L 26 18 Z" fill="white" stroke="white" strokeWidth="1" strokeLinejoin="round"/>
+          </svg>
+        );
       case 'good':
         return (
           <svg {...svgBase}>
             <circle cx="20" cy="20" r="18" fill="#60a5fa" stroke="#1e40af" strokeWidth="2"/>
             <path d="M 12 20 L 17 26 L 28 14" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
+      case 'sacrifice':
+        return (
+          <svg {...svgBase}>
+            <circle cx="20" cy="20" r="18" fill="#ec4899" stroke="#be185d" strokeWidth="2"/>
+            {/* Crossed swords */}
+            <g transform="rotate(-45 20 20)">
+              <rect x="18" y="10" width="4" height="18" fill="white" rx="1"/>
+              <circle cx="20" cy="28" r="2" fill="white"/>
+            </g>
+            <g transform="rotate(45 20 20)">
+              <rect x="18" y="10" width="4" height="18" fill="white" rx="1"/>
+              <circle cx="20" cy="28" r="2" fill="white"/>
+            </g>
           </svg>
         );
       case 'inaccuracy':
@@ -82,7 +105,7 @@ const ClassificationBadge: React.FC<{ classification: string }> = ({ classificat
 };
 
 const DisplayBoard: React.FC<DisplayBoardProps> = ({ fen, orientation = 'white', moveSquare, classification }) => {
-  const boardSize = 'min(92vw, 90vh, calc(100vh - 150px), 700px)';
+  const boardSize = 700;
   
   // Calculate badge position based on square notation
   const getBadgePosition = (square: string, boardOrientation: 'white' | 'black') => {
@@ -111,10 +134,8 @@ const DisplayBoard: React.FC<DisplayBoardProps> = ({ fen, orientation = 'white',
           allowDragging: false,
           showNotation: true,
           boardStyle: {
-            width: boardSize,
-            height: boardSize,
-            maxWidth: '700px',
-            maxHeight: '700px',
+            width: `${boardSize}px`,
+            height: `${boardSize}px`,
             borderRadius: '4px',
             boxShadow: '0 5px 15px rgba(0, 0, 0, 0.5)',
           },

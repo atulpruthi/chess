@@ -15,7 +15,7 @@ interface MoveEvaluation {
   bestMoveUci: string | null;
   bestEvaluation: number | null;
   centipawnLoss: number;
-  classification: 'brilliant' | 'great' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
+  classification: 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
   isBookMove: boolean;
   isForced: boolean;
 }
@@ -114,7 +114,15 @@ class GameAnalysisService {
         );
 
         // Classify move
-        const classification = this.classifyMove(centipawnLoss, evalBefore.mateIn, evalAfter.mateIn);
+        const classification = this.classifyMove(
+          centipawnLoss,
+          evalBefore.mateIn,
+          evalAfter.mateIn,
+          move.san,
+          evalBefore.evaluation,
+          evalAfter.evaluation,
+          move.color
+        );
 
         const moveEval: MoveEvaluation = {
           moveNumber: Math.floor(i / 2) + 1,
@@ -260,8 +268,12 @@ class GameAnalysisService {
   private classifyMove(
     centipawnLoss: number,
     mateInBefore: number | null,
-    mateInAfter: number | null
-  ): 'brilliant' | 'great' | 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'book' {
+    mateInAfter: number | null,
+    moveSan: string,
+    evalBefore: number,
+    evalAfter: number,
+    color: string
+  ): 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book' {
     // Missed mate or turned winning into losing
     if (mateInBefore && !mateInAfter) {
       return 'blunder';
@@ -272,8 +284,21 @@ class GameAnalysisService {
       return 'brilliant';
     }
 
+    // Detect sacrifice: piece given up (uppercase letter indicating piece capture)
+    // but position improved significantly
+    const isPieceSacrifice = /^[QRBN]x/.test(moveSan) || /^[a-h]x[QRBN]/.test(moveSan);
+    const evalImprovement = color === 'w' ? (evalAfter - evalBefore) : (evalBefore - evalAfter);
+    
+    // Sacrifice: gave up material but gained significant positional advantage
+    if (isPieceSacrifice && evalImprovement > 50 && centipawnLoss <= 30) {
+      return 'sacrifice';
+    }
+
     // Classify by centipawn loss
-    if (centipawnLoss <= 10) {
+    if (centipawnLoss <= 0) {
+      // Best move or better
+      return 'best';
+    } else if (centipawnLoss <= 10) {
       return 'good';
     } else if (centipawnLoss <= 25) {
       return 'good';

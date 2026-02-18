@@ -19,13 +19,29 @@ export const createBotGame = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid player color' });
     }
 
+    // Get user's current rating
+    const userResult = await pool.query(
+      'SELECT rating FROM users WHERE id = $1',
+      [userId]
+    );
+    const userRating = userResult.rows[0]?.rating || 1200;
+
     // Create new game in database
     const chess = new Chess();
     const initialFen = chess.fen();
 
     const result = await pool.query(
-      `INSERT INTO games (white_player_id, black_player_id, game_type, status, current_fen, pgn) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO games (
+        white_player_id, 
+        black_player_id, 
+        game_type, 
+        status, 
+        current_fen, 
+        pgn,
+        white_rating_before,
+        black_rating_before
+      ) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
        RETURNING id, white_player_id, black_player_id, game_type, status, current_fen, created_at`,
       [
         playerColor === 'white' ? userId : null,
@@ -34,6 +50,8 @@ export const createBotGame = async (req: Request, res: Response) => {
         'active',
         initialFen,
         '',
+        playerColor === 'white' ? userRating : null,
+        playerColor === 'black' ? userRating : null,
       ]
     );
 

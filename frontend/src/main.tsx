@@ -13,6 +13,8 @@ import GameReplay from './components/GameReplay.tsx'
 import GameAnalysis from './components/GameAnalysis.tsx'
 import { UserProfile } from './components/UserProfile.tsx'
 import AdminDashboard from './components/AdminDashboard.tsx'
+import TacticalPuzzle from './components/TacticalPuzzle.tsx'
+import Settings from './components/Settings.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { useAuthStore } from './store/authStore.ts'
 
@@ -107,6 +109,22 @@ const Router = () => {
         element={
           <ProtectedRoute>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/puzzles"
+        element={
+          <ProtectedRoute>
+            <TacticalPuzzle />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         }
       />

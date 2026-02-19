@@ -203,6 +203,14 @@ export const GameLobby = () => {
                 <IconRobot className="nav-icon" />
                 <span>Play vs Bot</span>
               </button>
+              <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">🧩</span>
+                <span>Tactical Puzzles</span>
+              </button>
+              <button onClick={() => navigate('/settings')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">⚙️</span>
+                <span>Settings</span>
+              </button>
             </div>
 
             <div className="lobby-sidebar-footer">

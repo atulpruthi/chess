@@ -359,22 +359,34 @@ const Dashboard: React.FC = () => {
         {/* Quick Actions */}
         <div className="flex w-full gap-4 mt-8">
           <button
+            onClick={() => navigate('/puzzles')}
+            className="btn-primary flex-1 whitespace-nowrap"
+          >
+            🧩 Tactical Puzzles
+          </button>
+          <button
             onClick={() => navigate('/game-history')}
             className="btn-secondary flex-1 whitespace-nowrap"
           >
-            📜 View Game History
+            📜 Game History
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
             className="btn-secondary flex-1 whitespace-nowrap"
           >
-            🏆 View Leaderboard
+            🏆 Leaderboard
           </button>
           <button
             onClick={() => navigate('/profile')}
             className="btn-secondary flex-1 whitespace-nowrap"
           >
-            👤 Edit Profile
+            👤 Profile
+          </button>
+          <button
+            onClick={() => navigate('/settings')}
+            className="btn-secondary flex-1 whitespace-nowrap"
+          >
+            ⚙️ Settings
           </button>
         </div>
       </div>

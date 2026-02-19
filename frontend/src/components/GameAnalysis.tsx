@@ -5,6 +5,7 @@ import DisplayBoard from './DisplayBoard';
 import EvaluationGraph from './EvaluationGraph';
 import { config } from '../config';
 import { useAuthStore } from '../store/authStore';
+import { downloadPGN, copyPGNToClipboard, shareGame, printGame, copyGameLink } from '../utils/exportUtils';
 
 interface MoveAnalysis {
   id: number;
@@ -61,6 +62,8 @@ const GameAnalysis: React.FC = () => {
   const [selectedMoveNumber, setSelectedMoveNumber] = useState<number | null>(null);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const chessboardRef = useRef<HTMLDivElement>(null);
   const moveRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const moveListRef = useRef<HTMLDivElement>(null);
@@ -232,6 +235,24 @@ const GameAnalysis: React.FC = () => {
     }
   }, [currentMoveIndex]);
 
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showExportMenu && !target.closest('.relative')) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
+
   const loadAnalysis = async () => {
     try {
       console.log(`Loading analysis for game ${gameId}...`);
@@ -283,6 +304,80 @@ const GameAnalysis: React.FC = () => {
     } catch (error) {
       console.error('Error loading commentaries:', error);
     }
+  };
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDownloadPGN = () => {
+    if (!chess || !analysis) return;
+    
+    downloadPGN({
+      pgn: chess.pgn(),
+      players: {
+        white: 'Player 1',
+        black: 'Player 2',
+      },
+      date: new Date().toISOString().split('T')[0],
+      event: 'Chess Game Analysis',
+    }, `game_${gameId}.pgn`);
+    
+    showToast('PGN downloaded successfully!');
+    setShowExportMenu(false);
+  };
+
+  const handleCopyPGN = async () => {
+    if (!chess) return;
+    
+    const success = await copyPGNToClipboard({
+      pgn: chess.pgn(),
+      players: {
+        white: 'Player 1',
+        black: 'Player 2',
+      },
+      date: new Date().toISOString().split('T')[0],
+    });
+    
+    showToast(success ? 'PGN copied to clipboard!' : 'Failed to copy PGN');
+    setShowExportMenu(false);
+  };
+
+  const handleShareGame = async () => {
+    const success = await shareGame({
+      gameId,
+      pgn: chess.pgn(),
+      players: {
+        white: 'Player 1',
+        black: 'Player 2',
+      },
+    });
+    
+    showToast(success ? 'Game shared successfully!' : 'Failed to share game');
+    setShowExportMenu(false);
+  };
+
+  const handleCopyLink = async () => {
+    const success = await copyGameLink(gameId!);
+    showToast(success ? 'Link copied to clipboard!' : 'Failed to copy link');
+    setShowExportMenu(false);
+  };
+
+  const handlePrintGame = () => {
+    if (!chess || !analysis) return;
+    
+    printGame({
+      pgn: chess.pgn(),
+      players: {
+        white: 'Player 1',
+        black: 'Player 2',
+      },
+      date: new Date().toISOString().split('T')[0],
+      moves: chess.history(),
+    });
+    
+    setShowExportMenu(false);
   };
 
   const startAnalysis = async () => {
@@ -537,7 +632,59 @@ const GameAnalysis: React.FC = () => {
             ← Back
           </button>
           <h1 className="text-2xl font-bold">Game Analysis</h1>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="h-11 px-5 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-[0_4px_14px_rgba(59,130,246,0.35)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.45)] transition-all active:scale-[0.97]"
+            >
+              📤 Export
+            </button>
+            
+            {/* Export Dropdown Menu */}
+            {showExportMenu && (
+              <div className="absolute right-0 top-14 bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 z-50 min-w-[220px] overflow-hidden animate-fade-in">
+                <button
+                  onClick={handleDownloadPGN}
+                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
+                >
+                  <span className="text-lg">💾</span>
+                  <span>Download PGN</span>
+                </button>
+                <div className="h-px bg-white/10" />
+                <button
+                  onClick={handleCopyPGN}
+                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
+                >
+                  <span className="text-lg">📋</span>
+                  <span>Copy PGN</span>
+                </button>
+                <div className="h-px bg-white/10" />
+                <button
+                  onClick={handleCopyLink}
+                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
+                >
+                  <span className="text-lg">🔗</span>
+                  <span>Copy Link</span>
+                </button>
+                <div className="h-px bg-white/10" />
+                <button
+                  onClick={handleShareGame}
+                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
+                >
+                  <span className="text-lg">🔄</span>
+                  <span>Share Game</span>
+                </button>
+                <div className="h-px bg-white/10" />
+                <button
+                  onClick={handlePrintGame}
+                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
+                >
+                  <span className="text-lg">🖨️</span>
+                  <span>Print Game</span>
+                </button>
+              </div>
+            )}
+            
             <button style={{display: 'none'}}
               onClick={() => setVoiceEnabled(!voiceEnabled)}
               className={`px-4 py-2 rounded hover:bg-gray-600 ${voiceEnabled ? 'bg-blue-600' : 'bg-gray-700'}`}
@@ -1027,6 +1174,16 @@ const GameAnalysis: React.FC = () => {
                   </p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed bottom-6 right-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(16,185,129,0.4)] z-50 backdrop-blur-xl border border-emerald-400/20 font-semibold animate-slide-in">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">✓</span>
+              <span>{toastMessage}</span>
             </div>
           </div>
         )}

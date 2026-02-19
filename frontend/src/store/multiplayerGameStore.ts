@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Chess } from 'chess.js';
 import socketClient from '../services/socketClient';
+import { soundService } from '../services/soundService';
 
 interface MultiplayerGameState {
   gameId: string | null;
@@ -151,8 +152,24 @@ export const useMultiplayerGameStore = create<MultiplayerGameState>((set, get) =
       const result = chess.move(move);
       if (!result) return;
 
+      // Play sound based on move type
+      if ('captured' in result && result.captured) {
+        soundService.playCapture();
+      } else if (result.san.includes('O-O')) {
+        soundService.playCastle();
+      } else {
+        soundService.playMove();
+      }
+
       const newFen = chess.fen();
       const newPgn = chess.pgn();
+
+      // Check for check/checkmate
+      if (chess.isCheckmate()) {
+        soundService.playCheckmate();
+      } else if (chess.isCheck()) {
+        soundService.playCheck();
+      }
 
       set({
         fen: newFen,
@@ -185,6 +202,25 @@ export const useMultiplayerGameStore = create<MultiplayerGameState>((set, get) =
 
   handleOpponentMove: (data: { move: string; fen: string; pgn: string }) => {
     const chess = new Chess(data.fen);
+
+    // Play sound for opponent's move
+    const lastMove = chess.history({ verbose: true }).pop();
+    if (lastMove) {
+      if ('captured' in lastMove && lastMove.captured) {
+        soundService.playCapture();
+      } else if (lastMove.san.includes('O-O')) {
+        soundService.playCastle();
+      } else {
+        soundService.playMove();
+      }
+
+      // Check for check/checkmate
+      if (chess.isCheckmate()) {
+        soundService.playCheckmate();
+      } else if (chess.isCheck()) {
+        soundService.playCheck();
+      }
+    }
 
     set({
       chess,

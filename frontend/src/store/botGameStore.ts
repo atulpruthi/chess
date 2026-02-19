@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Chess } from 'chess.js';
 import api from '../services/api';
+import { soundService } from '../services/soundService';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'expert';
 
@@ -130,6 +131,22 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
         return;
       }
 
+      // Play sound based on move type
+      if ('captured' in result && result.captured) {
+        soundService.playCapture();
+      } else if (result.san.includes('O-O')) {
+        soundService.playCastle();
+      } else {
+        soundService.playMove();
+      }
+
+      // Check for check/checkmate after move
+      if (chess.isCheckmate()) {
+        soundService.playCheckmate();
+      } else if (chess.isCheck()) {
+        soundService.playCheck();
+      }
+
       // Update local state
       set({
         fen: chess.fen(),
@@ -161,6 +178,25 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
       const newChess = new Chess();
       if (pgn) {
         newChess.loadPgn(pgn);
+      }
+
+      // Play bot's move sound
+      const lastMove = newChess.history({ verbose: true }).pop();
+      if (lastMove) {
+        if ('captured' in lastMove && lastMove.captured) {
+          soundService.playCapture();
+        } else if (lastMove.san.includes('O-O')) {
+          soundService.playCastle();
+        } else {
+          soundService.playMove();
+        }
+
+        // Check for check/checkmate after bot move
+        if (newChess.isCheckmate()) {
+          soundService.playCheckmate();
+        } else if (newChess.isCheck()) {
+          soundService.playCheck();
+        }
       }
       
       set({

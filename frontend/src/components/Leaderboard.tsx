@@ -22,15 +22,16 @@ const Leaderboard: React.FC = () => {
   const { user } = useAuthStore();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTimeControl, setSelectedTimeControl] = useState<string | undefined>(undefined);
+  const [selectedTimeControl] = useState<string | undefined>(undefined);
 
-  const timeControls = [
-    { value: undefined, label: 'All' },
-    { value: 'bullet', label: '⚡ Bullet', icon: '⚡' },
-    { value: 'blitz', label: '⚔️ Blitz', icon: '⚔️' },
-    { value: 'rapid', label: '🎯 Rapid', icon: '🎯' },
-    { value: 'classical', label: '👑 Classical', icon: '👑' },
-  ];
+  // Time control filter - commented out for now
+  // const timeControls = [
+  //   { value: undefined, label: 'All' },
+  //   { value: 'bullet', label: '⚡ Bullet', icon: '⚡' },
+  //   { value: 'blitz', label: '⚔️ Blitz', icon: '⚔️' },
+  //   { value: 'rapid', label: '🎯 Rapid', icon: '🎯' },
+  //   { value: 'classical', label: '👑 Classical', icon: '👑' },
+  // ];
 
   useEffect(() => {
     fetchLeaderboard();

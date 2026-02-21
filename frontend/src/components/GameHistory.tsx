@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-import { appCenteredClass, appPageClass, buttonSecondaryClass } from '../styles/appTheme';
 import { config } from '../config';
 
 interface GameHistoryItem {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-import { appCenteredClass, appShellClass } from '../styles/appTheme';
+import { appCenteredClass } from '../styles/appTheme';
 
 interface UserStats {
   gamesPlayed: number;

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
-import { glassCardSoftClass } from '../styles/appTheme';
 
 export const MultiplayerLobby: React.FC<{ onGameStart: () => void }> = ({ onGameStart }) => {
   const { isSearching, startSearching, cancelSearch } = useMultiplayerGameStore();

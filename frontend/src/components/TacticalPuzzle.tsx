@@ -506,26 +506,26 @@ const TacticalPuzzle: React.FC = () => {
             </div>
 
             {/* Puzzle Stats */}
-            {false && (
+            {false && puzzle && (
               <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)] mt-6">
                 <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60 mb-2">PUZZLE INFO</div>
                 <div className="h-px bg-white/10 my-4" />
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-white/60">Rating</span>
-                    <span className="font-semibold text-white">{puzzle.rating}</span>
+                    <span className="font-semibold text-white">{puzzle?.rating}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/60">Times Played</span>
-                    <span className="font-semibold text-white">{puzzle.nbPlays}</span>
+                    <span className="font-semibold text-white">{puzzle?.nbPlays}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/60">Times Solved</span>
-                    <span className="font-semibold text-white">{puzzle.nbSolved}</span>
+                    <span className="font-semibold text-white">{puzzle?.nbSolved}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/60">Success Rate</span>
-                    <span className="font-semibold text-white">{puzzle.solutionRate.toFixed(1)}%</span>
+                    <span className="font-semibold text-white">{puzzle?.solutionRate.toFixed(1)}%</span>
                   </div>
                   
                 </div>

@@ -1,27 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuthStore } from '../store/authStore';
+import { Recaptcha } from './Recaptcha';
 
 interface LoginFormProps {
   onSuccess?: () => void;
   onSwitchToRegister?: () => void;
+  onForgotPassword?: () => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister, onForgotPassword }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, requiresCaptchaForLogin } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
 
     try {
-      await login(email, password);
+      await login(email, password, recaptchaToken || undefined);
       onSuccess?.();
     } catch (err) {
       // Error is handled in store
+      // Reset CAPTCHA after failed attempt if CAPTCHA is required
+      if (requiresCaptchaForLogin && recaptchaRef.current) {
+        recaptchaRef.current.reset();
+        setRecaptchaToken(null);
+      }
     }
+  };
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
   };
 
   return (
@@ -37,11 +51,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
       </div>
       
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-3">
-          <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-          <span className="font-medium">{error}</span>
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          <span className="font-medium">⚠ {error}</span>
         </div>
       )}
 
@@ -90,11 +101,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
           </div>
         </div>
 
+        {onForgotPassword && (
+          <div className="flex justify-end px-[5px] -mt-1">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-xs text-[#7fa650] hover:text-[#588c2c] font-medium transition-colors"
+            >
+              Forgot Password?
+            </button>
+          </div>
+        )}
+
+        {requiresCaptchaForLogin && (
+          <Recaptcha 
+            ref={recaptchaRef}
+            onChange={handleRecaptchaChange}
+            onExpired={() => setRecaptchaToken(null)}
+            onError={() => setRecaptchaToken(null)}
+          />
+        )}
+
         <div className="flex justify-center mt-7">
           <button
             type="submit"
             disabled={isLoading}
-            className="h-[30px] w-fit px-4 bg-blue-600 text-white text-[15px] font-bold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[0_6px_18px_rgba(37,99,235,0.35)]"
+            className="btn-primary px-6"
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2.5">
@@ -118,18 +150,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
 
       {onSwitchToRegister && (
         <div className="mt-7 pt-6 border-t border-black/10">
-          <p className="text-center text-gray-600 text-sm">
-            Don't have an account?{' '}
+          <p className="text-center text-gray-600 text-sm mb-3">
+            Don't have an account?
+          </p>
+          <div className="flex justify-center">
             <button
               onClick={onSwitchToRegister}
-              className="inline-flex items-center gap-1 h-[26px] px-3 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-colors"
+              className="btn-secondary px-6"
             >
               Create one now
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
             </button>
-          </p>
+          </div>
         </div>
       )}
     </div>

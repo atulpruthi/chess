@@ -24,6 +24,8 @@ interface GameActions {
   undoMove: () => void;
   setPromotionSquare: (square: string | null) => void;
   promoteAndMove: (from: string, to: string, piece: PieceSymbol) => boolean;
+  offerDraw: () => void;
+  resign: (color: 'white' | 'black') => void;
 }
 
 const initialChess = new Chess();
@@ -149,5 +151,20 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       set({ promotionSquare: null });
     }
     return result;
+  },
+
+  offerDraw: () => {
+    set({
+      gameOver: true,
+      isDraw: true,
+      winner: 'draw',
+    });
+  },
+
+  resign: (color: 'white' | 'black') => {
+    set({
+      gameOver: true,
+      winner: color === 'white' ? 'black' : 'white',
+    });
   },
 }));

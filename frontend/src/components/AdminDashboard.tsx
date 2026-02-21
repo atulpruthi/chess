@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { appCenteredClass, appPageClass, buttonSecondaryClass, glassCardClass, glassCardSoftClass } from '../styles/appTheme';
 
 interface DashboardStats {
   total_users: number;
@@ -228,7 +227,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/lobby')}
-            className="h-10 px-5 rounded-xl bg-white/10 border border-white/10 text-white font-semibold hover:bg-white/15 transition-all active:scale-[0.97]"
+            className="btn-secondary"
           >
             Back to Game Lobby
           </button>

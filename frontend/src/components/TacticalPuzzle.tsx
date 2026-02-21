@@ -390,72 +390,70 @@ const TacticalPuzzle: React.FC = () => {
           </div>
         </header>
 
-        {/* Stats Bar */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-              <div className="text-white/60 text-xs font-semibold tracking-wider">PUZZLE RATING</div>
-              <div className="text-2xl font-bold text-white mt-1">{stats.puzzleRating}</div>
-            </div>
-            <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-              <div className="text-white/60 text-xs font-semibold tracking-wider">SOLVED</div>
-              <div className="text-2xl font-bold text-white mt-1">{stats.puzzlesSolved} / {stats.puzzlesAttempted}</div>
-            </div>
-            <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-              <div className="text-white/60 text-xs font-semibold tracking-wider">ACCURACY</div>
-              <div className="text-2xl font-bold text-white mt-1">{stats.accuracy}%</div>
-            </div>
-            <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-              <div className="text-white/60 text-xs font-semibold tracking-wider">CURRENT STREAK</div>
-              <div className="text-2xl font-bold text-white mt-1">🔥 {stats.currentStreak}</div>
-            </div>
-            <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-              <div className="text-white/60 text-xs font-semibold tracking-wider">BEST STREAK</div>
-              <div className="text-2xl font-bold text-white mt-1">⭐ {stats.bestStreak}</div>
+        <div className="flex gap-6" style={{ marginTop: '40px' }}>
+          {/* Left Sidebar - Difficulty Selector */}
+          <div className="w-100 flex-shrink-0">
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+              <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60 mb-2" style={{marginTop: '20px'}}></div>
+              <div className="h-px bg-white/10 my-4" />
+              <div className="space-y-3">
+                <button
+                  onClick={loadDailyPuzzle}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">⭐</span>
+                  <span>Daily Puzzle</span>
+                </button>
+                <button
+                  onClick={() => loadNewPuzzle('easy')}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">🟢</span>
+                  <span>Easy</span>
+                </button>
+                <button
+                  onClick={() => loadNewPuzzle('medium')}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">🟡</span>
+                  <span>Medium</span>
+                </button>
+                <button
+                  onClick={() => loadNewPuzzle('hard')}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">🔴</span>
+                  <span>Hard</span>
+                </button>
+              </div>
             </div>
           </div>
-        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Puzzle Board */}
-          <div className="lg:col-span-2">
-            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-8 py-10 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+          <div className="flex-1">
+            <div className="card-lift rounded-3xl bg-white/[0.03] px-8 py-10">
               {puzzle && (
                 <>
-                  {/* Puzzle Info */}
-                  <div className="mb-4 flex justify-between items-center bg-white/[0.05] border border-white/10 p-4 rounded-2xl">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-white">Puzzle #{puzzle.id}</span>
-                      <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg text-sm font-semibold shadow-[0_4px_14px_rgba(168,85,247,0.4)]">
-                        {puzzle.rating} rated
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-mono text-white">{formatTime(timeSpent)}</div>
-                      <div className="text-xs text-white/60">
-                        Attempts: {attempts}
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Status Message */}
-                  <div className={`mb-4 p-4 rounded-lg ${
-                    status === 'solved' ? 'bg-green-900/50 border-2 border-green-500' :
-                    status === 'failed' ? 'bg-red-900/50 border-2 border-red-500' :
-                    'bg-blue-900/50 border-2 border-blue-500'
-                  }`}>
-                    <div className="text-center font-semibold text-lg">
+                  <div className="mb-4 flex justify-center">
+                    <div className={`p-4 rounded-lg ${
+                      status === 'solved' ? 'bg-green-900/50 border-2 border-green-500' :
+                      status === 'failed' ? 'bg-red-900/50 border-2 border-red-500' :
+                      'bg-blue-900/50 border-2 border-blue-500'
+                    }`} style={{ maxWidth: '600px', width: '100%' }}>
+                      <div className="text-center font-semibold text-lg">
                       {message}
                       {ratingChange !== null && (
                         <span className={`ml-3 font-bold text-xl ${ratingChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {ratingChange > 0 ? '+' : ''}{ratingChange}
                         </span>
                       )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Chess Board + Progress Bar */}
-                  <div className="flex gap-2 mb-4">
+                  {/* Chess Board */}
+                  <div className="mb-4 flex justify-center">
                     <Chessboard
                       options={chessComOptions({
                         id: 'tactical-puzzle-board',
@@ -473,72 +471,11 @@ const TacticalPuzzle: React.FC = () => {
                         },
                       })}
                     />
-
-                    {/* Vertical Progress Bar */}
-                    <div className="flex flex-col items-center" style={{ width: '48px' }}>
-                      <div 
-                        className="relative bg-gray-700 rounded-lg overflow-hidden"
-                        style={{ width: '48px', height: '600px' }}
-                      >
-                        {/* Progress Fill */}
-                        <div 
-                          className="absolute bottom-0 w-full transition-all duration-300"
-                          style={{
-                            height: `${Math.min((moveIndex / puzzle.moves.length) * 100, 100)}%`,
-                            background: status === 'solved' 
-                              ? 'linear-gradient(to top, #10b981, #34d399, #6ee7b7)'
-                              : status === 'failed'
-                              ? 'linear-gradient(to top, #ef4444, #f87171, #fca5a5)'
-                              : 'linear-gradient(to top, #556b2f, #6b8e23, #808000, #9acd32)',
-                          }}
-                        />
-                        {/* Move Counter */}
-                        <div 
-                          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
-                          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-                        >
-                          <span className="text-xs font-bold text-white drop-shadow-lg">
-                            {moveIndex === 0 ? 'Start' : `${moveIndex}/${puzzle.moves.length}`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Hint */}
-                  {showHint && (
-                    <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/50 rounded-2xl backdrop-blur-xl">
-                      <span className="text-lg">💡</span> <span className="text-white/90 font-medium">Hint: The first move starts from {puzzle.moves[moveIndex].substring(0, 2)}</span>
-                    </div>
-                  )}
+                  
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 flex-wrap justify-center">
-                    {status === 'playing' && (
-                      <>
-                        <button
-                          onClick={toggleHint}
-                          className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-2xl transition-all font-semibold active:scale-[0.97] shadow-[0_4px_14px_rgba(234,179,8,0.4)]"
-                        >
-                          💡 {showHint ? 'Hide Hint' : 'Show Hint'}
-                        </button>
-                        <button
-                          onClick={giveUp}
-                          className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-2xl transition-all font-semibold active:scale-[0.97] shadow-[0_4px_14px_rgba(239,68,68,0.4)]"
-                        >
-                          ❌ Give Up
-                        </button>
-                      </>
-                    )}
-                    {status !== 'playing' && (
-                      <button
-                        onClick={() => loadNewPuzzle()}
-                        className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-2xl transition-all font-semibold text-lg active:scale-[0.97] shadow-[0_4px_14px_rgba(34,197,94,0.4)]"
-                      >
-                        Next Puzzle →
-                      </button>
-                    )}
-                  </div>
+                  
                 </>
               )}
               
@@ -567,45 +504,10 @@ const TacticalPuzzle: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Difficulty Selector */}
-            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
-              <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60 mb-2">NEW PUZZLE</div>
-              <div className="h-px bg-white/10 my-4" />
-              <div className="space-y-3">
-                <button
-                  onClick={loadDailyPuzzle}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-2xl transition-all font-semibold text-white shadow-[0_4px_14px_rgba(168,85,247,0.4)] active:scale-[0.97]"
-                >
-                  ⭐ Daily Puzzle
-                </button>
-                <button
-                  onClick={() => loadNewPuzzle('easy')}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-2xl transition-all text-white font-semibold shadow-[0_4px_14px_rgba(34,197,94,0.4)] active:scale-[0.97]"
-                >
-                  🟢 Easy
-                </button>
-                <button
-                  onClick={() => loadNewPuzzle('medium')}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-2xl transition-all text-white font-semibold shadow-[0_4px_14px_rgba(234,179,8,0.4)] active:scale-[0.97]"
-                >
-                  🟡 Medium
-                </button>
-                <button
-                  onClick={() => loadNewPuzzle('hard')}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-2xl transition-all text-white font-semibold shadow-[0_4px_14px_rgba(239,68,68,0.4)] active:scale-[0.97]"
-                >
-                  🔴 Hard
-                </button>
-              </div>
-            </div>
 
             {/* Puzzle Stats */}
-            {puzzle && (
-              <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+            {false && (
+              <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)] mt-6">
                 <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60 mb-2">PUZZLE INFO</div>
                 <div className="h-px bg-white/10 my-4" />
                 <div className="space-y-3 text-sm">
@@ -625,20 +527,102 @@ const TacticalPuzzle: React.FC = () => {
                     <span className="text-white/60">Success Rate</span>
                     <span className="font-semibold text-white">{puzzle.solutionRate.toFixed(1)}%</span>
                   </div>
-                  <div className="pt-3 border-t border-white/10">
-                    <span className="text-white/60 text-xs font-semibold tracking-wider">THEMES</span>
-                    <div className="flex gap-2 flex-wrap mt-2">
-                      {puzzle.themes.map(theme => (
-                        <span key={theme} className="px-3 py-1 bg-white/10 rounded-lg text-xs text-white font-medium border border-white/10">
-                          {theme}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  
                 </div>
               </div>
             )}
           </div>
+
+          {/* Right Sidebar - Stats */}
+          {stats && (
+            <div className="flex-shrink-0 space-y-4" style={{ width: '384px' }}>
+              {/* Puzzle Info */}
+              {puzzle && (
+                <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+                  <div className="mb-3 flex justify-between items-center">
+                    <span className="text-lg font-bold text-white">Puzzle #{puzzle.id}</span>
+                    <span className="text-sm font-semibold text-white/60">
+                      {puzzle.rating} rated
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                    <div>
+                      <div className="text-white/60 text-xs font-semibold tracking-wider">TIME</div>
+                      <div className="text-xl font-mono text-white mt-1">{formatTime(timeSpent)}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-white/60 text-xs font-semibold tracking-wider">ATTEMPTS</div>
+                      <div className="text-xl font-bold text-white mt-1">{attempts}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              
+              
+              <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+                <div className="text-white/60 text-xs font-semibold tracking-wider">PUZZLE RATING</div>
+                <div className="text-2xl font-bold text-white mt-1">{stats.puzzleRating}</div>
+              </div>
+              <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+                <div className="text-white/60 text-xs font-semibold tracking-wider">SOLVED</div>
+                <div className="text-2xl font-bold text-white mt-1">{stats.puzzlesSolved} / {stats.puzzlesAttempted}</div>
+              </div>
+              <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+                <div className="text-white/60 text-xs font-semibold tracking-wider">ACCURACY</div>
+                <div className="text-2xl font-bold text-white mt-1">{stats.accuracy}%</div>
+              </div>
+              <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+                <div className="text-white/60 text-xs font-semibold tracking-wider">CURRENT STREAK</div>
+                <div className="text-2xl font-bold text-white mt-1">🔥 {stats.currentStreak}</div>
+              </div>
+              <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl p-4 border border-white/10">
+                <div className="text-white/60 text-xs font-semibold tracking-wider">BEST STREAK</div>
+                <div className="text-2xl font-bold text-white mt-1">⭐ {stats.bestStreak}</div>
+              </div>
+              {/* Action Buttons */}
+              {puzzle && (
+                <div className="backdrop-blur-xl rounded-2xl p-4" style={{marginTop: '10px'}}>
+                  {status === 'playing' && (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={toggleHint}
+                        className="btn-secondary flex-1"
+                      >
+                        💡 {showHint ? 'Hide Hint' : 'Show Hint'}
+                      </button>
+                      <button
+                        onClick={giveUp}
+                        className="btn-secondary flex-1"
+                      >
+                        ❌ Give Up
+                      </button>
+                    </div>
+                  )}
+                  
+                  {status !== 'playing' && (
+                    <button
+                      onClick={() => loadNewPuzzle()}
+                      className="btn-secondary w-full"
+                    >
+                      Next Puzzle →
+                    </button>
+                  )}
+                  {/* Hint */}
+                  {showHint && (
+                    <div className="mb-4 p-4 bg-yellow-500/10 rounded-2xl backdrop-blur-xl">
+                      <span className="text-lg">💡</span> <span className="text-white/90 font-medium">Hint: The first move starts from {puzzle.moves[moveIndex].substring(0, 2)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+          )}
+
+          
+
+          
         </div>
       </div>
     </div>

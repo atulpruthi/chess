@@ -77,6 +77,27 @@ export const BotChessBoard: React.FC = () => {
       return;
     }
 
+    // If clicking the same square again, deselect it
+    if (moveFrom === square) {
+      setMoveFrom('');
+      setOptionSquares({});
+      return;
+    }
+
+    // Check if the target square is a valid move
+    if (!optionSquares[square]) {
+      // If not valid, try to select the clicked square instead
+      const moves = getMoveOptions(square);
+      if (Object.keys(moves).length !== 0) {
+        setMoveFrom(square);
+        setOptionSquares(moves);
+      } else {
+        setMoveFrom('');
+        setOptionSquares({});
+      }
+      return;
+    }
+
     // Check for pawn promotion
     const piece = chess.get(moveFrom);
     if (
@@ -99,6 +120,14 @@ export const BotChessBoard: React.FC = () => {
     // Disable moves if not player's turn
     if ((playerColor === 'white' && chess.turn() !== 'w') ||
         (playerColor === 'black' && chess.turn() !== 'b')) {
+      return false;
+    }
+
+    // Validate the move is legal
+    const moves = chess.moves({ square: sourceSquare, verbose: true });
+    const isValidMove = moves.some((m: any) => m.to === targetSquare);
+    
+    if (!isValidMove) {
       return false;
     }
 

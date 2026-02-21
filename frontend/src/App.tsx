@@ -188,6 +188,22 @@ function App() {
                     <IconRobot className="nav-icon" />
                     <span>Play vs Bot</span>
                   </button>
+                  <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                    <span className="nav-icon text-xl">🧩</span>
+                    <span>Tactical Puzzles</span>
+                  </button>
+                  <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                    <span className="nav-icon text-xl">📚</span>
+                    <span>Tutorial</span>
+                  </button>
+                  <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                    <span className="nav-icon text-xl">📖</span>
+                    <span>Chess Rules</span>
+                  </button>
+                  {/* <button onClick={() => navigate('/settings')} className="btn-secondary sidebar-btn">
+                    <span className="nav-icon text-xl">⚙️</span>
+                    <span>Settings</span>
+                  </button> */}
                 </div>
 
                 <div className="lobby-sidebar-footer">
@@ -404,10 +420,7 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Footer */}
-                    <footer className="text-center mt-8 text-gray-400 text-sm">
-                      <p>Built with React, TypeScript, chess.js & react-chessboard</p>
-                    </footer>
+
                   </>
                 )}
               </div>
@@ -552,10 +565,7 @@ function App() {
                 </div>
               </div>
 
-              {/* Footer */}
-              <footer className="text-center mt-8 text-gray-400 text-sm">
-                <p>Built with React, TypeScript, chess.js & react-chessboard</p>
-              </footer>
+
             </>
           )}
         </div>

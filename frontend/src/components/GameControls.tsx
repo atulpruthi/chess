@@ -1,7 +1,20 @@
 import { useGameStore } from '../store/gameStore';
 
 export default function GameControls() {
-  const { resetGame, undoMove, moveHistory, gameOver } = useGameStore();
+  const { resetGame, undoMove, offerDraw, resign, moveHistory, gameOver, currentTurn } = useGameStore();
+
+  const handleResign = () => {
+    if (window.confirm('Are you sure you want to resign?')) {
+      const resigningColor = currentTurn === 'w' ? 'white' : 'black';
+      resign(resigningColor);
+    }
+  };
+
+  const handleOfferDraw = () => {
+    if (window.confirm('Offer a draw? (In local mode, this will end the game as a draw)')) {
+      offerDraw();
+    }
+  };
 
   return (
     <div className="w-full bg-white rounded-lg shadow-lg p-4">
@@ -24,17 +37,19 @@ export default function GameControls() {
         </button>
 
         <button
-          disabled
+          onClick={handleOfferDraw}
+          disabled={gameOver}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Offer Draw (Coming Soon)
+          Offer Draw
         </button>
 
         <button
-          disabled
+          onClick={handleResign}
+          disabled={gameOver}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Resign (Coming Soon)
+          Resign
         </button>
       </div>
     </div>

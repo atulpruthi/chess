@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import DisplayBoard from './DisplayBoard';
@@ -68,12 +68,57 @@ const GameAnalysis: React.FC = () => {
   const moveRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const moveListRef = useRef<HTMLDivElement>(null);
 
-  console.log('GameAnalysis render - analysis:', analysis, 'isAnalyzing:', isAnalyzing, 'loadingError:', loadingError);
+  const loadAnalysis = useCallback(async () => {
+    try {
+      const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/analysis`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAnalysis(data);
+        setIsAnalyzing(false);
+        setLoadingError(null);
+      } else if (response.status === 404) {
+        setAnalysis(null);
+        setIsAnalyzing(false);
+        setLoadingError(null);
+      } else {
+        const errorText = await response.text();
+        console.error(`Failed to load analysis: ${response.status} - ${errorText}`);
+        setLoadingError(`Failed to load analysis: ${response.status}`);
+        setIsAnalyzing(false);
+      }
+    } catch (error) {
+      console.error('Error loading analysis:', error);
+      setLoadingError(error instanceof Error ? error.message : 'Network error');
+      setIsAnalyzing(false);
+    }
+  }, [gameId, token]);
+
+  const loadCommentaries = useCallback(async () => {
+    try {
+      const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/commentaries`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCommentaries(data);
+      }
+    } catch (error) {
+      console.error('Error loading commentaries:', error);
+    }
+  }, [gameId, token]);
 
   useEffect(() => {
     loadAnalysis();
     loadCommentaries();
-  }, [gameId]);
+  }, [loadAnalysis, loadCommentaries]);
 
   // Scroll chessboard to center of viewport
   useEffect(() => {
@@ -92,21 +137,18 @@ const GameAnalysis: React.FC = () => {
       const startFen = new Chess().fen();
       setCurrentFen(startFen);
       chess.reset();
-      console.log('Reset to starting position');
       return;
     }
 
     if (analysis && analysis.moves.length > 0 && currentMoveIndex >= 0 && currentMoveIndex < analysis.moves.length) {
       try {
         const currentMove = analysis.moves[currentMoveIndex];
-        console.log('Loading move index:', currentMoveIndex, 'Move:', currentMove.moveNumber, currentMove.moveSan, currentMove.playerColor, 'FEN:', currentMove.fenAfter);
         
         if (currentMove && currentMove.fenAfter) {
           // Try to create a fresh Chess instance with the FEN
           try {
             const testChess = new Chess(currentMove.fenAfter);
             const loadedFen = testChess.fen();
-            console.log('Successfully loaded FEN');
             setCurrentFen(loadedFen);
             // Update the main chess instance too
             chess.load(currentMove.fenAfter);
@@ -116,8 +158,7 @@ const GameAnalysis: React.FC = () => {
             chess.reset();
             for (let i = 0; i <= currentMoveIndex; i++) {
               try {
-                const move = chess.move(analysis.moves[i].moveSan);
-                console.log(`Replayed move ${i}:`, analysis.moves[i].moveSan, move);
+                chess.move(analysis.moves[i].moveSan);
               } catch (err) {
                 console.error(`Failed to play move ${i}:`, analysis.moves[i].moveSan, err);
               }
@@ -125,7 +166,6 @@ const GameAnalysis: React.FC = () => {
             setCurrentFen(chess.fen());
           }
         } else {
-          console.warn('No fenAfter for move', currentMoveIndex, '- replaying moves');
           // Fallback: replay moves if FEN not available
           chess.reset();
           for (let i = 0; i <= currentMoveIndex; i++) {
@@ -141,7 +181,7 @@ const GameAnalysis: React.FC = () => {
         console.error('Error loading position:', error);
       }
     }
-  }, [currentMoveIndex, analysis, chess]);
+  }, [currentMoveIndex, analysis]);
 
   // Keyboard navigation for moves
   useEffect(() => {
@@ -252,59 +292,6 @@ const GameAnalysis: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showExportMenu]);
-
-  const loadAnalysis = async () => {
-    try {
-      console.log(`Loading analysis for game ${gameId}...`);
-      const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/analysis`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      console.log(`Analysis response status: ${response.status}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Analysis data received:', data);
-        setAnalysis(data);
-        setIsAnalyzing(false);
-        setLoadingError(null);
-      } else if (response.status === 404) {
-        // No analysis found, show option to analyze
-        console.log('No analysis found for this game');
-        setAnalysis(null);
-        setIsAnalyzing(false);
-        setLoadingError(null);
-      } else {
-        const errorText = await response.text();
-        console.error(`Failed to load analysis: ${response.status} - ${errorText}`);
-        setLoadingError(`Failed to load analysis: ${response.status}`);
-        setIsAnalyzing(false);
-      }
-    } catch (error) {
-      console.error('Error loading analysis:', error);
-      setLoadingError(error instanceof Error ? error.message : 'Network error');
-      setIsAnalyzing(false);
-    }
-  };
-
-  const loadCommentaries = async () => {
-    try {
-      const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/commentaries`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCommentaries(data);
-      }
-    } catch (error) {
-      console.error('Error loading commentaries:', error);
-    }
-  };
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -561,7 +548,7 @@ const GameAnalysis: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => navigate('/game-history')}
-            className="mb-4 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+            className="btn-secondary mb-4"
           >
             ← Back to History
           </button>
@@ -579,7 +566,7 @@ const GameAnalysis: React.FC = () => {
             </button>
             <button
               onClick={() => navigate('/game-history')}
-              className="px-6 py-3 bg-gray-700 rounded-lg hover:bg-gray-600 font-bold"
+              className="btn-secondary"
             >
               Back to Game History
             </button>
@@ -596,7 +583,7 @@ const GameAnalysis: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => navigate('/game-history')}
-            className="mb-4 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
+            className="btn-secondary mb-4"
           >
             ← Back to History
           </button>

@@ -124,10 +124,20 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
     }
     
     try {
+      // Validate that the move is legal before attempting
+      const moves = chess.moves({ square: move.from as any, verbose: true });
+      const isValidMove = moves.some((m: any) => m.to === move.to);
+      
+      if (!isValidMove) {
+        console.warn('Invalid move attempted:', move);
+        return;
+      }
+
       // Make move locally first for immediate feedback
       const result = chess.move(move);
       
       if (!result) {
+        console.warn('Move failed:', move);
         return;
       }
 
@@ -172,7 +182,7 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
 
       const response = await Promise.race([responsePromise, timeoutPromise]) as any;
 
-      const { fen, pgn, gameOver, result: gameResult } = response.data;
+      const { pgn, gameOver, result: gameResult } = response.data;
 
       // Update with server response - use PGN to maintain full move history
       const newChess = new Chess();
@@ -216,6 +226,7 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
     } catch (error) {
       console.error('Failed to make move:', error);
       set({ isThinking: false });
+      
       // Undo the local move if server request fails
       chess.undo();
       set({
@@ -223,6 +234,10 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
         fen: chess.fen(),
         moveHistory: chess.history(),
         turn: chess.turn(),
+        isCheck: chess.isCheck(),
+        isCheckmate: chess.isCheckmate(),
+        isStalemate: chess.isStalemate(),
+        isDraw: chess.isDraw(),
       });
     }
   },

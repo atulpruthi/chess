@@ -47,11 +47,11 @@ export const GameChat = () => {
   }
 
   return (
-    <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col h-96">
+    <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col">
       <h3 className="text-xl font-semibold text-white mb-4">Chat</h3>
       
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+      <div className="overflow-y-auto space-y-3 mb-4" style={{ height: '100px' }}>
         {chatMessages.length === 0 ? (
           <p className="text-white/40 text-center py-8">No messages yet</p>
         ) : (
@@ -83,7 +83,7 @@ export const GameChat = () => {
         <button
           type="submit"
           disabled={!message.trim()}
-          className="px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium rounded-xl hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Send
         </button>

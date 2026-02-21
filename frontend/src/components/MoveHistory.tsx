@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { useGameStore } from '../store/gameStore';
 
-export default function MoveHistory() {
+const MoveHistory = memo(() => {
   const { moveHistory, capturedPieces } = useGameStore();
 
   // Format moves into pairs (white, black)
@@ -83,4 +84,8 @@ export default function MoveHistory() {
       </div>
     </div>
   );
-}
+});
+
+MoveHistory.displayName = 'MoveHistory';
+
+export default MoveHistory;

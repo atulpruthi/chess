@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
 import { Chess, type Square } from 'chess.js';
@@ -6,7 +6,7 @@ import { useSocket } from '../hooks/useSocket';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
-import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { chessComOptions } from '../styles/chessboardTheme';
 import { glassCardSoftClass } from '../styles/appTheme';
 
 export const MultiplayerGame = () => {
@@ -25,6 +25,7 @@ export const MultiplayerGame = () => {
   const [game, setGame] = useState<Chess>(new Chess());
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [showDrawDialog, setShowDrawDialog] = useState(false);
+  const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!currentRoom) {
@@ -42,6 +43,18 @@ export const MultiplayerGame = () => {
     const chess = new Chess(currentRoom.gameState);
     setGame(chess);
   }, [currentRoom, user, navigate]);
+
+  // Scroll chessboard to center of viewport when game loads
+  useEffect(() => {
+    if (currentRoom && chessboardRef.current) {
+      setTimeout(() => {
+        chessboardRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }, 100);
+    }
+  }, [currentRoom]);
 
   useEffect(() => {
     if (!socket) return;
@@ -164,113 +177,178 @@ export const MultiplayerGame = () => {
     );
   }
 
+  // Helper function to parse moves into pairs
+  const parsedMoves = () => {
+    const pairs = [];
+    for (let i = 0; i < currentRoom.moves.length; i += 2) {
+      pairs.push({
+        moveNumber: Math.floor(i / 2) + 1,
+        white: currentRoom.moves[i],
+        black: currentRoom.moves[i + 1] || null,
+      });
+    }
+    return pairs;
+  };
+
+  const whitePlayer = currentRoom.players.find(p => p.color === 'white');
+  const blackPlayer = currentRoom.players.find(p => p.color === 'black');
+  const totalMoves = currentRoom.moves.length;
+  const progressPercentage = totalMoves > 0 ? Math.min((totalMoves / 60) * 100, 100) : 0;
+
   return (
-    <div className="lobby-shell">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+    <div className="min-h-screen bg-gray-900 text-white p-4 mt-4">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Multiplayer Game</h1>
-            <p className="text-white/60">Room: {currentRoom.id}</p>
-          </div>
+        <div className="mb-4 flex justify-between items-center">
           <button
             onClick={handleLeaveGame}
-            className="px-6 py-2 bg-red-500/20 border border-red-500/30 text-red-400 font-medium rounded-xl hover:bg-red-500/30 transition-all"
+            className="btn-secondary"
           >
-            Leave Game
+            ← Leave Game
           </button>
+          <h1 className="text-2xl font-bold">Multiplayer Game</h1>
+          <div className="text-sm text-gray-400">Room: {currentRoom.id}</div>
         </div>
 
-        <div className="space-y-6">
-          {/* Players section (top) */}
-          <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Players</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {currentRoom.players.map((player) => (
-                <div
-                  key={player.id}
-                  className={`p-4 rounded-2xl ${
-                    player.color === currentRoom.currentTurn
-                      ? 'bg-purple-500/20 border border-purple-500/30'
-                      : 'bg-white/5 border border-white/10'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
+        <div className="flex gap-4 items-start">
+          {/* Chessboard */}
+          <div ref={chessboardRef}>
+            <Chessboard
+              options={chessComOptions({
+                id: 'multiplayer-room-chessboard',
+                position: game.fen(),
+                onPieceDrop: ({ sourceSquare, targetSquare }) =>
+                  onDrop(sourceSquare as Square, targetSquare as Square),
+                boardOrientation,
+                boardStyle: {
+                  width: '682px',
+                  height: '682px',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+                },
+              })}
+            />
+          </div>
+
+          {/* Vertical Progress Bar */}
+          <div className="flex flex-col items-center gap-3" style={{ width: '60px' }}>
+            <div 
+              className="relative rounded-lg overflow-hidden border-2 border-gray-700" 
+              style={{ width: '48px', height: '682px', backgroundColor: '#111827' }}
+            >
+              <div 
+                className="absolute left-0 right-0"
+                style={{
+                  bottom: 0,
+                  height: `${progressPercentage}%`,
+                  background: 'linear-gradient(to top, #556b2f, #6b8e23, #808000, #9acd32)',
+                  boxShadow: '0 -4px 24px rgba(107, 142, 35, 0.7)',
+                  width: '100%',
+                  transition: 'height 200ms ease-out'
+                }}
+              />
+            </div>
+            <div className="text-xs text-gray-400 text-center">
+              {totalMoves} moves
+            </div>
+          </div>
+
+          {/* Right Sidebar - Move History, Chat and Controls */}
+          <div className="space-y-4 flex-1">
+            {/* Move History */}
+            <div className="bg-gray-800 rounded-lg p-4">
+              <h3 className="text-lg font-bold text-white mb-3 text-center">Moves</h3>
+              
+              {/* Player Info Row */}
+              <div className="flex items-center text-sm mb-2 gap-2">
+                {/* White Player Info */}
+                <div className="flex-1 p-2 bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-center gap-2">
                     <div>
-                      <p className="text-white font-medium">{player.username}</p>
-                      <p className="text-white/60 text-sm capitalize">{player.color}</p>
+                      <div className="text-white font-semibold text-sm">{whitePlayer?.username || 'White'}</div>
                     </div>
-                    {player.color === currentRoom.currentTurn && (
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                    {currentRoom.currentTurn === 'white' && currentRoom.status === 'active' && (
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Chessboard row (board left, move history right) */}
-          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-              <Chessboard
-                options={chessComOptions({
-                  id: 'multiplayer-room-chessboard',
-                  position: game.fen(),
-                  onPieceDrop: ({ sourceSquare, targetSquare }) =>
-                    onDrop(sourceSquare as Square, targetSquare as Square),
-                  boardOrientation,
-                  boardStyle: {
-                    ...responsiveBoardStyle(682, 240),
-                  },
-                })}
-              />
-              <div className="mt-4 text-center">
-                <p className="text-white/80">
-                  {currentRoom.status === 'waiting' ? (
-                    'Waiting for opponent...'
-                  ) : currentRoom.status === 'completed' ? (
-                    `Game Over${currentRoom.winner ? ` - ${currentRoom.winner} wins!` : ' - Draw'}`
-                  ) : (
-                    `${currentRoom.currentTurn}'s turn`
-                  )}
-                </p>
+                
+                {/* Black Player Info */}
+                <div className="flex-1 p-2 bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-center gap-2">
+                    <div>
+                      <div className="text-white font-semibold text-sm">{blackPlayer?.username || 'Black'}</div>
+                    </div>
+                    {currentRoom.currentTurn === 'black' && currentRoom.status === 'active' && (
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6 max-h-[520px] overflow-y-auto">
-              <h3 className="text-xl font-semibold text-white mb-4">Move History</h3>
-              <div className="space-y-2">
-                {currentRoom.moves.length === 0 ? (
+              
+              <div className="space-y-1 max-h-[200px] overflow-y-auto mt-3">
+                {parsedMoves().length === 0 ? (
                   <p className="text-white/40 text-center py-4">No moves yet</p>
                 ) : (
-                  currentRoom.moves.map((move, index) => (
-                    <div key={index} className="text-white/80">
-                      {Math.floor(index / 2) + 1}. {move}
-                    </div>
-                  ))
+                  parsedMoves().slice().reverse().map((move, reversedIndex) => {
+                    const pairIndex = parsedMoves().length - 1 - reversedIndex;
+                    
+                    return (
+                      <div key={pairIndex} className="flex items-center text-sm gap-2">
+                        {/* Move number */}
+                        <div className="text-gray-400 font-bold w-8">
+                          {move.moveNumber}.
+                        </div>
+                        
+                        {/* White Move */}
+                        <div className="flex-1 p-2 rounded bg-gray-700/50 text-center">
+                          {move.white && (
+                            <span className="font-mono text-white text-sm">{move.white}</span>
+                          )}
+                        </div>
+                        
+                        {/* Black Move */}
+                        <div className="flex-1 p-2 rounded bg-gray-700/50 text-center">
+                          {move.black && (
+                            <span className="font-mono text-white text-sm">{move.black}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              
+              {/* Game Status */}
+              <div className="mt-3 text-center text-sm text-gray-400 pt-3 border-t border-gray-700">
+                {currentRoom.status === 'waiting' ? (
+                  'Waiting for opponent...'
+                ) : currentRoom.status === 'completed' ? (
+                  <span className="text-white font-semibold">
+                    Game Over{currentRoom.winner ? ` - ${currentRoom.winner} wins!` : ' - Draw'}
+                  </span>
+                ) : (
+                  <span className="text-white">{currentRoom.currentTurn}'s turn</span>
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Bottom row (chat left, controls right) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <GameChat />
-
-            <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-3xl p-6">
+            
+            <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-white mb-4">Game Controls</h3>
-              <div className="space-y-3">
+              <div className="flex gap-3 justify-center">
                 <button
                   onClick={handleOfferDraw}
                   disabled={currentRoom.status !== 'active'}
-                  className="btn-secondary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-secondary px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Offer Draw
                 </button>
                 <button
                   onClick={handleResign}
                   disabled={currentRoom.status !== 'active'}
-                  className="btn-secondary sidebar-btn--logout w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-secondary sidebar-btn--logout px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Resign
                 </button>

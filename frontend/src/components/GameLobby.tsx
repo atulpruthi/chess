@@ -207,10 +207,18 @@ export const GameLobby = () => {
                 <span className="nav-icon text-xl">🧩</span>
                 <span>Tactical Puzzles</span>
               </button>
-              <button onClick={() => navigate('/settings')} className="btn-secondary sidebar-btn">
+              <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📚</span>
+                <span>Tutorial</span>
+              </button>
+              <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📖</span>
+                <span>Chess Rules</span>
+              </button>
+              {/* <button onClick={() => navigate('/settings')} className="btn-secondary sidebar-btn">
                 <span className="nav-icon text-xl">⚙️</span>
                 <span>Settings</span>
-              </button>
+              </button> */}
             </div>
 
             <div className="lobby-sidebar-footer">

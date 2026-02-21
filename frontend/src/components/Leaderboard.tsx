@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { appCenteredClass, appPageClass, buttonSecondaryClass } from '../styles/appTheme';
 
 interface LeaderboardEntry {
   rank: number;
@@ -92,7 +91,7 @@ const Leaderboard: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className="h-10 px-5 rounded-xl bg-white/10 border border-white/10 text-white font-semibold hover:bg-white/15 transition-all active:scale-[0.97]"
+              className="btn-secondary"
             >
               Back to Dashboard
             </button>
@@ -100,7 +99,7 @@ const Leaderboard: React.FC = () => {
         </div>
 
         {/* Time Control Filter */}
-        <div className="mb-6">
+        {/*<div className="mb-6">
           <div className="flex gap-2 flex-wrap">
             {timeControls.map((tc) => (
               <button
@@ -116,7 +115,7 @@ const Leaderboard: React.FC = () => {
               </button>
             ))}
           </div>
-        </div>
+        </div>*/}
 
         {/* Leaderboard Table */}
         <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] overflow-hidden">
@@ -132,10 +131,10 @@ const Leaderboard: React.FC = () => {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
                       Rank
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">
+                    <th className="px-3 py-4 text-left text-sm font-semibold text-white/80">
                       Player
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">
+                    <th className="px-3 py-4 text-center text-sm font-semibold text-white/80">
                       Rating
                     </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-white/80">
@@ -171,11 +170,8 @@ const Leaderboard: React.FC = () => {
                       </td>
 
                       {/* Player */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center text-white font-bold">
-                            {entry.username[0].toUpperCase()}
-                          </div>
                           <div>
                             <div className="text-white font-semibold flex items-center gap-2">
                               {entry.username}
@@ -195,7 +191,7 @@ const Leaderboard: React.FC = () => {
                       </td>
 
                       {/* Rating */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-3 py-4 text-center">
                         <div className="text-2xl font-bold text-white">{entry.rating}</div>
                       </td>
 

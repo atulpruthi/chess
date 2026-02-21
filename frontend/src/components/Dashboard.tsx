@@ -382,12 +382,12 @@ const Dashboard: React.FC = () => {
           >
             👤 Profile
           </button>
-          <button
+          {/* <button
             onClick={() => navigate('/settings')}
             className="btn-secondary flex-1 whitespace-nowrap"
           >
             ⚙️ Settings
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

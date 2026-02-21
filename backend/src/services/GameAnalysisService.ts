@@ -52,25 +52,20 @@ class GameAnalysisService {
 
       const { pgn } = gameResult.rows[0];
 
-      // Create or get analysis record
-      let analysisResult = await client.query(
-        'SELECT id FROM game_analysis WHERE game_id = $1',
-        [gameId]
+      // Create or get analysis record using UPSERT to handle race conditions
+      const analysisResult = await client.query(
+        `INSERT INTO game_analysis (game_id, depth) 
+         VALUES ($1, $2) 
+         ON CONFLICT (game_id) 
+         DO UPDATE SET depth = EXCLUDED.depth, updated_at = CURRENT_TIMESTAMP
+         RETURNING id`,
+        [gameId, depth]
       );
 
-      let analysisId: number;
-
-      if (analysisResult.rows.length === 0) {
-        const insertResult = await client.query(
-          'INSERT INTO game_analysis (game_id, depth) VALUES ($1, $2) RETURNING id',
-          [gameId, depth]
-        );
-        analysisId = insertResult.rows[0].id;
-      } else {
-        analysisId = analysisResult.rows[0].id;
-        // Clear existing move analysis
-        await client.query('DELETE FROM move_analysis WHERE analysis_id = $1', [analysisId]);
-      }
+      const analysisId: number = analysisResult.rows[0].id;
+      
+      // Clear existing move analysis (in case we're re-analyzing)
+      await client.query('DELETE FROM move_analysis WHERE analysis_id = $1', [analysisId]);
 
       // Parse game and analyze each position
       const chess = new Chess();

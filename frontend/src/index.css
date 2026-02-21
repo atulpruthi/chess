@@ -583,3 +583,148 @@ input[type="range"]::-moz-range-thumb:hover {
   transform: scale(1.1);
 }
 
+/* ===================================================================
+   MOBILE RESPONSIVENESS & TOUCH OPTIMIZATIONS
+   =================================================================== */
+
+/* Touch-friendly button sizes (minimum 44x44px) */
+@media (max-width: 768px) {
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    padding: 12px 20px;
+  }
+
+  /* Increase touch targets for all interactive elements */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better spacing on mobile */
+  .lobby-container {
+    padding: 16px 12px 60px;
+  }
+
+  .action-bar {
+    gap: 10px;
+  }
+
+  /* Responsive text sizes */
+  h1,
+  .text-\[30px\] {
+    font-size: 24px !important;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  /* Stack columns on mobile */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Better card spacing on mobile */
+  .card-lift {
+    padding: 20px 16px !important;
+  }
+
+  /* Responsive board sizing */
+  .chessboard-wrapper {
+    max-width: 100%;
+    width: 100% !important;
+  }
+}
+
+/* Prevent text selection on mobile for better UX */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary,
+  .btn-secondary,
+  button {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Enable smooth scrolling on mobile */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Optimize for touch scrolling */
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+  .lobby-shell {
+    min-height: 100vh;
+  }
+
+  /* Reduce vertical padding in landscape */
+  .lobby-container {
+    padding-top: 12px;
+    padding-bottom: 40px;
+  }
+}
+
+/* Tablet optimization (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .lobby-container {
+    max-width: 720px;
+    padding: 24px 20px 70px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .lobby-shell,
+  .lobby-container {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-primary,
+  .btn-secondary {
+    border: 2px solid currentColor;
+  }
+
+  .card-lift {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+}
+

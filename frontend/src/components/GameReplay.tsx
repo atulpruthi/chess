@@ -569,14 +569,14 @@ const GameReplay: React.FC = () => {
                 <button
                   onClick={goToStart}
                   disabled={currentMoveIndex === -1}
-                  className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ⏮️ Start
                 </button>
                 <button
                   onClick={goToPrevious}
                   disabled={currentMoveIndex === -1}
-                  className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ◀️ Prev
                 </button>
@@ -598,14 +598,14 @@ const GameReplay: React.FC = () => {
                 <button
                   onClick={goToNext}
                   disabled={currentMoveIndex >= halfMoves.length - 1}
-                  className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next ▶️
                 </button>
                 <button
                   onClick={goToEnd}
                   disabled={currentMoveIndex >= halfMoves.length - 1}
-                  className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   End ⏭️
                 </button>

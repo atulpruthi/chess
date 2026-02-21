@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
+import { ForgotPasswordForm } from './ForgotPasswordForm';
 import { useAuthStore } from '../store/authStore';
 
 export const AuthPage: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const { isAuthenticated } = useAuthStore();
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
+  const { isAuthenticated, clearError } = useAuthStore();
+
+  const handleModeChange = (newMode: 'login' | 'register' | 'forgot') => {
+    clearError();
+    setMode(newMode);
+  };
 
   if (isAuthenticated) {
     return null; // Will be handled by routing
@@ -18,15 +24,21 @@ export const AuthPage: React.FC = () => {
       </div>
       
       <div className="w-full relative z-10 flex flex-col items-center">
-        {isLogin ? (
+        {mode === 'login' ? (
           <LoginForm
             onSuccess={() => window.location.reload()}
-            onSwitchToRegister={() => setIsLogin(false)}
+            onSwitchToRegister={() => handleModeChange('register')}
+            onForgotPassword={() => handleModeChange('forgot')}
           />
-        ) : (
+        ) : mode === 'register' ? (
           <RegisterForm
             onSuccess={() => window.location.reload()}
-            onSwitchToLogin={() => setIsLogin(true)}
+            onSwitchToLogin={() => handleModeChange('login')}
+          />
+        ) : (
+          <ForgotPasswordForm
+            onSuccess={() => window.location.reload()}
+            onBackToLogin={() => handleModeChange('login')}
           />
         )}
 

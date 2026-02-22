@@ -75,6 +75,9 @@ export const chessComHighlight = {
     'radial-gradient(circle, transparent 0%, transparent 70%, rgba(0, 0, 0, 0.28) 72%, rgba(0, 0, 0, 0.28) 84%, transparent 86%)',
 };
 
+// Matches the board size used in the Online Multiplayer room.
+export const ONLINE_MULTIPLAYER_BOARD_PX = 682;
+
 export function responsiveBoardStyle(
   maxPx = 560,
   viewportPaddingPx = 220,

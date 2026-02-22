@@ -2,6 +2,8 @@ import { useGameStore } from '../store/gameStore';
 
 export default function GameControls() {
   const { resetGame, undoMove, offerDraw, resign, moveHistory, gameOver, currentTurn } = useGameStore();
+  const isNewGameActive = moveHistory.length === 0 || gameOver;
+  const isGameInProgress = moveHistory.length > 0 && !gameOver;
 
   const handleResign = () => {
     if (window.confirm('Are you sure you want to resign?')) {
@@ -23,7 +25,8 @@ export default function GameControls() {
       <div className="space-y-3">
         <button
           onClick={resetGame}
-          className="find-match-btn find-match-btn--full transition-all duration-200"
+          disabled={isGameInProgress}
+          className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           New Game
         </button>
@@ -38,7 +41,7 @@ export default function GameControls() {
 
         <button
           onClick={handleOfferDraw}
-          disabled={gameOver}
+          disabled={isNewGameActive}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Offer Draw
@@ -46,7 +49,7 @@ export default function GameControls() {
 
         <button
           onClick={handleResign}
-          disabled={gameOver}
+          disabled={isNewGameActive}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Resign

@@ -41,6 +41,13 @@ interface MultiplayerGameState {
   promoteAndMove: (from: string, to: string, piece: string) => void;
 }
 
+const normalizePlayerColor = (color: unknown): 'white' | 'black' | null => {
+  if (color === 'white' || color === 'black') return color;
+  if (color === 'w') return 'white';
+  if (color === 'b') return 'black';
+  return null;
+};
+
 const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 const updateCapturedPieces = (chess: Chess) => {
@@ -97,11 +104,16 @@ export const useMultiplayerGameStore = create<MultiplayerGameState>((set, get) =
       
       set({
         gameId: data.gameId,
-        playerColor: data.color,
+        playerColor: normalizePlayerColor(data.color),
         opponent: data.opponent,
         chess,
         fen: data.fen,
         moveHistory: chess.history(),
+        turn: chess.turn(),
+        isCheck: chess.isCheck(),
+        isCheckmate: chess.isCheckmate(),
+        isStalemate: chess.isStalemate(),
+        isDraw: chess.isDraw(),
         isSearching: false,
         gameOver: false,
         result: null,

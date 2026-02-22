@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { type Square } from 'chess.js';
 import { useBotGameStore } from '../store/botGameStore';
-import { chessComHighlight, chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { chessComHighlight, chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export const BotChessBoard: React.FC = () => {
   const {
@@ -180,7 +180,7 @@ export const BotChessBoard: React.FC = () => {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(616, 260),
+            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
           },
           allowDragging: isMyTurn && !isThinking,
         })}

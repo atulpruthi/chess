@@ -11,12 +11,12 @@ const TIME_CONTROLS = [
 
 export const Matchmaking = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const { socket, isConnected } = useSocket();
   const { setCurrentRoom, setSearching, isSearching } = useMultiplayerStore();
   
   const [selectedTimeControl, setSelectedTimeControl] = useState('rapid');
-  const [isRated, setIsRated] = useState(true);
+  const [isRated, setIsRated] = useState(!isAuthenticated ? false : true);
   const [searchTime, setSearchTime] = useState(0);
 
   useEffect(() => {
@@ -137,7 +137,10 @@ export const Matchmaking = () => {
                 <button
                   type="button"
                   className={isRated ? 'active' : ''}
-                  onClick={() => setIsRated(true)}
+                  onClick={() => isAuthenticated && setIsRated(true)}
+                  disabled={!isAuthenticated}
+                  title={!isAuthenticated ? 'Login required for rated games' : ''}
+                  style={{ opacity: !isAuthenticated ? 0.5 : 1, cursor: !isAuthenticated ? 'not-allowed' : 'pointer' }}
                 >
                   Rated ⏺
                 </button>

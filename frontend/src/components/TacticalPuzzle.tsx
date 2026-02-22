@@ -4,8 +4,11 @@ import { Chessboard } from 'react-chessboard';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { config } from '../config';
-import { chessComOptions } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
 import { soundService } from '../services/soundService';
+import brilliantknightzLogo from '../assets/brilliantknightz.png';
+import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './icons/NavIcons';
 
 interface Puzzle {
   id: number;
@@ -30,7 +33,7 @@ interface PuzzleStats {
 
 const TacticalPuzzle: React.FC = () => {
   const navigate = useNavigate();
-  const { token } = useAuthStore();
+  const { token, user, isAuthenticated, logout } = useAuthStore();
 
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [game, setGame] = useState<Chess>(new Chess());
@@ -44,7 +47,7 @@ const TacticalPuzzle: React.FC = () => {
   const [timerActive, setTimerActive] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [stats, setStats] = useState<PuzzleStats | null>(null);
-  const [ratingChange, setRatingChange] = useState<number | null>(null);
+  const [, setRatingChange] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Timer effect
@@ -58,9 +61,11 @@ const TacticalPuzzle: React.FC = () => {
     return () => clearInterval(interval);
   }, [timerActive, status]);
 
-  // Fetch user stats on mount
+  // Fetch user stats on mount (only if authenticated)
   useEffect(() => {
-    fetchStats();
+    if (token) {
+      fetchStats();
+    }
   }, []);
 
   // Load puzzle on mount
@@ -69,6 +74,8 @@ const TacticalPuzzle: React.FC = () => {
   }, []);
 
   const fetchStats = async () => {
+    if (!token) return; // Only fetch stats for authenticated users
+    
     try {
       const response = await fetch(`${config.apiUrl}/api/puzzles/stats`, {
         headers: {
@@ -96,11 +103,12 @@ const TacticalPuzzle: React.FC = () => {
       const url = `${config.apiUrl}/api/puzzles/random${difficultyParam}`;
       console.log('Fetching from:', url);
       
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(url, { headers });
 
       console.log('Response status:', response.status);
       
@@ -374,15 +382,73 @@ const TacticalPuzzle: React.FC = () => {
   return (
     <div className="lobby-shell">
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+        <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+          <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+          <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+          <button
+            type="button"
+            className="sidebar-user"
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+          >
+            <div>
+              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+            </div>
+          </button>
+        </div>
+
+        <div className="lobby-layout">
+          <aside className="lobby-sidebar">
+            <div className="lobby-sidebar-nav">
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconMagnifier className="nav-icon" />
+                <span>Find Match</span>
+              </button>
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconPlus className="nav-icon" />
+                <span>Create Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconGlobe className="nav-icon" />
+                <span>Online Multiplayer</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconChessboard className="nav-icon" />
+                <span>Local Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconRobot className="nav-icon" />
+                <span>Play vs Bot</span>
+              </button>
+              <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">🧩</span>
+                <span>Tactical Puzzles</span>
+              </button>
+              <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📚</span>
+                <span>Tutorial</span>
+              </button>
+              <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📖</span>
+                <span>Chess Rules</span>
+              </button>
+            </div>
+
+            {isAuthenticated && (
+              <div className="lobby-sidebar-footer">
+                <button type="button" onClick={logout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </aside>
+
+          <main className="lobby-main">
         {/* Header */}
         <header className="flex flex-col gap-4 mb-8">
           <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="btn-secondary"
-            >
-              ← Back
-            </button>
             <div className="text-[30px] font-extrabold text-center">🧩 Tactical Puzzles</div>
             <div className="text-sm text-white/60">
               {stats ? `Rating: ${stats.puzzleRating}` : ''}
@@ -391,69 +457,23 @@ const TacticalPuzzle: React.FC = () => {
         </header>
 
         <div className="flex gap-6" style={{ marginTop: '40px' }}>
-          {/* Left Sidebar - Difficulty Selector */}
-          <div className="w-100 flex-shrink-0">
-            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
-              <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60 mb-2" style={{marginTop: '20px'}}></div>
-              <div className="h-px bg-white/10 my-4" />
-              <div className="space-y-3">
-                <button
-                  onClick={loadDailyPuzzle}
-                  className="btn-secondary sidebar-btn w-full"
-                >
-                  <span className="nav-icon text-xl">⭐</span>
-                  <span>Daily Puzzle</span>
-                </button>
-                <button
-                  onClick={() => loadNewPuzzle('easy')}
-                  className="btn-secondary sidebar-btn w-full"
-                >
-                  <span className="nav-icon text-xl">🟢</span>
-                  <span>Easy</span>
-                </button>
-                <button
-                  onClick={() => loadNewPuzzle('medium')}
-                  className="btn-secondary sidebar-btn w-full"
-                >
-                  <span className="nav-icon text-xl">🟡</span>
-                  <span>Medium</span>
-                </button>
-                <button
-                  onClick={() => loadNewPuzzle('hard')}
-                  className="btn-secondary sidebar-btn w-full"
-                >
-                  <span className="nav-icon text-xl">🔴</span>
-                  <span>Hard</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Puzzle Board */}
           <div className="flex-1">
             <div className="card-lift rounded-3xl bg-white/[0.03] px-8 py-10">
               {puzzle && (
                 <>
                   {/* Status Message */}
-                  <div className="mb-4 flex justify-center">
-                    <div className={`p-4 rounded-lg ${
-                      status === 'solved' ? 'bg-green-900/50 border-2 border-green-500' :
-                      status === 'failed' ? 'bg-red-900/50 border-2 border-red-500' :
-                      'bg-blue-900/50 border-2 border-blue-500'
-                    }`} style={{ maxWidth: '600px', width: '100%' }}>
-                      <div className="text-center font-semibold text-lg">
-                      {message}
-                      {ratingChange !== null && (
-                        <span className={`ml-3 font-bold text-xl ${ratingChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {ratingChange > 0 ? '+' : ''}{ratingChange}
-                        </span>
-                      )}
-                      </div>
+                  <div className="mb-4 flex justify-start">
+                    <div
+                      className="p-4 rounded-lg bg-blue-900/50"
+                      style={{ maxWidth: '600px', width: '100%' }}
+                    >
+                      <div className="text-center font-semibold text-lg">Find the best move for Black</div>
                     </div>
                   </div>
 
                   {/* Chess Board */}
-                  <div className="mb-4 flex justify-center">
+                  <div className="mb-4 flex justify-start">
                     <Chessboard
                       options={chessComOptions({
                         id: 'tactical-puzzle-board',
@@ -464,8 +484,8 @@ const TacticalPuzzle: React.FC = () => {
                           return onDrop(sourceSquare, targetSquare);
                         },
                         boardStyle: {
-                          width: '600px',
-                          height: '600px',
+                          width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
+                          height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
                           borderRadius: '8px',
                           boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
                         },
@@ -531,6 +551,44 @@ const TacticalPuzzle: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Left Sidebar - Difficulty Selector */}
+          <div className="w-100 flex-shrink-0">
+            <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+              <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60 mb-2" style={{marginTop: '20px'}}></div>
+              <div className="h-px bg-white/10 my-4" />
+              <div className="space-y-3">
+                <button
+                  onClick={loadDailyPuzzle}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">⭐</span>
+                  <span>Daily Puzzle</span>
+                </button>
+                <button
+                  onClick={() => loadNewPuzzle('easy')}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">🟢</span>
+                  <span>Easy</span>
+                </button>
+                <button
+                  onClick={() => loadNewPuzzle('medium')}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">🟡</span>
+                  <span>Medium</span>
+                </button>
+                <button
+                  onClick={() => loadNewPuzzle('hard')}
+                  className="btn-secondary sidebar-btn w-full"
+                >
+                  <span className="nav-icon text-xl">🔴</span>
+                  <span>Hard</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Right Sidebar - Stats */}
@@ -623,6 +681,8 @@ const TacticalPuzzle: React.FC = () => {
           
 
           
+        </div>
+          </main>
         </div>
       </div>
     </div>

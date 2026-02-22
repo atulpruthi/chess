@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
 import { Chess, type Square } from 'chess.js';
@@ -6,7 +6,7 @@ import { useSocket } from '../hooks/useSocket';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
-import { chessComOptions } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
 import { glassCardSoftClass } from '../styles/appTheme';
 
 export const MultiplayerGame = () => {
@@ -25,7 +25,6 @@ export const MultiplayerGame = () => {
   const [game, setGame] = useState<Chess>(new Chess());
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [showDrawDialog, setShowDrawDialog] = useState(false);
-  const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!currentRoom) {
@@ -43,18 +42,6 @@ export const MultiplayerGame = () => {
     const chess = new Chess(currentRoom.gameState);
     setGame(chess);
   }, [currentRoom, user, navigate]);
-
-  // Scroll chessboard to center of viewport when game loads
-  useEffect(() => {
-    if (currentRoom && chessboardRef.current) {
-      setTimeout(() => {
-        chessboardRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }, 100);
-    }
-  }, [currentRoom]);
 
   useEffect(() => {
     if (!socket) return;
@@ -212,7 +199,7 @@ export const MultiplayerGame = () => {
 
         <div className="flex gap-4 items-start">
           {/* Chessboard */}
-          <div ref={chessboardRef}>
+          <div>
             <Chessboard
               options={chessComOptions({
                 id: 'multiplayer-room-chessboard',
@@ -221,8 +208,8 @@ export const MultiplayerGame = () => {
                   onDrop(sourceSquare as Square, targetSquare as Square),
                 boardOrientation,
                 boardStyle: {
-                  width: '682px',
-                  height: '682px',
+                  width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
+                  height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
                   borderRadius: '8px',
                   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
                 },
@@ -286,33 +273,16 @@ export const MultiplayerGame = () => {
                 </div>
               </div>
               
-              <div className="space-y-1 max-h-[200px] overflow-y-auto mt-3">
+              <div className="space-y-1 h-[150px] overflow-y-auto mt-3">
                 {parsedMoves().length === 0 ? (
                   <p className="text-white/40 text-center py-4">No moves yet</p>
                 ) : (
                   parsedMoves().slice().reverse().map((move, reversedIndex) => {
                     const pairIndex = parsedMoves().length - 1 - reversedIndex;
-                    
+
                     return (
-                      <div key={pairIndex} className="flex items-center text-sm gap-2">
-                        {/* Move number */}
-                        <div className="text-gray-400 font-bold w-8">
-                          {move.moveNumber}.
-                        </div>
-                        
-                        {/* White Move */}
-                        <div className="flex-1 p-2 rounded bg-gray-700/50 text-center">
-                          {move.white && (
-                            <span className="font-mono text-white text-sm">{move.white}</span>
-                          )}
-                        </div>
-                        
-                        {/* Black Move */}
-                        <div className="flex-1 p-2 rounded bg-gray-700/50 text-center">
-                          {move.black && (
-                            <span className="font-mono text-white text-sm">{move.black}</span>
-                          )}
-                        </div>
+                      <div key={pairIndex} className="text-gray-300 text-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis">
+                        {move.moveNumber}. {move.white}{move.black ? ` ... ${move.black}` : ''}
                       </div>
                     );
                   })

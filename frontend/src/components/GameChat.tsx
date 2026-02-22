@@ -6,7 +6,7 @@ export const GameChat = () => {
   const { socket, sendChatMessage } = useSocket();
   const { chatMessages, addChatMessage, currentRoom } = useMultiplayerStore();
   const [message, setMessage] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -26,7 +26,11 @@ export const GameChat = () => {
   }, [socket, addChatMessage]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
   }, [chatMessages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -51,7 +55,7 @@ export const GameChat = () => {
       <h3 className="text-xl font-semibold text-white mb-4">Chat</h3>
       
       {/* Messages */}
-      <div className="overflow-y-auto space-y-3 mb-4" style={{ height: '100px' }}>
+      <div ref={messagesContainerRef} className="overflow-y-auto space-y-3 mb-4" style={{ height: '100px' }}>
         {chatMessages.length === 0 ? (
           <p className="text-white/40 text-center py-8">No messages yet</p>
         ) : (
@@ -67,7 +71,6 @@ export const GameChat = () => {
             </div>
           ))
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}

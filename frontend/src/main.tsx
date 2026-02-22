@@ -31,42 +31,38 @@ const LoadingFallback = () => (
 )
 
 const Router = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
+
+  // Determine default redirect based on user role
+  const getDefaultRedirect = () => {
+    if (!isAuthenticated) return '/auth';
+    return user?.role === 'admin' ? '/admin' : '/lobby';
+  };
 
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
         <Route 
           path="/auth" 
-          element={!isAuthenticated ? <AuthPage /> : <Navigate to="/lobby" replace />} 
+          element={!isAuthenticated ? <AuthPage /> : <Navigate to={getDefaultRedirect()} replace />} 
         />
         <Route
           path="/lobby"
-          element={
-            <ProtectedRoute>
-              <GameLobby />
-            </ProtectedRoute>
-          }
+          element={<GameLobby />}
         />
         <Route
           path="/game"
-          element={
-            <ProtectedRoute>
-              <MultiplayerGame />
-            </ProtectedRoute>
-          }
+          element={<MultiplayerGame />}
         />
         <Route
           path="/local"
           element={
-            <ProtectedRoute>
-              {new URLSearchParams(location.search).get('mode') ? (
-                <App />
-              ) : (
-                <Navigate to="/lobby" replace />
-              )}
-            </ProtectedRoute>
+            new URLSearchParams(location.search).get('mode') ? (
+              <App />
+            ) : (
+              <Navigate to="/lobby" replace />
+            )
           }
         />
         <Route
@@ -87,35 +83,19 @@ const Router = () => {
         />
         <Route
           path="/leaderboard"
-          element={
-            <ProtectedRoute>
-              <Leaderboard />
-            </ProtectedRoute>
-          }
+          element={<Leaderboard />}
         />
         <Route
           path="/game-replay/:gameId"
-          element={
-            <ProtectedRoute>
-              <GameReplay />
-            </ProtectedRoute>
-          }
+          element={<GameReplay />}
         />
         <Route
           path="/game-analysis/:gameId"
-          element={
-            <ProtectedRoute>
-              <GameAnalysis />
-            </ProtectedRoute>
-          }
+          element={<GameAnalysis />}
         />
         <Route
           path="/profile/:userId?"
-          element={
-            <ProtectedRoute>
-              <UserProfile />
-            </ProtectedRoute>
-          }
+          element={<UserProfile />}
         />
         <Route
           path="/admin"
@@ -127,11 +107,7 @@ const Router = () => {
         />
         <Route
           path="/puzzles"
-          element={
-            <ProtectedRoute>
-              <TacticalPuzzle />
-            </ProtectedRoute>
-          }
+          element={<TacticalPuzzle />}
         />
         <Route
           path="/settings"
@@ -143,21 +119,13 @@ const Router = () => {
         />
         <Route
           path="/tutorial"
-          element={
-            <ProtectedRoute>
-              <Tutorial />
-            </ProtectedRoute>
-          }
+          element={<Tutorial />}
         />
         <Route
           path="/rules"
-          element={
-            <ProtectedRoute>
-              <ChessRules />
-            </ProtectedRoute>
-          }
+          element={<ChessRules />}
         />
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/lobby" : "/auth"} replace />} />
+        <Route path="/" element={<Navigate to="/lobby" replace />} />
       </Routes>
     </Suspense>
   );

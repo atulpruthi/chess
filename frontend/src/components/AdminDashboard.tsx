@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import brilliantknightzLogo from '../assets/brilliantknightz.png';
+import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './icons/NavIcons';
 
 interface DashboardStats {
   total_users: number;
@@ -33,7 +36,7 @@ interface Game {
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, token } = useAuthStore();
+  const { user, token, logout, isAuthenticated } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [games, setGames] = useState<Game[]>([]);
@@ -219,6 +222,62 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="lobby-shell">
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+        <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+          <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+          <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+          <button
+            type="button"
+            className="sidebar-user"
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+          >
+            <div>
+              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+            </div>
+          </button>
+        </div>
+
+        <div className="lobby-layout">
+          <aside className="lobby-sidebar">
+            <div className="lobby-sidebar-nav">
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconMagnifier className="nav-icon" />
+                <span>Find Match</span>
+              </button>
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconPlus className="nav-icon" />
+                <span>Create Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconGlobe className="nav-icon" />
+                <span>Online Multiplayer</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconChessboard className="nav-icon" />
+                <span>Local Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconRobot className="nav-icon" />
+                <span>Play vs Bot</span>
+              </button>
+              <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">🧩</span>
+                <span>Tactical Puzzles</span>
+              </button>
+              <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📚</span>
+                <span>Tutorial</span>
+              </button>
+              <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📖</span>
+                <span>Chess Rules</span>
+              </button>
+            </div>
+          </aside>
+
+          <main className="lobby-main">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -226,10 +285,16 @@ const AdminDashboard: React.FC = () => {
             <p className="text-white/70">Welcome, {user?.username} ({user?.role})</p>
           </div>
           <button
-            onClick={() => navigate('/lobby')}
-            className="btn-secondary"
+            onClick={() => {
+              logout();
+              navigate('/lobby');
+            }}
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition flex items-center gap-2"
           >
-            Back to Game Lobby
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
           </button>
         </div>
 
@@ -457,6 +522,8 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
+          </main>
+        </div>
       </div>
     </div>
   );

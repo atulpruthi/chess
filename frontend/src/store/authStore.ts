@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import api from '../services/api';
 
 interface User {
   id: string;
@@ -21,9 +22,9 @@ interface AuthState {
   requiresCaptchaForPasswordReset: boolean;
   
   // Actions
-  login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
+  login: (email: string, password: string, recaptchaToken?: string) => Promise<User>;
   register: (username: string, email: string, password: string) => Promise<void>;
-  sendOTP: (username: string, email: string, password: string, recaptchaToken?: string) => Promise<void>;
+  sendOTP: (username: string, email: string, password: string, recaptchaToken: string) => Promise<void>;
   verifyOTP: (email: string, otp: string) => Promise<void>;
   checkUsername: (username: string) => Promise<{ available: boolean; suggestions: string[] }>;
   checkEmail: (email: string) => Promise<{ valid: boolean; exists: boolean; message: string }>;
@@ -32,6 +33,7 @@ interface AuthState {
   resetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<string>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -50,21 +52,10 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string, recaptchaToken?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, recaptchaToken }),
-          });
+          const { data } = await api.post('/api/auth/login', { email, password, recaptchaToken });
 
-          const data = await response.json();
-
-          if (!response.ok) {
-            // Update CAPTCHA requirement status
-            if (data.requiresCaptcha !== undefined) {
-              set({ requiresCaptchaForLogin: data.requiresCaptcha });
-            }
-            throw new Error(data.error || 'Login failed');
-          }
+          // Handle CAPTCHA requirement status from error responses
+          // This will be caught in the catch block if status is not 2xx
 
           // Clear CAPTCHA requirement on successful login
           set({
@@ -75,9 +66,15 @@ export const useAuthStore = create<AuthState>()(
             error: null,
             requiresCaptchaForLogin: false,
           });
-        } catch (error) {
+          
+          return data.user;
+        } catch (error: any) {
+          // Handle CAPTCHA requirement from error response
+          if (error.response?.data?.requiresCaptcha !== undefined) {
+            set({ requiresCaptchaForLogin: error.response.data.requiresCaptcha });
+          }
           set({
-            error: error instanceof Error ? error.message : 'Login failed',
+            error: error.response?.data?.error || error.message || 'Login failed',
             isLoading: false,
           });
           throw error;
@@ -87,17 +84,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (username: string, email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Registration failed');
-          }
+          const { data } = await api.post('/api/auth/register', { username, email, password });
 
           set({
             user: data.user,
@@ -106,34 +93,24 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
-        } catch (error) {
+        } catch (error: any) {
           set({
-            error: error instanceof Error ? error.message : 'Registration failed',
+            error: error.response?.data?.error || error.message || 'Registration failed',
             isLoading: false,
           });
           throw error;
         }
       },
 
-      sendOTP: async (username: string, email: string, password: string, recaptchaToken?: string) => {
+      sendOTP: async (username: string, email: string, password: string, recaptchaToken: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/register/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password, recaptchaToken }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Failed to send OTP');
-          }
+          await api.post('/api/auth/register/send-otp', { username, email, password, recaptchaToken });
 
           set({ isLoading: false, error: null });
-        } catch (error) {
+        } catch (error: any) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to send OTP',
+            error: error.response?.data?.error || error.message || 'Failed to send OTP',
             isLoading: false,
           });
           throw error;
@@ -143,17 +120,7 @@ export const useAuthStore = create<AuthState>()(
       verifyOTP: async (email: string, otp: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/register/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, otp }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'OTP verification failed');
-          }
+          const { data } = await api.post('/api/auth/register/verify', { email, otp });
 
           set({
             user: data.user,
@@ -173,16 +140,7 @@ export const useAuthStore = create<AuthState>()(
 
       checkUsername: async (username: string) => {
         try {
-          const response = await fetch(
-            `http://localhost:5001/api/auth/check-username?username=${encodeURIComponent(username)}`,
-            { method: 'GET' }
-          );
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Failed to check username');
-          }
+          const { data } = await api.get(`/api/auth/check-username?username=${encodeURIComponent(username)}`);
 
           return {
             available: data.available,
@@ -199,16 +157,7 @@ export const useAuthStore = create<AuthState>()(
 
       checkEmail: async (email: string) => {
         try {
-          const response = await fetch(
-            `http://localhost:5001/api/auth/check-email?email=${encodeURIComponent(email)}`,
-            { method: 'GET' }
-          );
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Failed to check email');
-          }
+          const { data } = await api.get(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
 
           return {
             valid: data.valid,
@@ -228,21 +177,7 @@ export const useAuthStore = create<AuthState>()(
       sendPasswordResetOTP: async (email: string, recaptchaToken?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/forgot-password/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, recaptchaToken }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            // Update CAPTCHA requirement status
-            if (data.requiresCaptcha !== undefined) {
-              set({ requiresCaptchaForPasswordReset: data.requiresCaptcha });
-            }
-            throw new Error(data.error || 'Failed to send OTP');
-          }
+          const { data } = await api.post('/api/auth/forgot-password/send-otp', { email, recaptchaToken });
 
           // Update CAPTCHA requirement status from successful response
           if (data.requiresCaptcha !== undefined) {
@@ -262,22 +197,12 @@ export const useAuthStore = create<AuthState>()(
       verifyPasswordResetOTP: async (email: string, otp: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/forgot-password/verify-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, otp }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Invalid OTP');
-          }
+          await api.post('/api/auth/forgot-password/verify-otp', { email, otp });
 
           set({ isLoading: false, error: null });
-        } catch (error) {
+        } catch (error: any) {
           set({
-            error: error instanceof Error ? error.message : 'Invalid OTP',
+            error: error.response?.data?.error || error.message || 'Invalid OTP',
             isLoading: false,
           });
           throw error;
@@ -287,17 +212,7 @@ export const useAuthStore = create<AuthState>()(
       resetPassword: async (email: string, otp: string, newPassword: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/forgot-password/reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, otp, newPassword }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Failed to reset password');
-          }
+          const { data } = await api.post('/api/auth/forgot-password/reset', { email, otp, newPassword });
 
           set({
             user: data.user,
@@ -306,9 +221,9 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
-        } catch (error) {
+        } catch (error: any) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to reset password',
+            error: error.response?.data?.error || error.message || 'Failed to reset password',
             isLoading: false,
           });
           throw error;
@@ -332,29 +247,43 @@ export const useAuthStore = create<AuthState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('http://localhost:5001/api/auth/profile', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(data),
-          });
-
-          const result = await response.json();
-
-          if (!response.ok) {
-            throw new Error(result.error || 'Update failed');
-          }
+          const { data: result } = await api.put('/api/auth/profile', data);
 
           set({
             user: result.user,
             isLoading: false,
             error: null,
           });
-        } catch (error) {
+        } catch (error: any) {
           set({
-            error: error instanceof Error ? error.message : 'Update failed',
+            error: error.response?.data?.error || error.message || 'Update failed',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      uploadAvatar: async (file: File) => {
+        const { token } = get();
+        if (!token) throw new Error('Not authenticated');
+
+        set({ isLoading: true, error: null });
+        try {
+          const formData = new FormData();
+          formData.append('avatar', file);
+
+          const { data: result } = await api.post('/api/auth/profile/avatar', formData);
+
+          set({
+            user: result.user,
+            isLoading: false,
+            error: null,
+          });
+
+          return result.user?.avatarUrl;
+        } catch (error: any) {
+          set({
+            error: error.response?.data?.error || error.message || 'Avatar upload failed',
             isLoading: false,
           });
           throw error;

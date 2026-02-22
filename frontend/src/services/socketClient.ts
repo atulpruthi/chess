@@ -1,7 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// In development, use relative URL (proxied by Vite)
+// In production, use environment variable
+const isDevelopment = import.meta.env.DEV;
+const SOCKET_URL = isDevelopment 
+  ? '' 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5001');
 
 class SocketClient {
   private socket: Socket | null = null;
@@ -23,6 +28,7 @@ class SocketClient {
 
     this.socket = io(SOCKET_URL, {
       auth: { token },
+      withCredentials: true, // Required for CORS with credentials
       transports: ['websocket', 'polling'],
     });
 

@@ -171,8 +171,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
       return;
     }
 
-    if (password.length < 6) {
-      setValidationError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setValidationError('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      setValidationError('Password must contain uppercase, lowercase, and number.');
       return;
     }
 
@@ -204,10 +209,22 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
 
   const handleResendOTP = async () => {
     clearError();
+    
+    // Check if we have a valid recaptcha token
+    if (!recaptchaToken) {
+      setValidationError('Please complete the CAPTCHA verification before resending.');
+      return;
+    }
+    
     try {
-      await sendOTP(username, email, password);
+      await sendOTP(username, email, password, recaptchaToken);
     } catch (err) {
       // Error is handled in store
+      // Reset CAPTCHA after failed attempt
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+        setRecaptchaToken(null);
+      }
     }
   };
 
@@ -455,7 +472,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
               placeholder="Password"
               aria-label="Password"
               required
-              minLength={6}
+              minLength={8}
               disabled={isLoading}
             />
           </div>
@@ -477,10 +494,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
               placeholder="Confirm Password"
               aria-label="Confirm Password"
               required
-              minLength={6}
+              minLength={8}
               disabled={isLoading}
             />
           </div>
+          <p className="mt-2 text-xs text-gray-500 px-1">
+            Password must be at least 8 characters with uppercase, lowercase, and number
+          </p>
         </div>
 
         <Recaptcha 

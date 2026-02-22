@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import brilliantknightzLogo from '../assets/brilliantknightz.png';
+import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './icons/NavIcons';
 
 interface LeaderboardEntry {
   rank: number;
@@ -19,7 +22,7 @@ interface LeaderboardEntry {
 
 const Leaderboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTimeControl] = useState<string | undefined>(undefined);
@@ -83,6 +86,70 @@ const Leaderboard: React.FC = () => {
   return (
     <div className="lobby-shell">
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+        <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+          <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+          <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+          <button
+            type="button"
+            className="sidebar-user"
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+          >
+            <div>
+              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+            </div>
+          </button>
+        </div>
+
+        <div className="lobby-layout">
+          <aside className="lobby-sidebar">
+            <div className="lobby-sidebar-nav">
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconMagnifier className="nav-icon" />
+                <span>Find Match</span>
+              </button>
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconPlus className="nav-icon" />
+                <span>Create Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconGlobe className="nav-icon" />
+                <span>Online Multiplayer</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconChessboard className="nav-icon" />
+                <span>Local Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconRobot className="nav-icon" />
+                <span>Play vs Bot</span>
+              </button>
+              <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">🧩</span>
+                <span>Tactical Puzzles</span>
+              </button>
+              <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📚</span>
+                <span>Tutorial</span>
+              </button>
+              <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📖</span>
+                <span>Chess Rules</span>
+              </button>
+            </div>
+
+            {isAuthenticated && (
+              <div className="lobby-sidebar-footer">
+                <button type="button" onClick={logout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </aside>
+
+          <main className="lobby-main">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -90,12 +157,6 @@ const Leaderboard: React.FC = () => {
               <h1 className="text-4xl font-bold text-white mb-2">🏆 Leaderboard</h1>
             <p className="text-white/70">Top players ranked by rating</p>
             </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="btn-secondary"
-            >
-              Back to Dashboard
-            </button>
           </div>
         </div>
 
@@ -238,6 +299,8 @@ const Leaderboard: React.FC = () => {
           <div className="text-sm text-white/60 text-center">
             Rankings are updated in real-time based on rated games. Play more games to climb the leaderboard!
           </div>
+        </div>
+          </main>
         </div>
       </div>
     </div>

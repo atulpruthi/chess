@@ -3,8 +3,18 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuthStore } from '../store/authStore';
 import { Recaptcha } from './Recaptcha';
 
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  rating: number;
+  role?: string;
+  avatarUrl?: string;
+  bio?: string;
+}
+
 interface LoginFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (user: User) => void;
   onSwitchToRegister?: () => void;
   onForgotPassword?: () => void;
 }
@@ -22,8 +32,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
     clearError();
 
     try {
-      await login(email, password, recaptchaToken || undefined);
-      onSuccess?.();
+      const user = await login(email, password, recaptchaToken || undefined);
+      onSuccess?.(user);
     } catch (err) {
       // Error is handled in store
       // Reset CAPTCHA after failed attempt if CAPTCHA is required

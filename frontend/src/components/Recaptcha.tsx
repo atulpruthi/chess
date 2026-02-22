@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 interface RecaptchaProps {
@@ -7,8 +7,8 @@ interface RecaptchaProps {
   onError?: () => void;
 }
 
-// Test site key - replace with your production key
-const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+// Get reCAPTCHA site key from environment variables
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
 
 export const Recaptcha = forwardRef<ReCAPTCHA, RecaptchaProps>(({ 
   onChange, 

@@ -1,6 +1,11 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// In development, use relative URLs to leverage Vite proxy and avoid CORS issues
+// In production, use the full API URL from environment variable
+const isDevelopment = import.meta.env.DEV;
+const API_URL = isDevelopment 
+  ? '' // Use relative URLs in dev (proxied by Vite)
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5001');
 
 export const config = {
   apiUrl: API_URL,
-  wsUrl: API_URL.replace('http', 'ws'),
+  wsUrl: isDevelopment ? '' : API_URL.replace('http', 'ws'),
 };

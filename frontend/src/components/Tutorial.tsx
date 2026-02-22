@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { chessComOptions } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
+import { useAuthStore } from '../store/authStore';
+import brilliantknightzLogo from '../assets/brilliantknightz.png';
+import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './icons/NavIcons';
 
 interface TutorialStep {
   id: number;
@@ -105,6 +109,7 @@ const tutorialSteps: TutorialStep[] = [
 
 const Tutorial: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [game, setGame] = useState(new Chess());
   const [completed, setCompleted] = useState(false);
@@ -173,7 +178,7 @@ const Tutorial: React.FC = () => {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
-              onClick={() => navigate('/local?mode=bot')}
+              onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })}
               className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-2xl font-semibold transition-all active:scale-[0.97] shadow-[0_4px_14px_rgba(59,130,246,0.4)]"
             >
               🤖 Play vs Bot
@@ -197,16 +202,74 @@ const Tutorial: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 mt-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+        <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+          <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+          <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+          <button
+            type="button"
+            className="sidebar-user"
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+          >
+            <div>
+              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+            </div>
+          </button>
+        </div>
+
+        <div className="lobby-layout">
+          <aside className="lobby-sidebar">
+            <div className="lobby-sidebar-nav">
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconMagnifier className="nav-icon" />
+                <span>Find Match</span>
+              </button>
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconPlus className="nav-icon" />
+                <span>Create Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconGlobe className="nav-icon" />
+                <span>Online Multiplayer</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconChessboard className="nav-icon" />
+                <span>Local Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconRobot className="nav-icon" />
+                <span>Play vs Bot</span>
+              </button>
+              <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">🧩</span>
+                <span>Tactical Puzzles</span>
+              </button>
+              <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📚</span>
+                <span>Tutorial</span>
+              </button>
+              <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📖</span>
+                <span>Chess Rules</span>
+              </button>
+            </div>
+
+            {isAuthenticated && (
+              <div className="lobby-sidebar-footer">
+                <button type="button" onClick={logout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </aside>
+
+          <main className="lobby-main">
         {/* Header */}
         <div className="mb-4 flex justify-between items-center">
-          <button
-            onClick={() => navigate('/lobby')}
-            className="btn-secondary"
-          >
-            ← Back
-          </button>
           <h1 className="text-2xl font-bold">📚 Chess Tutorial</h1>
           <button
             onClick={skipTutorial}
@@ -223,7 +286,7 @@ const Tutorial: React.FC = () => {
               {/* Board and Progress Bar */}
               <div className="flex gap-2 mb-4">
                 {/* Board */}
-                <div className="flex items-center justify-start ml-4">
+                <div className="flex items-center justify-start">
                   <Chessboard
                     options={chessComOptions({
                       id: 'tutorial-board',
@@ -243,8 +306,8 @@ const Tutorial: React.FC = () => {
                           }, {} as Record<string, React.CSSProperties>)
                         : undefined,
                       boardStyle: {
-                        width: '682px',
-                        height: '682px',
+                        width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
+                        height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
                         borderRadius: '8px',
                         boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
                       },
@@ -316,6 +379,8 @@ const Tutorial: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+          </main>
         </div>
       </div>
     </div>

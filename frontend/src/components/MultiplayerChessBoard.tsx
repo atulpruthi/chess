@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { type Square } from 'chess.js';
 import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
-import { chessComHighlight, chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { chessComHighlight, chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export const MultiplayerChessBoard: React.FC = () => {
   const {
@@ -145,7 +145,7 @@ export const MultiplayerChessBoard: React.FC = () => {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(616, 260),
+            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
           },
           allowDragging: isMyTurn && !opponentDisconnected,
         })}

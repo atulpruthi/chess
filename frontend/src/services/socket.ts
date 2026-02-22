@@ -1,22 +1,28 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// In development, use relative URL (proxied by Vite)
+// In production, use environment variable
+const isDevelopment = import.meta.env.DEV;
+const SOCKET_URL = isDevelopment 
+  ? '' 
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5001');
 
 class SocketService {
   private socket: Socket | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
 
-  connect(token: string): Socket {
+  connect(token?: string): Socket {
     if (this.socket?.connected) {
       return this.socket;
     }
 
     console.log('🔌 Attempting to connect to:', SOCKET_URL);
-    console.log('🔑 Auth token:', token ? 'Present' : 'Missing');
+    console.log('🔑 Auth token:', token ? 'Present' : 'Missing (Guest mode)');
 
     this.socket = io(SOCKET_URL, {
-      auth: { token },
+      auth: token ? { token } : {}, // Allow connection without token for guests
+      withCredentials: true, // Required for CORS with credentials
       transports: ['websocket', 'polling'], // Allow polling as fallback
       reconnection: true,
       reconnectionDelay: 1000,

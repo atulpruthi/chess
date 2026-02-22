@@ -6,6 +6,8 @@ import EvaluationGraph from './EvaluationGraph';
 import { config } from '../config';
 import { useAuthStore } from '../store/authStore';
 import { downloadPGN, copyPGNToClipboard, shareGame, printGame, copyGameLink } from '../utils/exportUtils';
+import brilliantknightzLogo from '../assets/brilliantknightz.png';
+import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
 
 interface MoveAnalysis {
   id: number;
@@ -50,7 +52,7 @@ interface Commentary {
 const GameAnalysis: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const { token } = useAuthStore();
+  const { token, isAuthenticated, user, logout } = useAuthStore();
   const [analysis, setAnalysis] = useState<GameAnalysisData | null>(null);
   const [commentaries, setCommentaries] = useState<Commentary[]>([]);
   const [chess] = useState(new Chess());
@@ -70,10 +72,12 @@ const GameAnalysis: React.FC = () => {
 
   const loadAnalysis = useCallback(async () => {
     try {
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/analysis`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers
       });
 
       if (response.ok) {
@@ -100,10 +104,12 @@ const GameAnalysis: React.FC = () => {
 
   const loadCommentaries = useCallback(async () => {
     try {
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/commentaries`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers
       });
 
       if (response.ok) {
@@ -368,6 +374,13 @@ const GameAnalysis: React.FC = () => {
   };
 
   const startAnalysis = async () => {
+    if (!isAuthenticated) {
+      if (window.confirm('You need to login to analyze games. Would you like to login now?')) {
+        navigate('/auth');
+      }
+      return;
+    }
+    
     setIsAnalyzing(true);
     try {
       const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/analyze`, {
@@ -405,6 +418,13 @@ const GameAnalysis: React.FC = () => {
   const addCommentary = async () => {
     if (!newComment.trim()) return;
 
+    if (!isAuthenticated) {
+      if (window.confirm('You need to login to add comments. Would you like to login now?')) {
+        navigate('/auth');
+      }
+      return;
+    }
+
     try {
       const response = await fetch(`${config.apiUrl}/api/analysis/games/${gameId}/commentary`, {
         method: 'POST',
@@ -429,6 +449,13 @@ const GameAnalysis: React.FC = () => {
   };
 
   const likeCommentary = async (commentaryId: number) => {
+    if (!isAuthenticated) {
+      if (window.confirm('You need to login to like comments. Would you like to login now?')) {
+        navigate('/auth');
+      }
+      return;
+    }
+    
     try {
       await fetch(`${config.apiUrl}/api/analysis/commentaries/${commentaryId}/like`, {
         method: 'POST',
@@ -528,14 +555,201 @@ const GameAnalysis: React.FC = () => {
     );
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+
+  const lobbySidebar = (
+    <aside className="lobby-sidebar">
+      <div className="lobby-sidebar-nav">
+        <button type="button" onClick={() => navigate('/lobby')} className="btn-primary sidebar-btn">
+          <svg
+            className="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            role="img"
+            aria-label="Find match"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="11" cy="11" r="7" fill="#22D3EE" />
+            <circle cx="11" cy="11" r="4" fill="#0EA5E9" />
+            <path d="M16.6 16.6L21 21" stroke="#A78BFA" strokeWidth="3" strokeLinecap="round" />
+            <path
+              d="M6.6 11c0-2.5 2-4.4 4.4-4.4"
+              stroke="#FFFFFF"
+              strokeOpacity="0.75"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span>Find Match</span>
+        </button>
+
+        <button type="button" onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+          <svg
+            className="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            role="img"
+            aria-label="Create"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="6" fill="#34D399" />
+            <path d="M12 7v10M7 12h10" stroke="#064E3B" strokeWidth="3" strokeLinecap="round" />
+            <path
+              d="M6.5 6.8c1.6-1.5 3.6-2.3 5.9-2.3"
+              stroke="#FFFFFF"
+              strokeOpacity="0.55"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span>Create Game</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })}
+          className="btn-secondary sidebar-btn"
+        >
+          <svg
+            className="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            role="img"
+            aria-label="Online"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="12" cy="12" r="9" fill="#60A5FA" />
+            <path
+              d="M3.7 10.2c2.1 1 5 1.6 8.3 1.6s6.2-.6 8.3-1.6"
+              stroke="#0B3A1F"
+              strokeOpacity="0.25"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M12 3c2.8 2.6 4.5 6 4.5 9s-1.7 6.4-4.5 9c-2.8-2.6-4.5-6-4.5-9S9.2 5.6 12 3Z"
+              fill="#34D399"
+              fillOpacity="0.95"
+            />
+            <path
+              d="M4.5 14.2c2.2-1.2 5-1.9 7.5-1.9s5.3.7 7.5 1.9"
+              stroke="#1D4ED8"
+              strokeOpacity="0.55"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span>Online Multiplayer</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/local?mode=local', { preventScrollReset: true })}
+          className="btn-secondary sidebar-btn"
+        >
+          <svg
+            className="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            role="img"
+            aria-label="Local game"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="5" fill="#A78BFA" />
+            <g opacity="0.9">
+              <path d="M7 7h3v3H7V7Z" fill="#FDE68A" />
+              <path d="M10 10h3v3h-3v-3Z" fill="#FDE68A" />
+              <path d="M13 7h3v3h-3V7Z" fill="#FDE68A" />
+              <path d="M7 13h3v3H7v-3Z" fill="#FDE68A" />
+              <path d="M13 13h3v3h-3v-3Z" fill="#FDE68A" />
+            </g>
+            <path d="M7.5 18.5h9" stroke="#3B0764" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.6" />
+          </svg>
+          <span>Local Game</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })}
+          className="btn-secondary sidebar-btn"
+        >
+          <svg
+            className="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            role="img"
+            aria-label="Play vs bot"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="5" y="7" width="14" height="12" rx="5" fill="#FB7185" />
+            <rect x="8" y="10" width="3.5" height="3" rx="1.5" fill="#0F172A" />
+            <rect x="12.5" y="10" width="3.5" height="3" rx="1.5" fill="#0F172A" />
+            <path d="M9 15.5c1 .9 2.1 1.3 3 1.3s2-.4 3-1.3" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 7V4" stroke="#FDE68A" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="12" cy="3.5" r="1.2" fill="#FDE68A" />
+          </svg>
+          <span>Play vs Bot</span>
+        </button>
+
+        <button type="button" onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+          <span className="nav-icon text-xl">🧩</span>
+          <span>Tactical Puzzles</span>
+        </button>
+        <button type="button" onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+          <span className="nav-icon text-xl">📚</span>
+          <span>Tutorial</span>
+        </button>
+        <button type="button" onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+          <span className="nav-icon text-xl">📖</span>
+          <span>Chess Rules</span>
+        </button>
+      </div>
+
+      <div className="lobby-sidebar-footer">
+        <button type="button" onClick={handleLogout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+  );
+
   // Show loading state
   if (isAnalyzing) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <h2 className="text-2xl font-bold">Analyzing Game...</h2>
-          <p className="text-gray-400 mt-2">This may take a few moments</p>
+      <div className="min-h-screen bg-gray-900 text-white p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+            <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+            <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
+
+          <div className="lobby-layout">
+            {lobbySidebar}
+            <main className="lobby-main">
+              <div className="flex items-center justify-center" style={{ minHeight: '50vh' }}>
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <h2 className="text-2xl font-bold">Analyzing Game...</h2>
+                  <p className="text-gray-400 mt-2">This may take a few moments</p>
+                </div>
+              </div>
+            </main>
+          </div>
         </div>
       </div>
     );
@@ -545,31 +759,41 @@ const GameAnalysis: React.FC = () => {
   if (loadingError) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-8">
-        <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => navigate('/game-history')}
-            className="btn-secondary mb-4"
-          >
-            ← Back to History
-          </button>
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4 text-red-500">Error Loading Analysis</h2>
-            <p className="text-gray-400 mb-6">{loadingError}</p>
+        <div className="max-w-7xl mx-auto">
+          <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+            <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+            <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
             <button
-              onClick={() => {
-                setLoadingError(null);
-                loadAnalysis();
-              }}
-              className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 font-bold mr-4"
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
             >
-              Retry
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
             </button>
-            <button
-              onClick={() => navigate('/game-history')}
-              className="btn-secondary"
-            >
-              Back to Game History
-            </button>
+          </div>
+
+          <div className="lobby-layout">
+            {lobbySidebar}
+            <main className="lobby-main">
+              <div className="bg-gray-800 rounded-lg p-8 text-center">
+                <h2 className="text-2xl font-bold mb-4 text-red-500">Error Loading Analysis</h2>
+                <p className="text-gray-400 mb-6">{loadingError}</p>
+                <button
+                  onClick={() => {
+                    setLoadingError(null);
+                    loadAnalysis();
+                  }}
+                  className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 font-bold"
+                >
+                  Retry
+                </button>
+              </div>
+            </main>
           </div>
         </div>
       </div>
@@ -580,25 +804,41 @@ const GameAnalysis: React.FC = () => {
   if (!analysis) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-8">
-        <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => navigate('/game-history')}
-            className="btn-secondary mb-4"
-          >
-            ← Back to History
-          </button>
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">No Analysis Available</h2>
-            <p className="text-gray-400 mb-6">
-              This game hasn't been analyzed yet. Click below to start computer analysis.
-            </p>
+        <div className="max-w-7xl mx-auto">
+          <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+            <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+            <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
             <button
-              onClick={startAnalysis}
-              disabled={isAnalyzing}
-              className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
             >
-              {isAnalyzing ? 'Analyzing...' : 'Start Analysis'}
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
             </button>
+          </div>
+
+          <div className="lobby-layout">
+            {lobbySidebar}
+            <main className="lobby-main">
+              <div className="bg-gray-800 rounded-lg p-8 text-center">
+                <h2 className="text-2xl font-bold mb-4">No Analysis Available</h2>
+                <p className="text-gray-400 mb-6">
+                  This game hasn't been analyzed yet. Click below to start computer analysis.
+                </p>
+                <button
+                  onClick={startAnalysis}
+                  disabled={isAnalyzing}
+                  className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAnalyzing ? 'Analyzing...' : 'Start Analysis'}
+                </button>
+              </div>
+            </main>
           </div>
         </div>
       </div>
@@ -610,16 +850,30 @@ const GameAnalysis: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 mt-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 flex justify-between items-center">
+        <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+          <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+          <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
           <button
-            onClick={() => navigate('/game-history')}
-            className="btn-secondary"
+            type="button"
+            className="sidebar-user"
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
           >
-            ← Back
+            <div>
+              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+            </div>
           </button>
-          <h1 className="text-2xl font-bold">Game Analysis</h1>
-          <div className="flex gap-2 relative">
+        </div>
+
+        <div className="lobby-layout">
+          {lobbySidebar}
+          <main className="lobby-main">
+            {/* Header */}
+            <div className="mb-4 flex justify-between items-center">
+              <h1 className="text-2xl font-bold">Game Analysis</h1>
+              <div className="flex gap-2 relative">
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
               className="h-11 px-5 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-[0_4px_14px_rgba(59,130,246,0.35)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.45)] transition-all active:scale-[0.97]"
@@ -685,8 +939,8 @@ const GameAnalysis: React.FC = () => {
             >
               {showCommentary ? 'Hide' : 'Show'} Commentary
             </button>
-          </div>
-        </div>
+              </div>
+            </div>
 
         {/* Opening Info */}
         <div className="bg-gray-800 rounded-lg p-4 mb-4" style={{ visibility: 'hidden', display: 'none' }}>
@@ -715,7 +969,7 @@ const GameAnalysis: React.FC = () => {
             {/* Graph and Board Side by Side with Vertical Control */}
             <div className="flex gap-2 mb-4" ref={chessboardRef}>
               {/* Chessboard */}
-              <div className="flex-1 rounded-lg p-4 flex items-center justify-center" style={{ backgroundColor: '#1f2937' }}>
+              <div className="flex-1 rounded-lg p-4 flex items-center justify-start" style={{ backgroundColor: '#1f2937' }}>
                 <DisplayBoard 
                   fen={currentFen} 
                   orientation="white"
@@ -1174,6 +1428,8 @@ const GameAnalysis: React.FC = () => {
             </div>
           </div>
         )}
+          </main>
+        </div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { config } from '../config';
 
 const api = axios.create({
   baseURL: config.apiUrl,
+  withCredentials: true, // Required for CORS with credentials
   headers: {
     'Content-Type': 'application/json',
   },

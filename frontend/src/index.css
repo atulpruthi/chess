@@ -130,8 +130,8 @@ textarea {
   }
 
   .sidebar-user-avatar {
-    width: 38px;
-    height: 38px;
+    width: 50px;
+    height: 50px;
     border-radius: 14px;
     display: grid;
     place-items: center;
@@ -140,7 +140,13 @@ textarea {
     color: white;
     background: linear-gradient(135deg, #a855f7, #3b82f6);
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
-    flex: 0 0 38px;
+    flex: 0 0 50px;
+  }
+
+  .sidebar-logo {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
   }
 
   .sidebar-user-name {

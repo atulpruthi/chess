@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { useGameStore, type PieceSymbol } from '../store/gameStore';
 import { type Square } from 'chess.js';
-import { chessComHighlight, chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { chessComHighlight, chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export default function ChessBoard() {
   const {
@@ -144,7 +144,7 @@ export default function ChessBoard() {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(616, 240),
+            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 240),
             borderRadius: '8px',
           },
         })}

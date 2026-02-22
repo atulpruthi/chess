@@ -6,21 +6,11 @@ import { useAuthStore } from '../store/authStore';
 export const useSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { user, token } = useAuthStore();
+  const { token } = useAuthStore();
 
   useEffect(() => {
-    if (!user || !token) {
-      // Disconnect if user logs out
-      if (socket) {
-        socketService.disconnect();
-        setSocket(null);
-        setIsConnected(false);
-      }
-      return;
-    }
-
-    // Connect socket with auth token
-    const socketInstance = socketService.connect(token);
+    // Connect socket with or without auth token (guest mode)
+    const socketInstance = socketService.connect(token || undefined);
     setSocket(socketInstance);
 
     // Listen for connection status changes
@@ -38,7 +28,7 @@ export const useSocket = () => {
       socketInstance.off('connect', handleConnect);
       socketInstance.off('disconnect', handleDisconnect);
     };
-  }, [user, token]);
+  }, [token]);
 
   return {
     socket,

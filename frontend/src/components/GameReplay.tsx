@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { chessComOptions } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
 import { useAuthStore } from '../store/authStore';
 import { config } from '../config';
+import brilliantknightzLogo from '../assets/brilliantknightz.png';
+import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './icons/NavIcons';
 
 interface GameData {
   id: number;
@@ -37,7 +40,7 @@ interface HalfMove {
 const GameReplay: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const { token } = useAuthStore();
+  const { token, isAuthenticated, user } = useAuthStore();
   
   const [game, setGame] = useState<Chess>(new Chess());
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -138,10 +141,13 @@ const GameReplay: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`${config.apiUrl}/api/games/${gameId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers
       });
       
       if (response.ok) {
@@ -350,23 +356,141 @@ const GameReplay: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
-        <div className="text-white text-xl">Loading game...</div>
+      <div className="min-h-screen bg-gray-900 text-white p-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+          <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+            <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+            <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
+
+          <div className="lobby-layout">
+            <aside className="lobby-sidebar">
+              <div className="lobby-sidebar-nav">
+                <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                  <IconMagnifier className="nav-icon" />
+                  <span>Find Match</span>
+                </button>
+                <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                  <IconPlus className="nav-icon" />
+                  <span>Create Game</span>
+                </button>
+                <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                  <IconGlobe className="nav-icon" />
+                  <span>Online Multiplayer</span>
+                </button>
+                <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                  <IconChessboard className="nav-icon" />
+                  <span>Local Game</span>
+                </button>
+                <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                  <IconRobot className="nav-icon" />
+                  <span>Play vs Bot</span>
+                </button>
+                <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                  <span className="nav-icon text-xl">🧩</span>
+                  <span>Tactical Puzzles</span>
+                </button>
+                <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                  <span className="nav-icon text-xl">📚</span>
+                  <span>Tutorial</span>
+                </button>
+                <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                  <span className="nav-icon text-xl">📖</span>
+                  <span>Chess Rules</span>
+                </button>
+              </div>
+            </aside>
+
+            <main className="lobby-main">
+              <div className="flex items-center justify-center" style={{ minHeight: '50vh' }}>
+                <div className="text-white text-xl">Loading game...</div>
+              </div>
+            </main>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!gameData || error) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-6">
-        <div className="text-center">
-          <div className="text-white text-xl mb-4">{error || 'Game not found'}</div>
-          <button
-            onClick={() => navigate('/game-history')}
-            className="btn-secondary px-6 py-2"
-          >
-            Back to Game History
-          </button>
+      <div className="min-h-screen bg-gray-900 text-white p-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+          <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+            <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+            <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
+
+          <div className="lobby-layout">
+            <aside className="lobby-sidebar">
+              <div className="lobby-sidebar-nav">
+                <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                  <IconMagnifier className="nav-icon" />
+                  <span>Find Match</span>
+                </button>
+                <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                  <IconPlus className="nav-icon" />
+                  <span>Create Game</span>
+                </button>
+                <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                  <IconGlobe className="nav-icon" />
+                  <span>Online Multiplayer</span>
+                </button>
+                <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                  <IconChessboard className="nav-icon" />
+                  <span>Local Game</span>
+                </button>
+                <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                  <IconRobot className="nav-icon" />
+                  <span>Play vs Bot</span>
+                </button>
+                <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                  <span className="nav-icon text-xl">🧩</span>
+                  <span>Tactical Puzzles</span>
+                </button>
+                <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                  <span className="nav-icon text-xl">📚</span>
+                  <span>Tutorial</span>
+                </button>
+                <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                  <span className="nav-icon text-xl">📖</span>
+                  <span>Chess Rules</span>
+                </button>
+              </div>
+            </aside>
+
+            <main className="lobby-main">
+              <div className="flex items-center justify-center" style={{ minHeight: '50vh' }}>
+                <div className="text-center">
+                  <div className="text-white text-xl">{error || 'Game not found'}</div>
+                </div>
+              </div>
+            </main>
+          </div>
         </div>
       </div>
     );
@@ -375,276 +499,353 @@ const GameReplay: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 mt-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 flex justify-between items-center">
+        <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
+          <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
+          <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
           <button
-            onClick={() => navigate('/game-history')}
-            className="btn-secondary"
+            type="button"
+            className="sidebar-user"
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
           >
-            ← Back
+            <div>
+              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+            </div>
           </button>
-          <h1 className="text-2xl font-bold">Game Replay</h1>
-          <div className="text-sm text-gray-400">{getResultString()}</div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Chessboard */}
-          <div className="lg:col-span-2">
-            <div className="bg-gray-800 rounded-lg p-4">
-              {/* Board and Progress Bar */}
-              <div className="flex gap-2 mb-4">
-                {/* Board */}
-                <div ref={chessboardRef} className="flex items-center justify-start ml-4" >
-                  <Chessboard
-                    options={chessComOptions({
-                      id: 'game-replay-chessboard',
-                      position,
-                      allowDragging: false,
-                      boardStyle: {
-                        width: '682px',
-                        height: '682px',
-                        borderRadius: '8px',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
-                      },
-                    })}
-                  />
-                </div>
+        <div className="lobby-layout">
+          <aside className="lobby-sidebar">
+            <div className="lobby-sidebar-nav">
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconMagnifier className="nav-icon" />
+                <span>Find Match</span>
+              </button>
+              <button onClick={() => navigate('/lobby')} className="btn-secondary sidebar-btn">
+                <IconPlus className="nav-icon" />
+                <span>Create Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconGlobe className="nav-icon" />
+                <span>Online Multiplayer</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconChessboard className="nav-icon" />
+                <span>Local Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconRobot className="nav-icon" />
+                <span>Play vs Bot</span>
+              </button>
+              <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">🧩</span>
+                <span>Tactical Puzzles</span>
+              </button>
+              <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📚</span>
+                <span>Tutorial</span>
+              </button>
+              <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📖</span>
+                <span>Chess Rules</span>
+              </button>
+            </div>
+          </aside>
 
-                {/* Vertical Progress Bar */}
-                <div className="flex flex-col items-center justify-center gap-3 py-4" style={{ width: '60px', marginLeft: '5px', marginRight: '5px' }}>
-                  <div 
-                    className="relative rounded-lg overflow-hidden border-2 border-gray-700" 
-                    style={{ width: '48px', height: '500px', backgroundColor: '#111827' }}
-                  >
-                    <div 
-                      className="absolute left-0 right-0"
-                      style={{
-                        bottom: 0,
-                        height: `${currentMoveIndex === -1 ? 0 : ((currentMoveIndex + 1) / halfMoves.length) * 100}%`,
-                        background: 'linear-gradient(to top, #556b2f, #6b8e23, #808000, #9acd32)',
-                        boxShadow: '0 -4px 24px rgba(107, 142, 35, 0.7)',
-                        width: '100%',
-                        transition: 'height 200ms ease-out'
-                      }}
-                    />
+          <main className="lobby-main">
+            {/* Header */}
+            <div className="mb-4 flex justify-between items-center">
+              <h1 className="text-2xl font-bold">Game Replay</h1>
+              <div className="text-sm text-gray-400">{getResultString()}</div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Chessboard */}
+              <div className="lg:col-span-3">
+                <div className="bg-gray-800 rounded-lg p-4">
+                  {/* Board and Progress Bar */}
+                  <div className="flex gap-2 mb-4">
+                    {/* Board */}
+                    <div ref={chessboardRef} className="flex items-center justify-start">
+                      <Chessboard
+                        options={chessComOptions({
+                          id: 'game-replay-chessboard',
+                          position,
+                          allowDragging: false,
+                          boardStyle: {
+                            width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
+                            height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
+                            borderRadius: '8px',
+                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+                          },
+                        })}
+                      />
+                    </div>
+
+                    {/* Vertical Progress Bar */}
+                    <div
+                      className="flex flex-col items-center justify-center gap-3 py-4"
+                      style={{ width: '60px', marginLeft: '5px', marginRight: '5px' }}
+                    >
+                      <div
+                        className="relative rounded-lg overflow-hidden border-2 border-gray-700"
+                        style={{ width: '48px', height: '500px', backgroundColor: '#111827' }}
+                      >
+                        <div
+                          className="absolute left-0 right-0"
+                          style={{
+                            bottom: 0,
+                            height: `${
+                              currentMoveIndex === -1 ? 0 : ((currentMoveIndex + 1) / halfMoves.length) * 100
+                            }%`,
+                            background: 'linear-gradient(to top, #556b2f, #6b8e23, #808000, #9acd32)',
+                            boxShadow: '0 -4px 24px rgba(107, 142, 35, 0.7)',
+                            width: '100%',
+                            transition: 'height 200ms ease-out',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <button
+                          onClick={togglePlayPause}
+                          className="bg-transparent border-0 text-white hover:bg-gray-700/50 transition flex items-center justify-center"
+                        >
+                          {isPlaying ? (
+                            <svg
+                              width="40"
+                              height="40"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <rect x="3" y="2" width="3" height="12" fill="currentColor" rx="1" />
+                              <rect x="10" y="2" width="3" height="12" fill="currentColor" rx="1" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="40"
+                              height="40"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M4 2L13 8L4 14V2Z" fill="currentColor" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Move history */}
+                    <div style={{ width: '100%', height: '300px' }}>
+                      <div className="bg-gray-800 rounded-lg p-4 h-full">
+                        <h3 className="text-lg font-bold text-white mb-3 text-center">Moves</h3>
+
+                        {/* Player Info Row */}
+                        <div className="flex items-center text-sm mb-2">
+                          {/* Empty space for move number column */}
+                          <div style={{ width: '50px' }}></div>
+
+                          {/* White Player Info */}
+                          <div className="flex-1 p-2 bg-gray-700 rounded-lg">
+                            <div className="flex items-center justify-center gap-2">
+                              <div>
+                                <div className="text-white font-semibold text-sm">
+                                  {gameData.whiteUsername || 'White'}
+                                </div>
+                                {gameData?.whiteRatingBefore && (
+                                  <div className="text-xs text-gray-400">Rating: {gameData.whiteRatingBefore}</div>
+                                )}
+                              </div>
+                              {game.turn() === 'w' && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
+                            </div>
+                          </div>
+
+                          {/* Gap between columns */}
+                          <div style={{ width: '30px' }}></div>
+
+                          {/* Black Player Info */}
+                          <div className="flex-1 p-2 bg-gray-700 rounded-lg">
+                            <div className="flex items-center justify-center gap-2">
+                              <div>
+                                <div className="text-white font-semibold text-sm">
+                                  {gameData.blackUsername || 'Bot'}
+                                </div>
+                                {gameData?.blackRatingBefore && (
+                                  <div className="text-xs text-gray-400">Rating: {gameData.blackRatingBefore}</div>
+                                )}
+                              </div>
+                              {game.turn() === 'b' && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ height: '20px' }}></div>
+
+                        <div ref={moveListRef} className="space-y-1 h-[100px] overflow-y-auto">
+                          {moves
+                            .slice()
+                            .reverse()
+                            .map((move, reversedIndex) => {
+                              const pairIndex = moves.length - 1 - reversedIndex;
+                              const whiteHalfMoveIndex = halfMoves.findIndex(
+                                (hm) => hm.moveNumber === move.moveNumber && hm.playerColor === 'white'
+                              );
+                              const blackHalfMoveIndex = halfMoves.findIndex(
+                                (hm) => hm.moveNumber === move.moveNumber && hm.playerColor === 'black'
+                              );
+
+                              return (
+                                <div key={pairIndex} className="flex items-center text-sm text-center">
+                                  {/* Move number */}
+                                  <div className="text-gray-400 font-bold" style={{ width: '50px' }}>
+                                    {move.moveNumber}
+                                  </div>
+
+                                  {/* White Move */}
+                                  <div
+                                    onClick={() => move.white && goToMove(whiteHalfMoveIndex)}
+                                    className={`flex-1 p-3 rounded ${
+                                      move.white ? 'cursor-pointer hover:bg-gray-700' : ''
+                                    } transition ${currentMoveIndex === whiteHalfMoveIndex ? '' : 'bg-gray-700/50'}`}
+                                    style={currentMoveIndex === whiteHalfMoveIndex ? { backgroundColor: '#6b8e23' } : {}}
+                                    data-move-index={whiteHalfMoveIndex}
+                                  >
+                                    {move.white && <span className="font-mono text-white text-base">{move.white}</span>}
+                                  </div>
+
+                                  {/* Gap between columns */}
+                                  <div style={{ width: '30px' }}></div>
+
+                                  {/* Black Move */}
+                                  <div
+                                    onClick={() => move.black && goToMove(blackHalfMoveIndex)}
+                                    className={`flex-1 p-3 rounded ${
+                                      move.black ? 'cursor-pointer hover:bg-gray-700' : ''
+                                    } transition ${
+                                      currentMoveIndex === blackHalfMoveIndex
+                                        ? ''
+                                        : move.black
+                                          ? 'bg-gray-700/50'
+                                          : ''
+                                    }`}
+                                    style={currentMoveIndex === blackHalfMoveIndex ? { backgroundColor: '#6b8e23' } : {}}
+                                    data-move-index={blackHalfMoveIndex}
+                                  >
+                                    {move.black && <span className="font-mono text-white text-base">{move.black}</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+
+                        {/* Captured Pieces Row */}
+                        <div className="flex items-center text-xs mt-4">
+                          {/* Empty space for move number column */}
+                          <div style={{ width: '50px' }}></div>
+
+                          {/* White's captured pieces (Black's pieces captured by White) */}
+                          <div className="flex-1 p-2 bg-gray-700/30 rounded">
+                            {renderCapturedPieces(getMaterialCount(position).whiteCaptured, 'white')}
+                            <div className="text-gray-400 text-center mt-1">
+                              <span className="text-white font-bold">{getMaterialCount(position).blackLost} pts</span>
+                            </div>
+                          </div>
+
+                          {/* Gap between columns */}
+                          <div style={{ width: '30px' }}></div>
+
+                          {/* Black's captured pieces (White's pieces captured by Black) */}
+                          <div className="flex-1 p-2 bg-gray-700/30 rounded">
+                            {renderCapturedPieces(getMaterialCount(position).blackCaptured, 'black')}
+                            <div className="text-gray-400 text-center mt-1">
+                              <span className="text-white font-bold">{getMaterialCount(position).whiteLost} pts</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
+
+                  {/* Controls */}
+                  <div className="flex items-center justify-center gap-3" style={{ display: 'none' }}>
+                    <button
+                      onClick={goToStart}
+                      disabled={currentMoveIndex === -1}
+                      className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ⏮️ Start
+                    </button>
+                    <button
+                      onClick={goToPrevious}
+                      disabled={currentMoveIndex === -1}
+                      className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ◀️ Prev
+                    </button>
                     <button
                       onClick={togglePlayPause}
-                      className="bg-transparent border-0 text-white hover:bg-gray-700/50 transition flex items-center justify-center">
-                        {isPlaying ? (
-                          <svg width="40" height="40" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="2" width="3" height="12" fill="currentColor" rx="1"/>
-                            <rect x="10" y="2" width="3" height="12" fill="currentColor" rx="1"/>
-                          </svg>
-                        ) : (
-                          <svg width="40" height="40" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 2L13 8L4 14V2Z" fill="currentColor"/>
-                          </svg>
-                        )}
-                      </button>
-                  </div>
-                  
-                 </div>
-                 {/* Move history */}
-          <div style={{width: '100%', height: '300px'  }}>
-            <div className="bg-gray-800 rounded-lg p-4 h-full" >
-              <h3 className="text-lg font-bold text-white mb-3 text-center">Moves</h3>
-              
-              {/* Player Info Row */}
-              <div className="flex items-center text-sm mb-2">
-                {/* Empty space for move number column */}
-                <div style={{ width: '50px' }}></div>
-                
-                {/* White Player Info */}
-                <div className="flex-1 p-2 bg-gray-700 rounded-lg">
-                  <div className="flex items-center justify-center gap-2">
-                    <div>
-                      <div className="text-white font-semibold text-sm">{gameData.whiteUsername || 'White'}</div>
-                      {gameData?.whiteRatingBefore && (
-                        <div className="text-xs text-gray-400">Rating: {gameData.whiteRatingBefore}</div>
-                      )}
-                    </div>
-                    {game.turn() === 'w' && (
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    )}
-                  </div>
-                </div>
-                
-                {/* Gap between columns */}
-                <div style={{ width: '30px' }}></div>
-                
-                {/* Black Player Info */}
-                <div className="flex-1 p-2 bg-gray-700 rounded-lg">
-                  <div className="flex items-center justify-center gap-2">
-                    <div>
-                      <div className="text-white font-semibold text-sm">{gameData.blackUsername || 'Bot'}</div>
-                      {gameData?.blackRatingBefore && (
-                        <div className="text-xs text-gray-400">Rating: {gameData.blackRatingBefore}</div>
-                      )}
-                    </div>
-                    {game.turn() === 'b' && (
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div style={{height: '20px'}}></div>
-              
-              <div ref={moveListRef} className="space-y-1 h-[100px] overflow-y-auto">
-                {moves.slice().reverse().map((move, reversedIndex) => {
-                  const pairIndex = moves.length - 1 - reversedIndex;
-                  const whiteHalfMoveIndex = halfMoves.findIndex(hm => hm.moveNumber === move.moveNumber && hm.playerColor === 'white');
-                  const blackHalfMoveIndex = halfMoves.findIndex(hm => hm.moveNumber === move.moveNumber && hm.playerColor === 'black');
-                  
-                  return (
-                  <div key={pairIndex} className="flex items-center text-sm text-center">
-                    {/* Move number */}
-                    <div className="text-gray-400 font-bold" style={{ width: '50px' }}>
-                      {move.moveNumber}
-                    </div>
-                    
-                    {/* White Move */}
-                    <div
-                      onClick={() => move.white && goToMove(whiteHalfMoveIndex)}
-                      className={`flex-1 p-3 rounded ${move.white ? 'cursor-pointer hover:bg-gray-700' : ''} transition ${
-                        currentMoveIndex === whiteHalfMoveIndex ? '' : 'bg-gray-700/50'
-                      }`}
-                      style={currentMoveIndex === whiteHalfMoveIndex ? { backgroundColor: '#6b8e23' } : {}}
-                      data-move-index={whiteHalfMoveIndex}
+                      className="m-2 bg-transparent text-white hover:bg-gray-700/50 flex items-center justify-center"
                     >
-                      {move.white && (
-                        <span className="font-mono text-white text-base">{move.white}</span>
+                      {isPlaying ? (
+                        <svg width="40" height="40" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="3" y="2" width="3" height="12" fill="currentColor" rx="1" />
+                          <rect x="10" y="2" width="3" height="12" fill="currentColor" rx="1" />
+                        </svg>
+                      ) : (
+                        <svg width="40" height="40" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M4 2L13 8L4 14V2Z" fill="currentColor" />
+                        </svg>
                       )}
-                    </div>
-                    
-                    {/* Gap between columns */}
-                    <div style={{ width: '30px' }}></div>
-                    
-                    {/* Black Move */}
-                    <div
-                      onClick={() => move.black && goToMove(blackHalfMoveIndex)}
-                      className={`flex-1 p-3 rounded ${move.black ? 'cursor-pointer hover:bg-gray-700' : ''} transition ${
-                        currentMoveIndex === blackHalfMoveIndex ? '' : move.black ? 'bg-gray-700/50' : ''
-                      }`}
-                      style={currentMoveIndex === blackHalfMoveIndex ? { backgroundColor: '#6b8e23' } : {}}
-                      data-move-index={blackHalfMoveIndex}
+                    </button>
+                    <button
+                      onClick={goToNext}
+                      disabled={currentMoveIndex >= halfMoves.length - 1}
+                      className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {move.black && (
-                        <span className="font-mono text-white text-base">{move.black}</span>
-                      )}
-                    </div>
+                      Next ▶️
+                    </button>
+                    <button
+                      onClick={goToEnd}
+                      disabled={currentMoveIndex >= halfMoves.length - 1}
+                      className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      End ⏭️
+                    </button>
                   </div>
-                  );
-                })}
-              </div>
-              
-              {/* Captured Pieces Row */}
-              <div className="flex items-center text-xs mt-4">
-                {/* Empty space for move number column */}
-                <div style={{ width: '50px' }}></div>
-                
-                {/* White's captured pieces (Black's pieces captured by White) */}
-                <div className="flex-1 p-2 bg-gray-700/30 rounded">
-                  {renderCapturedPieces(getMaterialCount(position).whiteCaptured, 'white')}
-                  <div className="text-gray-400 text-center mt-1">
-                    <span className="text-white font-bold">{getMaterialCount(position).blackLost} pts</span>
-                  </div>
-                </div>
-                
-                {/* Gap between columns */}
-                <div style={{ width: '30px' }}></div>
-                
-                {/* Black's captured pieces (White's pieces captured by Black) */}
-                <div className="flex-1 p-2 bg-gray-700/30 rounded">
-                  {renderCapturedPieces(getMaterialCount(position).blackCaptured, 'black')}
-                  <div className="text-gray-400 text-center mt-1">
-                    <span className="text-white font-bold">{getMaterialCount(position).whiteLost} pts</span>
-                  </div>
-                </div>
-              </div>
-              </div>
-              {/* Controls */}
-              <div className="flex items-center justify-center gap-3" style={{display: 'none'}}>
-                <button
-                  onClick={goToStart}
-                  disabled={currentMoveIndex === -1}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ⏮️ Start
-                </button>
-                <button
-                  onClick={goToPrevious}
-                  disabled={currentMoveIndex === -1}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ◀️ Prev
-                </button>
-                <button
-                  onClick={togglePlayPause}
-                  className="m-2 bg-transparent text-white hover:bg-gray-700/50 flex items-center justify-center"
-                >
-                  {isPlaying ? (
-                    <svg width="40" height="40" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="3" y="2" width="3" height="12" fill="currentColor" rx="1"/>
-                      <rect x="10" y="2" width="3" height="12" fill="currentColor" rx="1"/>
-                    </svg>
-                  ) : (
-                    <svg width="40" height="40" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 2L13 8L4 14V2Z" fill="currentColor"/>
-                    </svg>
-                  )}
-                </button>
-                <button
-                  onClick={goToNext}
-                  disabled={currentMoveIndex >= halfMoves.length - 1}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next ▶️
-                </button>
-                <button
-                  onClick={goToEnd}
-                  disabled={currentMoveIndex >= halfMoves.length - 1}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  End ⏭️
-                </button>
-              </div>
 
-              <div className="mt-3 text-center text-gray-400 text-sm">
-                {currentMoveIndex === -1 ? 'Start' : `Move ${currentMoveIndex + 1} of ${halfMoves.length}`}
-              </div>
-              {/* Game info */}
-              <div className="pt-4 border-t border-gray-600 space-y-2 text-sm">
-                <div className="flex justify-between text-gray-300">
-                  <span>Time Control:</span>
-                  <span className="text-white capitalize">{gameData?.timeControl || 'Custom'}</span>
-                </div>
-                <div className="flex justify-between text-gray-300">
-                  <span>Game Type:</span>
-                  <span className="text-white">
-                    {gameData?.isRated ? '⭐ Rated' : 'Casual'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-300">
-                  <span>Total Moves:</span>
-                  <span className="text-white">{gameData?.totalMoves || 0}</span>
-                </div>
-                <div className="flex justify-between text-gray-300">
-                  <span>Played on:</span>
-                  <span className="text-white">
-                    {gameData?.completedAt ? new Date(gameData.completedAt).toLocaleDateString() : 'Unknown'}
-                  </span>
+                  <div className="mt-3 text-center text-gray-400 text-sm">
+                    {currentMoveIndex === -1 ? 'Start' : `Move ${currentMoveIndex + 1} of ${halfMoves.length}`}
+                  </div>
+                  {/* Game info */}
+                  <div className="pt-4 border-t border-gray-600 space-y-2 text-sm">
+                    <div className="flex justify-between text-gray-300">
+                      <span>Time Control:</span>
+                      <span className="text-white capitalize">{gameData?.timeControl || 'Custom'}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span>Game Type:</span>
+                      <span className="text-white">{gameData?.isRated ? '⭐ Rated' : 'Casual'}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span>Total Moves:</span>
+                      <span className="text-white">{gameData?.totalMoves || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-300">
+                      <span>Played on:</span>
+                      <span className="text-white">
+                        {gameData?.completedAt ? new Date(gameData.completedAt).toLocaleDateString() : 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
+          </main>
         </div>
       </div>
     </div>
-  </div>
-</div>
   );
 };
 

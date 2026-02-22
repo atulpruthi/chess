@@ -4,14 +4,14 @@ import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
 export const MultiplayerChat: React.FC = () => {
   const { chatMessages, sendMessage } = useMultiplayerGameStore();
   const [message, setMessage] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
   }, [chatMessages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ export const MultiplayerChat: React.FC = () => {
       </h3>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto mb-4 space-y-2">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto mb-4 space-y-2">
         {chatMessages.length === 0 ? (
           <p className="text-gray-500 text-sm text-center py-4">
             No messages yet. Say hello!
@@ -49,7 +49,6 @@ export const MultiplayerChat: React.FC = () => {
             </div>
           ))
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}

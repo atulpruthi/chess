@@ -3,9 +3,23 @@ import { Chess } from 'chess.js';
 import { getStockfishInstance, DifficultyLevel } from '../services/StockfishService';
 import pool from '../config/database';
 
+// In-memory storage for guest games
+interface GuestGame {
+  id: string;
+  chess: Chess;
+  difficulty: DifficultyLevel;
+  playerColor: 'white' | 'black';
+  status: 'active' | 'completed';
+  result: string | null;
+  createdAt: Date;
+}
+
+const guestGames = new Map<string, GuestGame>();
+
 export const createBotGame = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
+    const isGuest = (req as any).isGuest;
     const { difficulty, playerColor } = req.body as {
       difficulty: DifficultyLevel;
       playerColor: 'white' | 'black';
@@ -19,16 +33,52 @@ export const createBotGame = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid player color' });
     }
 
-    // Get user's current rating
+    const chess = new Chess();
+    const initialFen = chess.fen();
+
+    // Handle guest users
+    if (isGuest || !userId) {
+      const gameId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      let botMove = null;
+      if (playerColor === 'black') {
+        const stockfish = getStockfishInstance();
+        const move = await stockfish.getBestMove(initialFen, difficulty);
+        chess.move(move);
+        botMove = move;
+      }
+
+      guestGames.set(gameId, {
+        id: gameId,
+        chess,
+        difficulty,
+        playerColor,
+        status: 'active',
+        result: null,
+        createdAt: new Date(),
+      });
+
+      return res.status(201).json({
+        message: 'Bot game created successfully (guest mode)',
+        game: {
+          id: gameId,
+          difficulty,
+          playerColor,
+          fen: chess.fen(),
+          pgn: chess.pgn(),
+          status: 'active',
+          botMove,
+          isGuest: true,
+        },
+      });
+    }
+
+    // Handle authenticated users - save to database
     const userResult = await pool.query(
       'SELECT rating FROM users WHERE id = $1',
       [userId]
     );
     const userRating = userResult.rows[0]?.rating || 1200;
-
-    // Create new game in database
-    const chess = new Chess();
-    const initialFen = chess.fen();
 
     const result = await pool.query(
       `INSERT INTO games (
@@ -57,7 +107,6 @@ export const createBotGame = async (req: Request, res: Response) => {
 
     const game = result.rows[0];
 
-    // If player is black, make bot's first move
     let botMove = null;
     if (playerColor === 'black') {
       const stockfish = getStockfishInstance();
@@ -88,6 +137,7 @@ export const createBotGame = async (req: Request, res: Response) => {
         pgn: botMove ? chess.pgn() : '',
         status: 'active',
         botMove,
+        isGuest: false,
       },
     });
   } catch (error) {
@@ -98,13 +148,105 @@ export const createBotGame = async (req: Request, res: Response) => {
 
 export const makeBotMove = async (req: Request, res: Response) => {
   try {
-    const { gameId } = req.params;
+    const { gameId: gameIdParam } = req.params;
+    const gameId = Array.isArray(gameIdParam) ? gameIdParam[0] : gameIdParam;
+    const userId = (req as any).userId;
+    const isGuest = (req as any).isGuest;
     const { move, difficulty } = req.body as {
       move: string;
       difficulty: DifficultyLevel;
     };
 
-    // Validate game exists and is active
+    // Handle guest games
+    if (gameId.startsWith('guest_')) {
+      const guestGame = guestGames.get(gameId);
+      if (!guestGame) {
+        return res.status(404).json({ error: 'Game not found' });
+      }
+
+      if (guestGame.status !== 'active') {
+        return res.status(400).json({ error: 'Game is not active' });
+      }
+
+      const chess = guestGame.chess;
+
+      // Make player's move
+      try {
+        const result = chess.move(move);
+        if (!result) {
+          return res.status(400).json({ error: 'Invalid move' });
+        }
+      } catch (error) {
+        return res.status(400).json({ error: 'Invalid move format' });
+      }
+
+      // Check if game is over after player's move
+      if (chess.isGameOver()) {
+        let result = 'draw';
+        if (chess.isCheckmate()) {
+          result = chess.turn() === 'w' ? 'black' : 'white';
+        }
+
+        guestGame.status = 'completed';
+        guestGame.result = result;
+
+        return res.json({
+          message: 'Game over',
+          fen: chess.fen(),
+          pgn: chess.pgn(),
+          gameOver: true,
+          result,
+        });
+      }
+
+      // Get bot's move
+      const stockfish = getStockfishInstance();
+      let botMove: string;
+      
+      try {
+        botMove = await stockfish.getBestMove(chess.fen(), guestGame.difficulty);
+      } catch (error) {
+        console.error('Failed to get bot move:', error);
+        const moves = chess.moves();
+        if (moves.length === 0) {
+          return res.status(400).json({ error: 'No legal moves available' });
+        }
+        botMove = moves[Math.floor(Math.random() * moves.length)];
+      }
+
+      // Make bot's move
+      try {
+        chess.move(botMove);
+      } catch (error) {
+        console.error(`Failed to make bot move ${botMove}:`, error);
+        return res.status(500).json({ error: 'Failed to make bot move' });
+      }
+
+      // Check if game is over after bot's move
+      let gameOver = false;
+      let result = null;
+      
+      if (chess.isGameOver()) {
+        gameOver = true;
+        result = 'draw';
+        if (chess.isCheckmate()) {
+          result = chess.turn() === 'w' ? 'black' : 'white';
+        }
+        guestGame.status = 'completed';
+        guestGame.result = result;
+      }
+
+      return res.json({
+        message: 'Move processed successfully (guest mode)',
+        fen: chess.fen(),
+        pgn: chess.pgn(),
+        botMove,
+        gameOver,
+        result,
+      });
+    }
+
+    // Handle authenticated user games - database storage
     const gameResult = await pool.query(
       'SELECT * FROM games WHERE id = $1 AND game_type = $2 AND status = $3',
       [gameId, 'bot', 'active']
@@ -116,20 +258,18 @@ export const makeBotMove = async (req: Request, res: Response) => {
 
     const game = gameResult.rows[0];
     
-    // Load game from PGN to preserve move history
     const chess = new Chess();
     if (game.pgn) {
       try {
         chess.loadPgn(game.pgn);
       } catch (e) {
-        // If PGN fails to load, fall back to FEN
         chess.load(game.current_fen);
       }
     } else if (game.current_fen) {
       chess.load(game.current_fen);
     }
 
-    // Validate and make player's move
+    // Make player's move
     try {
       const result = chess.move(move);
       if (!result) {
@@ -168,22 +308,18 @@ export const makeBotMove = async (req: Request, res: Response) => {
     );
 
     // Get bot's move
-    console.log(`Getting bot move for difficulty: ${difficulty}, FEN: ${chess.fen()}`);
     const stockfish = getStockfishInstance();
     
     let botMove: string;
     try {
       botMove = await stockfish.getBestMove(chess.fen(), difficulty);
-      console.log(`Bot move received: ${botMove}`);
     } catch (error) {
       console.error('Failed to get bot move from Stockfish:', error);
-      // Fallback to random legal move
       const moves = chess.moves();
       if (moves.length === 0) {
         return res.status(400).json({ error: 'No legal moves available' });
       }
       botMove = moves[Math.floor(Math.random() * moves.length)];
-      console.log(`Using fallback random move: ${botMove}`);
     }
 
     // Make bot's move
@@ -194,7 +330,6 @@ export const makeBotMove = async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Failed to make bot move' });
     }
 
-    // Calculate move number for bot's move after making the move
     const botMoveNumber = Math.floor(chess.moveNumber());
 
     // Check if game is over after bot's move
@@ -237,9 +372,33 @@ export const makeBotMove = async (req: Request, res: Response) => {
 
 export const getBotGame = async (req: Request, res: Response) => {
   try {
-    const { gameId } = req.params;
+    const { gameId: gameIdParam } = req.params;
+    const gameId = Array.isArray(gameIdParam) ? gameIdParam[0] : gameIdParam;
     const userId = (req as any).userId;
 
+    // Handle guest games
+    if (gameId.startsWith('guest_')) {
+      const guestGame = guestGames.get(gameId);
+      if (!guestGame) {
+        return res.status(404).json({ error: 'Game not found' });
+      }
+
+      return res.json({
+        game: {
+          id: guestGame.id,
+          fen: guestGame.chess.fen(),
+          pgn: guestGame.chess.pgn(),
+          status: guestGame.status,
+          result: guestGame.result,
+          playerColor: guestGame.playerColor,
+          createdAt: guestGame.createdAt,
+          isGuest: true,
+        },
+        moves: [],
+      });
+    }
+
+    // Handle authenticated user games
     const result = await pool.query(
       `SELECT g.*, 
         u1.username as white_username,
@@ -258,7 +417,6 @@ export const getBotGame = async (req: Request, res: Response) => {
 
     const game = result.rows[0];
 
-    // Get move history
     const movesResult = await pool.query(
       'SELECT * FROM moves WHERE game_id = $1 ORDER BY move_number ASC',
       [gameId]
@@ -273,6 +431,7 @@ export const getBotGame = async (req: Request, res: Response) => {
         result: game.result,
         playerColor: game.white_player_id === userId ? 'white' : 'black',
         createdAt: game.created_at,
+        isGuest: false,
       },
       moves: movesResult.rows,
     });
@@ -284,11 +443,42 @@ export const getBotGame = async (req: Request, res: Response) => {
 
 export const endBotGame = async (req: Request, res: Response) => {
   try {
-    const { gameId } = req.params;
+    const { gameId: gameIdParam } = req.params;
+    const gameId = Array.isArray(gameIdParam) ? gameIdParam[0] : gameIdParam;
     const userId = (req as any).userId;
     const { action } = req.body as { action: 'resign' | 'draw' };
 
-    // Validate game exists and is active
+    // Handle guest games
+    if (gameId.startsWith('guest_')) {
+      const guestGame = guestGames.get(gameId);
+      if (!guestGame) {
+        return res.status(404).json({ error: 'Game not found' });
+      }
+
+      if (guestGame.status !== 'active') {
+        return res.status(400).json({ error: 'Game is not active' });
+      }
+
+      let result: string;
+      if (action === 'resign') {
+        result = guestGame.playerColor === 'white' ? 'black' : 'white';
+      } else if (action === 'draw') {
+        result = 'draw';
+      } else {
+        return res.status(400).json({ error: 'Invalid action' });
+      }
+
+      guestGame.status = 'completed';
+      guestGame.result = result;
+
+      return res.json({
+        message: 'Game ended successfully (guest mode)',
+        result,
+        gameOver: true,
+      });
+    }
+
+    // Handle authenticated user games
     const gameResult = await pool.query(
       'SELECT * FROM games WHERE id = $1 AND game_type = $2 AND status = $3 AND (white_player_id = $4 OR black_player_id = $4)',
       [gameId, 'bot', 'active', userId]
@@ -310,7 +500,6 @@ export const endBotGame = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid action' });
     }
 
-    // Load current game state to get move count
     const chess = new Chess();
     if (game.pgn) {
       try {
@@ -322,7 +511,6 @@ export const endBotGame = async (req: Request, res: Response) => {
       chess.load(game.current_fen);
     }
 
-    // Update game status
     await pool.query(
       'UPDATE games SET status = $1, result = $2, completed_at = NOW(), total_moves = $3 WHERE id = $4',
       ['completed', result, chess.moveNumber(), gameId]

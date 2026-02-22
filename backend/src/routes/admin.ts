@@ -10,6 +10,7 @@ import {
   getAllGames,
   deleteGame
 } from '../controllers/adminController';
+import { syncAllAchievements } from '../controllers/statsController';
 import { adminMiddleware, moderatorMiddleware } from '../middleware/adminMiddleware';
 
 const router = express.Router();
@@ -30,5 +31,8 @@ router.delete('/games/:gameId', adminMiddleware, deleteGame);
 
 // Admin logs (admin only)
 router.get('/logs', adminMiddleware, getAdminLogs);
+
+// Achievement management (admin only)
+router.post('/achievements/sync-all', adminMiddleware, syncAllAchievements);
 
 export default router;

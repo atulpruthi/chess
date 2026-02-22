@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import UserStatsService from '../services/UserStatsService';
+import { achievementService } from '../services/AchievementService';
 
 export const getUserStats = async (req: Request, res: Response) => {
   try {
@@ -120,5 +121,68 @@ export const getBookmarkedGames = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching bookmarked games:', error);
     res.status(500).json({ error: 'Failed to fetch bookmarked games' });
+  }
+};
+
+/**
+ * Sync achievements for the authenticated user
+ */
+export const syncMyAchievements = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const unlocked = await achievementService.syncUserAchievements(userId);
+    res.json({ 
+      message: 'Achievements synced successfully',
+      newlyUnlocked: unlocked,
+      count: unlocked.length
+    });
+  } catch (error) {
+    console.error('Error syncing achievements:', error);
+    res.status(500).json({ error: 'Failed to sync achievements' });
+  }
+};
+
+/**
+ * Get all available achievements with user's unlock status
+ */
+export const getAllAchievements = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const achievements = await achievementService.getUserAchievements(userId);
+    res.json(achievements);
+  } catch (error) {
+    console.error('Error fetching all achievements:', error);
+    res.status(500).json({ error: 'Failed to fetch achievements' });
+  }
+};
+
+/**
+ * Admin endpoint: Sync achievements for all users
+ */
+export const syncAllAchievements = async (req: Request, res: Response) => {
+  try {
+    const results = await achievementService.syncAllUserAchievements();
+    
+    const totalUnlocked = results.reduce((sum, r) => sum + r.achievements.length, 0);
+    
+    res.json({ 
+      message: 'All achievements synced successfully',
+      usersProcessed: results.length,
+      totalAchievementsUnlocked: totalUnlocked,
+      details: results
+    });
+  } catch (error) {
+    console.error('Error syncing all achievements:', error);
+    res.status(500).json({ error: 'Failed to sync all achievements' });
   }
 };

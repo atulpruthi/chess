@@ -1,13 +1,13 @@
 import express from 'express';
 import { createBotGame, makeBotMove, getBotGame, endBotGame } from '../controllers/botController';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { optionalAuthMiddleware } from '../middleware/optionalAuthMiddleware';
 
 const router = express.Router();
 
-// All bot routes require authentication
-router.post('/create', authMiddleware, createBotGame);
-router.post('/:gameId/move', authMiddleware, makeBotMove);
-router.post('/:gameId/end', authMiddleware, endBotGame);
-router.get('/:gameId', authMiddleware, getBotGame);
+// Bot routes support both authenticated and guest users
+router.post('/create', optionalAuthMiddleware, createBotGame);
+router.post('/:gameId/move', optionalAuthMiddleware, makeBotMove);
+router.post('/:gameId/end', optionalAuthMiddleware, endBotGame);
+router.get('/:gameId', optionalAuthMiddleware, getBotGame);
 
 export default router;

@@ -91,9 +91,20 @@ export const updateUserRole = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { role } = req.body;
     const adminId = (req as any).userId;
+    const currentUserRole = (req as any).userRole;
 
     if (!['user', 'moderator', 'admin'].includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    // Prevent self-role modification
+    if (userId === adminId) {
+      return res.status(403).json({ error: 'Cannot modify your own role' });
+    }
+
+    // Only admins can assign admin role
+    if (role === 'admin' && currentUserRole !== 'admin') {
+      return res.status(403).json({ error: 'Only admins can assign admin role' });
     }
 
     await pool.query(

@@ -21,18 +21,15 @@ class GameAnalysisService {
                 throw new Error('Game not found');
             }
             const { pgn } = gameResult.rows[0];
-            // Create or get analysis record
-            let analysisResult = await client.query('SELECT id FROM game_analysis WHERE game_id = $1', [gameId]);
-            let analysisId;
-            if (analysisResult.rows.length === 0) {
-                const insertResult = await client.query('INSERT INTO game_analysis (game_id, depth) VALUES ($1, $2) RETURNING id', [gameId, depth]);
-                analysisId = insertResult.rows[0].id;
-            }
-            else {
-                analysisId = analysisResult.rows[0].id;
-                // Clear existing move analysis
-                await client.query('DELETE FROM move_analysis WHERE analysis_id = $1', [analysisId]);
-            }
+            // Create or get analysis record using UPSERT to handle race conditions
+            const analysisResult = await client.query(`INSERT INTO game_analysis (game_id, depth) 
+         VALUES ($1, $2) 
+         ON CONFLICT (game_id) 
+         DO UPDATE SET depth = EXCLUDED.depth, updated_at = CURRENT_TIMESTAMP
+         RETURNING id`, [gameId, depth]);
+            const analysisId = analysisResult.rows[0].id;
+            // Clear existing move analysis (in case we're re-analyzing)
+            await client.query('DELETE FROM move_analysis WHERE analysis_id = $1', [analysisId]);
             // Parse game and analyze each position
             const chess = new chess_js_1.Chess();
             chess.loadPgn(pgn);
@@ -61,7 +58,7 @@ class GameAnalysisService {
                 // Calculate centipawn loss
                 const centipawnLoss = this.calculateCentipawnLoss(evalBefore.evaluation, evalAfter.evaluation, move.color);
                 // Classify move
-                const classification = this.classifyMove(centipawnLoss, evalBefore.mateIn, evalAfter.mateIn);
+                const classification = this.classifyMove(centipawnLoss, evalBefore.mateIn, evalAfter.mateIn, move.san, evalBefore.evaluation, evalAfter.evaluation, move.color);
                 const moveEval = {
                     moveNumber: Math.floor(i / 2) + 1,
                     playerColor: move.color === 'w' ? 'white' : 'black',
@@ -133,7 +130,7 @@ class GameAnalysisService {
             return null;
         }
         const analysis = analysisResult.rows[0];
-        const movesResult = await database_1.default.query(`SELECT * FROM move_analysis WHERE analysis_id = $1 ORDER BY move_number, player_color`, [analysis.id]);
+        const movesResult = await database_1.default.query(`SELECT * FROM move_analysis WHERE analysis_id = $1 ORDER BY move_number ASC, player_color DESC`, [analysis.id]);
         return {
             id: analysis.id,
             gameId: analysis.game_id,
@@ -145,10 +142,13 @@ class GameAnalysisService {
             accuracyBlack: analysis.accuracy_black,
             analysisCompleted: analysis.analysis_completed,
             moves: movesResult.rows.map(row => ({
+                id: row.id,
                 moveNumber: row.move_number,
                 playerColor: row.player_color,
                 moveSan: row.move_san,
                 moveUci: row.move_uci,
+                fenBefore: row.fen_before,
+                fenAfter: row.fen_after,
                 evaluation: row.evaluation,
                 mateIn: row.mate_in,
                 bestMoveSan: row.best_move_san,
@@ -159,7 +159,7 @@ class GameAnalysisService {
                 isBookMove: row.is_book_move,
                 isForced: row.is_forced,
             })),
-            createdAt: analysis.created_at,
+            analyzedAt: analysis.created_at,
         };
     }
     /**
@@ -175,7 +175,7 @@ class GameAnalysisService {
     /**
      * Classify move based on centipawn loss
      */
-    classifyMove(centipawnLoss, mateInBefore, mateInAfter) {
+    classifyMove(centipawnLoss, mateInBefore, mateInAfter, moveSan, evalBefore, evalAfter, color) {
         // Missed mate or turned winning into losing
         if (mateInBefore && !mateInAfter) {
             return 'blunder';
@@ -184,8 +184,20 @@ class GameAnalysisService {
         if (!mateInBefore && mateInAfter) {
             return 'brilliant';
         }
+        // Detect sacrifice: piece given up (uppercase letter indicating piece capture)
+        // but position improved significantly
+        const isPieceSacrifice = /^[QRBN]x/.test(moveSan) || /^[a-h]x[QRBN]/.test(moveSan);
+        const evalImprovement = color === 'w' ? (evalAfter - evalBefore) : (evalBefore - evalAfter);
+        // Sacrifice: gave up material but gained significant positional advantage
+        if (isPieceSacrifice && evalImprovement > 50 && centipawnLoss <= 30) {
+            return 'sacrifice';
+        }
         // Classify by centipawn loss
-        if (centipawnLoss <= 10) {
+        if (centipawnLoss <= 0) {
+            // Best move or better
+            return 'best';
+        }
+        else if (centipawnLoss <= 10) {
             return 'good';
         }
         else if (centipawnLoss <= 25) {

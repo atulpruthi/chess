@@ -3,13 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBotGame = exports.makeBotMove = exports.createBotGame = void 0;
+exports.endBotGame = exports.getBotGame = exports.makeBotMove = exports.createBotGame = void 0;
 const chess_js_1 = require("chess.js");
 const StockfishService_1 = require("../services/StockfishService");
 const database_1 = __importDefault(require("../config/database"));
+const guestGames = new Map();
 const createBotGame = async (req, res) => {
     try {
         const userId = req.userId;
+        const isGuest = req.isGuest;
         const { difficulty, playerColor } = req.body;
         if (!['easy', 'medium', 'hard', 'expert'].includes(difficulty)) {
             return res.status(400).json({ error: 'Invalid difficulty level' });
@@ -17,27 +19,72 @@ const createBotGame = async (req, res) => {
         if (!['white', 'black'].includes(playerColor)) {
             return res.status(400).json({ error: 'Invalid player color' });
         }
-        // Create new game in database
         const chess = new chess_js_1.Chess();
         const initialFen = chess.fen();
-        const result = await database_1.default.query(`INSERT INTO games (white_player_id, black_player_id, game_type, status, fen, pgn) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, white_player_id, black_player_id, game_type, status, fen, created_at`, [
+        // Handle guest users
+        if (isGuest || !userId) {
+            const gameId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            let botMove = null;
+            if (playerColor === 'black') {
+                const stockfish = (0, StockfishService_1.getStockfishInstance)();
+                const move = await stockfish.getBestMove(initialFen, difficulty);
+                chess.move(move);
+                botMove = move;
+            }
+            guestGames.set(gameId, {
+                id: gameId,
+                chess,
+                difficulty,
+                playerColor,
+                status: 'active',
+                result: null,
+                createdAt: new Date(),
+            });
+            return res.status(201).json({
+                message: 'Bot game created successfully (guest mode)',
+                game: {
+                    id: gameId,
+                    difficulty,
+                    playerColor,
+                    fen: chess.fen(),
+                    pgn: chess.pgn(),
+                    status: 'active',
+                    botMove,
+                    isGuest: true,
+                },
+            });
+        }
+        // Handle authenticated users - save to database
+        const userResult = await database_1.default.query('SELECT rating FROM users WHERE id = $1', [userId]);
+        const userRating = userResult.rows[0]?.rating || 1200;
+        const result = await database_1.default.query(`INSERT INTO games (
+        white_player_id, 
+        black_player_id, 
+        game_type, 
+        status, 
+        current_fen, 
+        pgn,
+        white_rating_before,
+        black_rating_before
+      ) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+       RETURNING id, white_player_id, black_player_id, game_type, status, current_fen, created_at`, [
             playerColor === 'white' ? userId : null,
             playerColor === 'black' ? userId : null,
             'bot',
             'active',
             initialFen,
             '',
+            playerColor === 'white' ? userRating : null,
+            playerColor === 'black' ? userRating : null,
         ]);
         const game = result.rows[0];
-        // If player is black, make bot's first move
         let botMove = null;
         if (playerColor === 'black') {
             const stockfish = (0, StockfishService_1.getStockfishInstance)();
             const move = await stockfish.getBestMove(initialFen, difficulty);
             chess.move(move);
-            await database_1.default.query('UPDATE games SET fen = $1, pgn = $2 WHERE id = $3', [chess.fen(), chess.pgn(), game.id]);
+            await database_1.default.query('UPDATE games SET current_fen = $1, pgn = $2 WHERE id = $3', [chess.fen(), chess.pgn(), game.id]);
             await database_1.default.query('INSERT INTO moves (game_id, move_number, move_notation, fen) VALUES ($1, $2, $3, $4)', [game.id, 1, move, chess.fen()]);
             botMove = move;
         }
@@ -48,8 +95,10 @@ const createBotGame = async (req, res) => {
                 difficulty,
                 playerColor,
                 fen: botMove ? chess.fen() : initialFen,
+                pgn: botMove ? chess.pgn() : '',
                 status: 'active',
                 botMove,
+                isGuest: false,
             },
         });
     }
@@ -61,16 +110,109 @@ const createBotGame = async (req, res) => {
 exports.createBotGame = createBotGame;
 const makeBotMove = async (req, res) => {
     try {
-        const { gameId } = req.params;
+        const { gameId: gameIdParam } = req.params;
+        const gameId = Array.isArray(gameIdParam) ? gameIdParam[0] : gameIdParam;
+        const userId = req.userId;
+        const isGuest = req.isGuest;
         const { move, difficulty } = req.body;
-        // Validate game exists and is active
+        // Handle guest games
+        if (gameId.startsWith('guest_')) {
+            const guestGame = guestGames.get(gameId);
+            if (!guestGame) {
+                return res.status(404).json({ error: 'Game not found' });
+            }
+            if (guestGame.status !== 'active') {
+                return res.status(400).json({ error: 'Game is not active' });
+            }
+            const chess = guestGame.chess;
+            // Make player's move
+            try {
+                const result = chess.move(move);
+                if (!result) {
+                    return res.status(400).json({ error: 'Invalid move' });
+                }
+            }
+            catch (error) {
+                return res.status(400).json({ error: 'Invalid move format' });
+            }
+            // Check if game is over after player's move
+            if (chess.isGameOver()) {
+                let result = 'draw';
+                if (chess.isCheckmate()) {
+                    result = chess.turn() === 'w' ? 'black' : 'white';
+                }
+                guestGame.status = 'completed';
+                guestGame.result = result;
+                return res.json({
+                    message: 'Game over',
+                    fen: chess.fen(),
+                    pgn: chess.pgn(),
+                    gameOver: true,
+                    result,
+                });
+            }
+            // Get bot's move
+            const stockfish = (0, StockfishService_1.getStockfishInstance)();
+            let botMove;
+            try {
+                botMove = await stockfish.getBestMove(chess.fen(), guestGame.difficulty);
+            }
+            catch (error) {
+                console.error('Failed to get bot move:', error);
+                const moves = chess.moves();
+                if (moves.length === 0) {
+                    return res.status(400).json({ error: 'No legal moves available' });
+                }
+                botMove = moves[Math.floor(Math.random() * moves.length)];
+            }
+            // Make bot's move
+            try {
+                chess.move(botMove);
+            }
+            catch (error) {
+                console.error(`Failed to make bot move ${botMove}:`, error);
+                return res.status(500).json({ error: 'Failed to make bot move' });
+            }
+            // Check if game is over after bot's move
+            let gameOver = false;
+            let result = null;
+            if (chess.isGameOver()) {
+                gameOver = true;
+                result = 'draw';
+                if (chess.isCheckmate()) {
+                    result = chess.turn() === 'w' ? 'black' : 'white';
+                }
+                guestGame.status = 'completed';
+                guestGame.result = result;
+            }
+            return res.json({
+                message: 'Move processed successfully (guest mode)',
+                fen: chess.fen(),
+                pgn: chess.pgn(),
+                botMove,
+                gameOver,
+                result,
+            });
+        }
+        // Handle authenticated user games - database storage
         const gameResult = await database_1.default.query('SELECT * FROM games WHERE id = $1 AND game_type = $2 AND status = $3', [gameId, 'bot', 'active']);
         if (gameResult.rows.length === 0) {
             return res.status(404).json({ error: 'Game not found or not active' });
         }
         const game = gameResult.rows[0];
-        const chess = new chess_js_1.Chess(game.fen);
-        // Validate and make player's move
+        const chess = new chess_js_1.Chess();
+        if (game.pgn) {
+            try {
+                chess.loadPgn(game.pgn);
+            }
+            catch (e) {
+                chess.load(game.current_fen);
+            }
+        }
+        else if (game.current_fen) {
+            chess.load(game.current_fen);
+        }
+        // Make player's move
         try {
             const result = chess.move(move);
             if (!result) {
@@ -86,22 +228,41 @@ const makeBotMove = async (req, res) => {
             if (chess.isCheckmate()) {
                 result = chess.turn() === 'w' ? 'black' : 'white';
             }
-            await database_1.default.query('UPDATE games SET fen = $1, pgn = $2, status = $3, result = $4 WHERE id = $5', [chess.fen(), chess.pgn(), 'completed', result, gameId]);
+            await database_1.default.query('UPDATE games SET current_fen = $1, pgn = $2, status = $3, result = $4, total_moves = $5, completed_at = NOW() WHERE id = $6', [chess.fen(), chess.pgn(), 'completed', result, chess.moveNumber(), gameId]);
             return res.json({
                 message: 'Game over',
                 fen: chess.fen(),
+                pgn: chess.pgn(),
                 gameOver: true,
                 result,
             });
         }
         // Save player's move
-        const moveNumber = Math.floor(chess.moveNumber());
-        await database_1.default.query('INSERT INTO moves (game_id, move_number, move_notation, fen) VALUES ($1, $2, $3, $4)', [gameId, moveNumber, move, chess.fen()]);
+        const playerMoveNumber = Math.floor(chess.moveNumber());
+        await database_1.default.query('INSERT INTO moves (game_id, move_number, move_notation, fen) VALUES ($1, $2, $3, $4)', [gameId, playerMoveNumber, move, chess.fen()]);
         // Get bot's move
         const stockfish = (0, StockfishService_1.getStockfishInstance)();
-        const botMove = await stockfish.getBestMove(chess.fen(), difficulty);
+        let botMove;
+        try {
+            botMove = await stockfish.getBestMove(chess.fen(), difficulty);
+        }
+        catch (error) {
+            console.error('Failed to get bot move from Stockfish:', error);
+            const moves = chess.moves();
+            if (moves.length === 0) {
+                return res.status(400).json({ error: 'No legal moves available' });
+            }
+            botMove = moves[Math.floor(Math.random() * moves.length)];
+        }
         // Make bot's move
-        chess.move(botMove);
+        try {
+            chess.move(botMove);
+        }
+        catch (error) {
+            console.error(`Failed to make bot move ${botMove}:`, error);
+            return res.status(500).json({ error: 'Failed to make bot move' });
+        }
+        const botMoveNumber = Math.floor(chess.moveNumber());
         // Check if game is over after bot's move
         let gameOver = false;
         let result = null;
@@ -113,12 +274,13 @@ const makeBotMove = async (req, res) => {
             }
         }
         // Update game state
-        await database_1.default.query('UPDATE games SET fen = $1, pgn = $2, status = $3, result = $4 WHERE id = $5', [chess.fen(), chess.pgn(), gameOver ? 'completed' : 'active', result, gameId]);
+        await database_1.default.query('UPDATE games SET current_fen = $1, pgn = $2, status = $3, result = $4, total_moves = $5, completed_at = $6 WHERE id = $7', [chess.fen(), chess.pgn(), gameOver ? 'completed' : 'active', result, chess.moveNumber(), gameOver ? new Date() : null, gameId]);
         // Save bot's move
-        await database_1.default.query('INSERT INTO moves (game_id, move_number, move_notation, fen) VALUES ($1, $2, $3, $4)', [gameId, moveNumber, botMove, chess.fen()]);
+        await database_1.default.query('INSERT INTO moves (game_id, move_number, move_notation, fen) VALUES ($1, $2, $3, $4)', [gameId, botMoveNumber, botMove, chess.fen()]);
         res.json({
             message: 'Move processed successfully',
             fen: chess.fen(),
+            pgn: chess.pgn(),
             botMove,
             gameOver,
             result,
@@ -132,8 +294,30 @@ const makeBotMove = async (req, res) => {
 exports.makeBotMove = makeBotMove;
 const getBotGame = async (req, res) => {
     try {
-        const { gameId } = req.params;
+        const { gameId: gameIdParam } = req.params;
+        const gameId = Array.isArray(gameIdParam) ? gameIdParam[0] : gameIdParam;
         const userId = req.userId;
+        // Handle guest games
+        if (gameId.startsWith('guest_')) {
+            const guestGame = guestGames.get(gameId);
+            if (!guestGame) {
+                return res.status(404).json({ error: 'Game not found' });
+            }
+            return res.json({
+                game: {
+                    id: guestGame.id,
+                    fen: guestGame.chess.fen(),
+                    pgn: guestGame.chess.pgn(),
+                    status: guestGame.status,
+                    result: guestGame.result,
+                    playerColor: guestGame.playerColor,
+                    createdAt: guestGame.createdAt,
+                    isGuest: true,
+                },
+                moves: [],
+            });
+        }
+        // Handle authenticated user games
         const result = await database_1.default.query(`SELECT g.*, 
         u1.username as white_username,
         u2.username as black_username
@@ -146,17 +330,17 @@ const getBotGame = async (req, res) => {
             return res.status(404).json({ error: 'Game not found' });
         }
         const game = result.rows[0];
-        // Get move history
         const movesResult = await database_1.default.query('SELECT * FROM moves WHERE game_id = $1 ORDER BY move_number ASC', [gameId]);
         res.json({
             game: {
                 id: game.id,
-                fen: game.fen,
+                fen: game.current_fen,
                 pgn: game.pgn,
                 status: game.status,
                 result: game.result,
                 playerColor: game.white_player_id === userId ? 'white' : 'black',
                 createdAt: game.created_at,
+                isGuest: false,
             },
             moves: movesResult.rows,
         });
@@ -167,3 +351,78 @@ const getBotGame = async (req, res) => {
     }
 };
 exports.getBotGame = getBotGame;
+const endBotGame = async (req, res) => {
+    try {
+        const { gameId: gameIdParam } = req.params;
+        const gameId = Array.isArray(gameIdParam) ? gameIdParam[0] : gameIdParam;
+        const userId = req.userId;
+        const { action } = req.body;
+        // Handle guest games
+        if (gameId.startsWith('guest_')) {
+            const guestGame = guestGames.get(gameId);
+            if (!guestGame) {
+                return res.status(404).json({ error: 'Game not found' });
+            }
+            if (guestGame.status !== 'active') {
+                return res.status(400).json({ error: 'Game is not active' });
+            }
+            let result;
+            if (action === 'resign') {
+                result = guestGame.playerColor === 'white' ? 'black' : 'white';
+            }
+            else if (action === 'draw') {
+                result = 'draw';
+            }
+            else {
+                return res.status(400).json({ error: 'Invalid action' });
+            }
+            guestGame.status = 'completed';
+            guestGame.result = result;
+            return res.json({
+                message: 'Game ended successfully (guest mode)',
+                result,
+                gameOver: true,
+            });
+        }
+        // Handle authenticated user games
+        const gameResult = await database_1.default.query('SELECT * FROM games WHERE id = $1 AND game_type = $2 AND status = $3 AND (white_player_id = $4 OR black_player_id = $4)', [gameId, 'bot', 'active', userId]);
+        if (gameResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Game not found or not active' });
+        }
+        const game = gameResult.rows[0];
+        const playerColor = game.white_player_id === userId ? 'white' : 'black';
+        let result;
+        if (action === 'resign') {
+            result = playerColor === 'white' ? 'black' : 'white';
+        }
+        else if (action === 'draw') {
+            result = 'draw';
+        }
+        else {
+            return res.status(400).json({ error: 'Invalid action' });
+        }
+        const chess = new chess_js_1.Chess();
+        if (game.pgn) {
+            try {
+                chess.loadPgn(game.pgn);
+            }
+            catch (e) {
+                chess.load(game.current_fen);
+            }
+        }
+        else if (game.current_fen) {
+            chess.load(game.current_fen);
+        }
+        await database_1.default.query('UPDATE games SET status = $1, result = $2, completed_at = NOW(), total_moves = $3 WHERE id = $4', ['completed', result, chess.moveNumber(), gameId]);
+        res.json({
+            message: 'Game ended successfully',
+            result,
+            gameOver: true,
+        });
+    }
+    catch (error) {
+        console.error('End bot game error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+exports.endBotGame = endBotGame;

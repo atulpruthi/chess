@@ -6,8 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const socket_io_1 = require("socket.io");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const GameTimerService_1 = require("./GameTimerService");
+const GameService_1 = require("./GameService");
 const database_1 = require("../config/database");
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('FATAL: JWT_SECRET environment variable must be set');
+}
+// We've validated JWT_SECRET exists - use non-null assertion
+const SECRET = JWT_SECRET;
 class SocketService {
     constructor(server) {
         this.activeUsers = new Map();
@@ -28,16 +34,26 @@ class SocketService {
         this.io.use((socket, next) => {
             const token = socket.handshake.auth.token;
             if (!token) {
-                return next(new Error('Authentication error'));
+                // Allow guest users - generate temporary guest ID
+                const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                socket.userId = guestId;
+                socket.username = `Guest_${Math.random().toString(36).substr(2, 6)}`;
+                console.log(`Guest user connected: ${socket.username} (${socket.userId})`);
+                return next();
             }
             try {
-                const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+                const decoded = jsonwebtoken_1.default.verify(token, SECRET);
                 socket.userId = decoded.userId;
                 socket.username = decoded.username;
                 next();
             }
             catch (error) {
-                next(new Error('Authentication error'));
+                // If token is invalid, allow as guest
+                const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                socket.userId = guestId;
+                socket.username = `Guest_${Math.random().toString(36).substr(2, 6)}`;
+                console.log(`Guest user connected (invalid token): ${socket.username} (${socket.userId})`);
+                next();
             }
         });
     }
@@ -112,6 +128,10 @@ class SocketService {
             // Resign
             socket.on('resign', () => {
                 this.handleResign(socket);
+            });
+            // Game over (checkmate/stalemate from client)
+            socket.on('gameOver', (data) => {
+                this.handleGameOver(socket, data);
             });
             // Join matchmaking queue (old events for compatibility)
             socket.on('find_match', () => {
@@ -254,7 +274,7 @@ class SocketService {
             }
         });
     }
-    handleMakeMove(socket, data) {
+    async handleMakeMove(socket, data) {
         if (!socket.userId)
             return;
         // Find the game room the socket is in
@@ -279,6 +299,8 @@ class SocketService {
             if (timeCheck.expired) {
                 gameRoom.status = 'completed';
                 const winner = timeCheck.loser === 'white' ? 'black' : 'white';
+                // Save game to database
+                await this.saveGameResult(gameRoom, roomId, winner, 'Time expired');
                 this.io.to(roomId).emit('gameOver', {
                     winner,
                     reason: 'Time expired',
@@ -290,12 +312,14 @@ class SocketService {
                 return;
             }
         }
-        // Add move to history
+        // Update game state with new FEN and PGN
+        gameRoom.fen = data.fen;
+        gameRoom.pgn = data.pgn;
         gameRoom.moveHistory.push(data.move);
         // Broadcast move to opponent with updated times
         socket.to(roomId).emit('moveMade', {
             move: data.move,
-            fen: gameRoom.fen,
+            fen: data.fen,
             whiteTime: gameRoom.whiteTime,
             blackTime: gameRoom.blackTime,
         });
@@ -336,10 +360,12 @@ class SocketService {
     handleDrawResponse(socket, accept) {
         if (!socket.userId)
             return;
-        this.gameRooms.forEach((game, roomId) => {
+        this.gameRooms.forEach(async (game, roomId) => {
             if (game.whitePlayer.userId === socket.userId || game.blackPlayer.userId === socket.userId) {
                 if (accept) {
                     game.status = 'completed';
+                    // Save game to database
+                    await this.saveGameResult(game, roomId, 'draw', 'Draw by agreement');
                     this.io.to(roomId).emit('gameOver', { winner: 'draw', reason: 'Draw by agreement' });
                     this.gameRooms.delete(roomId);
                 }
@@ -352,15 +378,101 @@ class SocketService {
     handleResign(socket) {
         if (!socket.userId)
             return;
-        this.gameRooms.forEach((game, roomId) => {
+        this.gameRooms.forEach(async (game, roomId) => {
             if (game.whitePlayer.userId === socket.userId || game.blackPlayer.userId === socket.userId) {
                 game.status = 'completed';
                 const winner = game.whitePlayer.userId === socket.userId ? 'black' : 'white';
+                // Save game to database
+                await this.saveGameResult(game, roomId, winner, 'Resignation');
                 this.io.to(roomId).emit('gameOver', { winner, reason: 'Resignation' });
                 this.gameRooms.delete(roomId);
                 this.broadcastRoomList();
             }
         });
+    }
+    handleGameOver(socket, data) {
+        if (!socket.userId)
+            return;
+        this.gameRooms.forEach(async (game, roomId) => {
+            if (game.whitePlayer.userId === socket.userId || game.blackPlayer.userId === socket.userId) {
+                game.status = 'completed';
+                game.fen = data.fen;
+                game.pgn = data.pgn;
+                // Save game to database
+                await this.saveGameResult(game, roomId, data.winner, data.reason);
+                this.io.to(roomId).emit('gameOver', {
+                    winner: data.winner,
+                    reason: data.reason,
+                    fen: data.fen,
+                    pgn: data.pgn
+                });
+                GameTimerService_1.gameTimerService.stopTimer(roomId);
+                this.gameRooms.delete(roomId);
+                this.broadcastRoomList();
+            }
+        });
+    }
+    /**
+     * Save game result to database with rating updates
+     */
+    async saveGameResult(game, roomId, winner, reason) {
+        try {
+            // Only save if both players are present and game is rated
+            if (!game.whitePlayer.userId || !game.blackPlayer.userId)
+                return;
+            // Don't save games involving guest users
+            if (game.whitePlayer.userId.startsWith('guest_') || game.blackPlayer.userId.startsWith('guest_')) {
+                console.log(`Skipping game save - guest user involved`);
+                return;
+            }
+            if (!game.isRated)
+                return;
+            const whiteRating = game.whitePlayer.rating || 1200;
+            const blackRating = game.blackPlayer.rating || 1200;
+            const savedGame = await GameService_1.gameService.saveCompletedGame({
+                roomId,
+                whitePlayer: {
+                    userId: game.whitePlayer.userId,
+                    username: game.whitePlayer.username,
+                    rating: whiteRating,
+                },
+                blackPlayer: {
+                    userId: game.blackPlayer.userId,
+                    username: game.blackPlayer.username,
+                    rating: blackRating,
+                },
+                winner,
+                reason,
+                pgn: game.pgn || '',
+                fen: game.fen,
+                moveHistory: game.moveHistory,
+                timeControl: game.timeControl,
+                isRated: game.isRated || false,
+                whiteTimeRemaining: game.whiteTime,
+                blackTimeRemaining: game.blackTime,
+            });
+            // Emit rating updates to both players
+            const whiteSocket = this.io.sockets.sockets.get(game.whitePlayer.socketId);
+            const blackSocket = this.io.sockets.sockets.get(game.blackPlayer.socketId);
+            if (whiteSocket) {
+                whiteSocket.emit('ratingUpdate', {
+                    oldRating: whiteRating,
+                    newRating: savedGame.whiteNewRating,
+                    change: savedGame.whiteRatingChange,
+                });
+            }
+            if (blackSocket) {
+                blackSocket.emit('ratingUpdate', {
+                    oldRating: blackRating,
+                    newRating: savedGame.blackNewRating,
+                    change: savedGame.blackRatingChange,
+                });
+            }
+            console.log(`Game ${savedGame.gameId} saved. White: ${whiteRating} -> ${savedGame.whiteNewRating} (${savedGame.whiteRatingChange}), Black: ${blackRating} -> ${savedGame.blackNewRating} (${savedGame.blackRatingChange})`);
+        }
+        catch (error) {
+            console.error('Error saving game result:', error);
+        }
     }
     broadcastRoomList() {
         const availableRooms = Array.from(this.gameRooms.values())

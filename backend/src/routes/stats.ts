@@ -6,7 +6,9 @@ import {
   getUserRank,
   getUserAchievements,
   bookmarkGame,
-  getBookmarkedGames
+  getBookmarkedGames,
+  syncMyAchievements,
+  getAllAchievements
 } from '../controllers/statsController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
@@ -22,5 +24,7 @@ router.get('/leaderboard', getLeaderboard);
 // Protected routes
 router.post('/games/:gameId/bookmark', authMiddleware, bookmarkGame);
 router.get('/bookmarks', authMiddleware, getBookmarkedGames);
+router.post('/achievements/sync', authMiddleware, syncMyAchievements);
+router.get('/achievements', authMiddleware, getAllAchievements);
 
 export default router;

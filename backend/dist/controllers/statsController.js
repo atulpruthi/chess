@@ -3,8 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBookmarkedGames = exports.bookmarkGame = exports.getUserAchievements = exports.getUserRank = exports.getLeaderboard = exports.getGameHistory = exports.getUserStats = void 0;
+exports.syncAllAchievements = exports.getAllAchievements = exports.syncMyAchievements = exports.getBookmarkedGames = exports.bookmarkGame = exports.getUserAchievements = exports.getUserRank = exports.getLeaderboard = exports.getGameHistory = exports.getUserStats = void 0;
 const UserStatsService_1 = __importDefault(require("../services/UserStatsService"));
+const AchievementService_1 = require("../services/AchievementService");
 const getUserStats = async (req, res) => {
     try {
         const userId = parseInt(String(req.params.userId));
@@ -118,3 +119,63 @@ const getBookmarkedGames = async (req, res) => {
     }
 };
 exports.getBookmarkedGames = getBookmarkedGames;
+/**
+ * Sync achievements for the authenticated user
+ */
+const syncMyAchievements = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        const unlocked = await AchievementService_1.achievementService.syncUserAchievements(userId);
+        res.json({
+            message: 'Achievements synced successfully',
+            newlyUnlocked: unlocked,
+            count: unlocked.length
+        });
+    }
+    catch (error) {
+        console.error('Error syncing achievements:', error);
+        res.status(500).json({ error: 'Failed to sync achievements' });
+    }
+};
+exports.syncMyAchievements = syncMyAchievements;
+/**
+ * Get all available achievements with user's unlock status
+ */
+const getAllAchievements = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        const achievements = await AchievementService_1.achievementService.getUserAchievements(userId);
+        res.json(achievements);
+    }
+    catch (error) {
+        console.error('Error fetching all achievements:', error);
+        res.status(500).json({ error: 'Failed to fetch achievements' });
+    }
+};
+exports.getAllAchievements = getAllAchievements;
+/**
+ * Admin endpoint: Sync achievements for all users
+ */
+const syncAllAchievements = async (req, res) => {
+    try {
+        const results = await AchievementService_1.achievementService.syncAllUserAchievements();
+        const totalUnlocked = results.reduce((sum, r) => sum + r.achievements.length, 0);
+        res.json({
+            message: 'All achievements synced successfully',
+            usersProcessed: results.length,
+            totalAchievementsUnlocked: totalUnlocked,
+            details: results
+        });
+    }
+    catch (error) {
+        console.error('Error syncing all achievements:', error);
+        res.status(500).json({ error: 'Failed to sync all achievements' });
+    }
+};
+exports.syncAllAchievements = syncAllAchievements;

@@ -6,7 +6,12 @@ import { eloService } from './EloService';
 import { gameService } from './GameService';
 import { query } from '../config/database';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable must be set');
+}
+// We've validated JWT_SECRET exists - use non-null assertion
+const SECRET = JWT_SECRET!;
 
 interface UserSocket extends Socket {
   userId?: string;
@@ -63,16 +68,26 @@ class SocketService {
       const token = socket.handshake.auth.token;
 
       if (!token) {
-        return next(new Error('Authentication error'));
+        // Allow guest users - generate temporary guest ID
+        const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        socket.userId = guestId;
+        socket.username = `Guest_${Math.random().toString(36).substr(2, 6)}`;
+        console.log(`Guest user connected: ${socket.username} (${socket.userId})`);
+        return next();
       }
 
       try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; username: string };
+        const decoded = jwt.verify(token, SECRET) as { userId: string; username: string };
         socket.userId = decoded.userId;
         socket.username = decoded.username;
         next();
       } catch (error) {
-        next(new Error('Authentication error'));
+        // If token is invalid, allow as guest
+        const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        socket.userId = guestId;
+        socket.username = `Guest_${Math.random().toString(36).substr(2, 6)}`;
+        console.log(`Guest user connected (invalid token): ${socket.username} (${socket.userId})`);
+        next();
       }
     });
   }
@@ -503,6 +518,13 @@ class SocketService {
     try {
       // Only save if both players are present and game is rated
       if (!game.whitePlayer.userId || !game.blackPlayer.userId) return;
+      
+      // Don't save games involving guest users
+      if (game.whitePlayer.userId.startsWith('guest_') || game.blackPlayer.userId.startsWith('guest_')) {
+        console.log(`Skipping game save - guest user involved`);
+        return;
+      }
+      
       if (!game.isRated) return;
 
       const whiteRating = game.whitePlayer.rating || 1200;

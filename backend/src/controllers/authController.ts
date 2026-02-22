@@ -1,12 +1,17 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import fs from 'fs/promises';
+import path from 'path';
 import pool from '../config/database';
 import { otpService } from '../services/OTPService';
 import { rateLimitService } from '../services/RateLimitService';
 import { recaptchaService } from '../services/RecaptchaService';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable must be set');
+}
 const JWT_EXPIRES_IN = '7d';
 
 // Helper function to generate username suggestions
@@ -55,6 +60,52 @@ const generateUsernameSuggestions = async (baseUsername: string, count: number =
   return suggestions;
 };
 
+const MAX_AVATAR_BYTES = 200 * 1024;
+
+const detectImageExtension = (buffer: Buffer): { ext: 'png' | 'jpg' | 'gif' | 'webp'; mime: string } | null => {
+  if (buffer.length < 12) return null;
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return { ext: 'png', mime: 'image/png' };
+  }
+
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return { ext: 'jpg', mime: 'image/jpeg' };
+  }
+
+  // GIF: 47 49 46 38
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
+    return { ext: 'gif', mime: 'image/gif' };
+  }
+
+  // WEBP: RIFF .... WEBP
+  if (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return { ext: 'webp', mime: 'image/webp' };
+  }
+
+  return null;
+};
+
 export const checkUsername = async (req: Request, res: Response) => {
   try {
     const { username } = req.query;
@@ -85,7 +136,9 @@ export const checkUsername = async (req: Request, res: Response) => {
       suggestions: [],
     });
   } catch (error) {
-    console.error('Check username error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Check username error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -129,7 +182,9 @@ export const checkEmail = async (req: Request, res: Response) => {
       message: 'Email is available',
     });
   } catch (error) {
-    console.error('Check email error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Check email error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -153,8 +208,13 @@ export const sendOTP = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Username must contain only letters and numbers' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    // Strong password validation
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain uppercase, lowercase, and number' });
     }
 
     // Verify CAPTCHA - always required for registration
@@ -195,7 +255,9 @@ export const sendOTP = async (req: Request, res: Response) => {
       email: email
     });
   } catch (error) {
-    console.error('Send OTP error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Send OTP error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -252,7 +314,11 @@ export const verifyOTPAndRegister = async (req: Request, res: Response) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { 
+        userId: user.id, 
+        username: user.username,
+        role: user.role || 'user'
+      },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -284,8 +350,13 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    // Strong password validation
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain uppercase, lowercase, and number' });
     }
 
     // Check if user already exists
@@ -313,7 +384,11 @@ export const register = async (req: Request, res: Response) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { 
+        userId: user.id, 
+        username: user.username,
+        role: user.role || 'user'
+      },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -406,7 +481,11 @@ export const login = async (req: Request, res: Response) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { 
+        userId: user.id, 
+        username: user.username,
+        role: user.role || 'user'
+      },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -459,7 +538,9 @@ export const getProfile = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Get profile error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Get user by ID error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -468,6 +549,30 @@ export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
     const { username, bio, avatarUrl } = req.body;
+
+    // Validate avatar URL if provided
+    if (avatarUrl) {
+      try {
+        const url = new URL(avatarUrl);
+        // Allow only HTTPS (or HTTP in development)
+        if (url.protocol !== 'https:' && (process.env.NODE_ENV === 'production' || url.protocol !== 'http:')) {
+          return res.status(400).json({ error: 'Avatar URL must use HTTPS' });
+        }
+        // Optional: whitelist allowed domains
+        // const allowedDomains = ['gravatar.com', 'your-cdn.com', 'imgur.com'];
+        // if (!allowedDomains.includes(url.hostname)) {
+        //   return res.status(400).json({ error: 'Avatar URL domain not allowed' });
+        // }
+      } catch {
+        return res.status(400).json({ error: 'Invalid avatar URL format' });
+      }
+    }
+
+    // Sanitize bio - limit length and remove null bytes
+    let sanitizedBio = bio;
+    if (bio) {
+      sanitizedBio = bio.replace(/\0/g, '').substring(0, 500);
+    }
 
     // Check if username is taken by another user
     if (username) {
@@ -489,7 +594,7 @@ export const updateProfile = async (req: Request, res: Response) => {
            updated_at = NOW()
        WHERE id = $4
        RETURNING id, username, email, rating, avatar_url, bio, updated_at`,
-      [username, bio, avatarUrl, userId]
+      [username, sanitizedBio, avatarUrl, userId]
     );
 
     const user = result.rows[0];
@@ -508,6 +613,66 @@ export const updateProfile = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const uploadAvatar = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const file = (req as any).file as Express.Multer.File | undefined;
+
+    if (!file) {
+      return res.status(400).json({ error: 'Avatar file is required' });
+    }
+
+    if (file.size > MAX_AVATAR_BYTES) {
+      return res.status(413).json({ error: 'Avatar must be 200KB or smaller' });
+    }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      return res.status(400).json({ error: 'Uploaded file is empty' });
+    }
+
+    const detected = detectImageExtension(file.buffer);
+    if (!detected) {
+      return res.status(400).json({ error: 'Invalid image file. Please upload a PNG, JPG, GIF, or WEBP image.' });
+    }
+
+    const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    const filename = `user-${userId}-${Date.now()}.${detected.ext}`;
+    const filepath = path.join(uploadDir, filename);
+    await fs.writeFile(filepath, file.buffer);
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const publicUrl = `${baseUrl}/uploads/avatars/${filename}`;
+
+    const result = await pool.query(
+      `UPDATE users
+       SET avatar_url = $1,
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, username, email, rating, avatar_url, bio, updated_at`,
+      [publicUrl, userId]
+    );
+
+    const user = result.rows[0];
+    res.json({
+      message: 'Avatar uploaded successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        rating: user.rating,
+        avatarUrl: user.avatar_url,
+        bio: user.bio,
+        updatedAt: user.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error('Upload avatar error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -537,7 +702,9 @@ export const getUserById = async (req: Request, res: Response) => {
       createdAt: user.created_at,
     });
   } catch (error) {
-    console.error('Get user by ID error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Registration error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -575,39 +742,40 @@ export const sendPasswordResetOTP = async (req: Request, res: Response) => {
       }
     }
 
-    // Check if user exists
+    // Check if user exists (but don't reveal this information)
     const userResult = await pool.query(
       'SELECT id FROM users WHERE email = $1',
       [email]
     );
 
-    if (userResult.rows.length === 0) {
-      // Record failed attempt even for non-existent emails to prevent enumeration
-      rateLimitService.recordPasswordResetAttempt(ip);
-      return res.status(404).json({ 
-        error: 'No account found with this email',
-        requiresCaptcha: rateLimitService.requiresCaptchaForPasswordReset(ip),
-        attemptCount: rateLimitService.getPasswordResetAttemptCount(ip)
-      });
-    }
-
-    // Record attempt (even for successful attempts to prevent spam)
+    // Record attempt regardless of whether email exists
     rateLimitService.recordPasswordResetAttempt(ip);
 
-    // Generate and store OTP
-    const otp = otpService.storePasswordResetOTP(email);
+    // If user exists, generate and send OTP
+    if (userResult.rows.length > 0) {
+      const otp = otpService.storePasswordResetOTP(email);
+      // Log OTP to console (in production, send via email service)
+      otpService.logOTP(email, otp);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Password Reset] OTP generated for verified email: ${email}`);
+      }
+    } else {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Password Reset] Email not found in database: ${email}`);
+      }
+    }
 
-    // Log OTP to console (in production, send via email service)
-    otpService.logOTP(email, otp);
-
+    // Always return success to prevent email enumeration
     res.status(200).json({
-      message: 'Password reset OTP sent successfully',
-      email,
+      message: 'If an account exists with this email, a password reset code has been sent',
       requiresCaptcha: rateLimitService.requiresCaptchaForPasswordReset(ip),
       attemptCount: rateLimitService.getPasswordResetAttemptCount(ip)
     });
   } catch (error) {
-    console.error('Send password reset OTP error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Send password reset OTP error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -620,14 +788,31 @@ export const verifyPasswordResetOTP = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email and OTP are required' });
     }
 
+    // Verify email exists in database
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      // Use same error message as invalid OTP to prevent email enumeration
+      return res.status(400).json({ 
+        error: 'Invalid or expired verification code. Please request a new code or check your email address.' 
+      });
+    }
+
     const verification = otpService.verifyOTP(email, otp);
 
     if (!verification.valid) {
-      return res.status(400).json({ error: 'Invalid or expired OTP' });
+      return res.status(400).json({ 
+        error: 'Invalid or expired verification code. Please request a new code.' 
+      });
     }
 
     if (verification.data?.type !== 'password_reset') {
-      return res.status(400).json({ error: 'Invalid OTP type' });
+      return res.status(400).json({ 
+        error: 'Invalid verification code. Please use the code sent for password reset.' 
+      });
     }
 
     // OTP is valid, return success
@@ -636,7 +821,9 @@ export const verifyPasswordResetOTP = async (req: Request, res: Response) => {
       email,
     });
   } catch (error) {
-    console.error('Verify password reset OTP error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Verify password reset OTP error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -649,19 +836,28 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email, OTP, and new password are required' });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    // Strong password validation
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+      return res.status(400).json({ error: 'Password must contain uppercase, lowercase, and number' });
     }
 
     // Verify OTP one more time
     const verification = otpService.verifyOTP(email, otp);
 
     if (!verification.valid) {
-      return res.status(400).json({ error: 'Invalid or expired OTP' });
+      return res.status(400).json({ 
+        error: 'Invalid or expired verification code. Please request a new password reset code.' 
+      });
     }
 
     if (verification.data?.type !== 'password_reset') {
-      return res.status(400).json({ error: 'Invalid OTP type' });
+      return res.status(400).json({ 
+        error: 'Invalid verification code. Please use the code sent for password reset.' 
+      });
     }
 
     // Hash new password
@@ -670,14 +866,17 @@ export const resetPassword = async (req: Request, res: Response) => {
     // Update password in database
     const result = await pool.query(
       `UPDATE users 
-       SET password = $1, updated_at = NOW()
+       SET password_hash = $1, updated_at = NOW()
        WHERE email = $2
        RETURNING id, username, email, rating`,
       [hashedPassword, email]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      // Use generic error message to prevent email enumeration
+      return res.status(400).json({ 
+        error: 'Unable to reset password. Please request a new password reset code.' 
+      });
     }
 
     // Delete OTP after successful password reset
@@ -690,7 +889,8 @@ export const resetPassword = async (req: Request, res: Response) => {
       { 
         userId: user.id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        role: user.role || 'user'
       },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
@@ -704,10 +904,13 @@ export const resetPassword = async (req: Request, res: Response) => {
         username: user.username,
         email: user.email,
         rating: user.rating,
+        role: user.role || 'user',
       },
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Reset password error:', error);
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };

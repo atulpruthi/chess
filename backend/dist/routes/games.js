@@ -7,4 +7,6 @@ const express_1 = __importDefault(require("express"));
 const gameController_1 = require("../controllers/gameController");
 const router = express_1.default.Router();
 router.get('/:gameId', gameController_1.getGameById);
+router.get('/user/:userId/history', gameController_1.getMatchHistory);
+router.get('/user/:userId/recent', gameController_1.getRecentGames);
 exports.default = router;

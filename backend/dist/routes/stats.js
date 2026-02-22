@@ -16,4 +16,6 @@ router.get('/leaderboard', statsController_1.getLeaderboard);
 // Protected routes
 router.post('/games/:gameId/bookmark', authMiddleware_1.authMiddleware, statsController_1.bookmarkGame);
 router.get('/bookmarks', authMiddleware_1.authMiddleware, statsController_1.getBookmarkedGames);
+router.post('/achievements/sync', authMiddleware_1.authMiddleware, statsController_1.syncMyAchievements);
+router.get('/achievements', authMiddleware_1.authMiddleware, statsController_1.getAllAchievements);
 exports.default = router;

@@ -9,6 +9,9 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const pool = new pg_1.Pool({
     connectionString: process.env.DATABASE_URL,
+    max: 20, // Maximum number of clients in the pool
+    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+    connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection cannot be established
 });
 const query = (text, params) => {
     return pool.query(text, params);

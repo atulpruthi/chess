@@ -198,6 +198,11 @@ export const UserProfile: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/lobby', { replace: true });
+  };
+
   return (
     <div className="lobby-shell">
       <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
@@ -257,7 +262,7 @@ export const UserProfile: React.FC = () => {
 
             {isAuthenticated && (
               <div className="lobby-sidebar-footer">
-                <button type="button" onClick={logout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                <button type="button" onClick={handleLogout} className="btn-secondary sidebar-btn sidebar-btn--logout">
                   <span>Logout</span>
                 </button>
               </div>

@@ -157,6 +157,11 @@ const GameHistory: React.FC = () => {
     navigate(`/game-replay/${gameId}`);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/lobby', { replace: true });
+  };
+
   if (loading && page === 1) {
     return (
       <div className="lobby-shell flex items-center justify-center p-6">
@@ -224,7 +229,7 @@ const GameHistory: React.FC = () => {
 
             {isAuthenticated && (
               <div className="lobby-sidebar-footer">
-                <button type="button" onClick={logout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                <button type="button" onClick={handleLogout} className="btn-secondary sidebar-btn sidebar-btn--logout">
                   <span>Logout</span>
                 </button>
               </div>

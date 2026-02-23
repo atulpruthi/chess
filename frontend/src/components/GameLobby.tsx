@@ -33,6 +33,11 @@ export const GameLobby = () => {
     navigate({ pathname: '/lobby', search: params.toString() }, { replace: true });
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/lobby', { replace: true });
+  };
+
   useEffect(() => {
     if (!socket) return;
 
@@ -214,7 +219,7 @@ export const GameLobby = () => {
               <div className="lobby-sidebar-footer">
                 <button
                   type="button"
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="btn-secondary sidebar-btn sidebar-btn--logout"
                 >
                   <span>Logout</span>

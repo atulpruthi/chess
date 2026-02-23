@@ -8,10 +8,13 @@ import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
 import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
 import { glassCardSoftClass } from '../styles/appTheme';
+import brilliantknightzLogo from '../assets/brilliantknightz.png';
+import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
+import { IconChessboard, IconGlobe, IconMagnifier, IconPlus, IconRobot } from './icons/NavIcons';
 
 export const MultiplayerGame = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const { socket, makeMove: sendMove, leaveRoom, offerDraw, respondToDraw, resign } = useSocket();
   const {
     currentRoom,
@@ -125,12 +128,12 @@ export const MultiplayerGame = () => {
     return false;
   };
 
-  const handleLeaveGame = () => {
-    if (confirm('Are you sure you want to leave the game?')) {
-      leaveRoom();
-      reset();
-      navigate('/lobby');
-    }
+  const handleLogout = () => {
+    // Cleanup multiplayer room state before logging out.
+    leaveRoom();
+    reset();
+    logout();
+    navigate('/lobby');
   };
 
   const handleOfferDraw = () => {
@@ -183,62 +186,146 @@ export const MultiplayerGame = () => {
   const progressPercentage = totalMoves > 0 ? Math.min((totalMoves / 60) * 100, 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 mt-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 flex justify-between items-center">
+    <div className="lobby-shell">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-20 pt-8">
+        <div
+          className="sidebar-logo-container"
+          style={{
+            marginBottom: '2rem',
+            display: 'flex',
+            flexDirection: 'row', 
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          <img
+            src={brilliantknightzLogo}
+            alt="BrilliantKnightz"
+            className="sidebar-logo"
+            style={{ width: '150px', height: '150px', cursor: 'pointer' }}
+            onClick={() => navigate('/lobby')}
+          />
+          <img
+            src={brilliantknightzBanner}
+            alt="Brilliant Knightz"
+            style={{
+              width: '400px',
+              height: '200px',
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+            }}
+          />
           <button
-            onClick={handleLeaveGame}
-            className="btn-secondary"
+            type="button"
+            className="sidebar-user"
+            aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
           >
-            ← Leave Game
+            <div>
+              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+            </div>
           </button>
-          <h1 className="text-2xl font-bold">Multiplayer Game</h1>
-          <div className="text-sm text-gray-400">Room: {currentRoom.id}</div>
         </div>
 
-        <div className="flex gap-4 items-start">
-          {/* Chessboard */}
-          <div>
-            <Chessboard
-              options={chessComOptions({
-                id: 'multiplayer-room-chessboard',
-                position: game.fen(),
-                onPieceDrop: ({ sourceSquare, targetSquare }) =>
-                  onDrop(sourceSquare as Square, targetSquare as Square),
-                boardOrientation,
-                boardStyle: {
-                  width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                  height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
-                },
-              })}
-            />
-          </div>
+        <div className="lobby-layout">
+          <aside className="lobby-sidebar">
+            <div className="lobby-sidebar-nav">
+              <button onClick={() => navigate('/lobby?tab=matchmaking')} className="btn-primary sidebar-btn">
+                <IconMagnifier className="nav-icon" />
+                <span>Find Match</span>
+              </button>
+              <button onClick={() => navigate('/lobby?tab=custom')} className="btn-secondary sidebar-btn">
+                <IconPlus className="nav-icon" />
+                <span>Create Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=multiplayer', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconGlobe className="nav-icon" />
+                <span>Online Multiplayer</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=local', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconChessboard className="nav-icon" />
+                <span>Local Game</span>
+              </button>
+              <button onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })} className="btn-secondary sidebar-btn">
+                <IconRobot className="nav-icon" />
+                <span>Play vs Bot</span>
+              </button>
+              <button onClick={() => navigate('/puzzles')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">🧩</span>
+                <span>Tactical Puzzles</span>
+              </button>
+              <button onClick={() => navigate('/tutorial')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📚</span>
+                <span>Tutorial</span>
+              </button>
+              <button onClick={() => navigate('/rules')} className="btn-secondary sidebar-btn">
+                <span className="nav-icon text-xl">📖</span>
+                <span>Chess Rules</span>
+              </button>
+            </div>
 
-          {/* Vertical Progress Bar */}
-          <div className="flex flex-col items-center gap-3" style={{ width: '60px' }}>
-            <div 
-              className="relative rounded-lg overflow-hidden border-2 border-gray-700" 
-              style={{ width: '48px', height: '682px', backgroundColor: '#111827' }}
-            >
-              <div 
-                className="absolute left-0 right-0"
-                style={{
-                  bottom: 0,
-                  height: `${progressPercentage}%`,
-                  background: 'linear-gradient(to top, #556b2f, #6b8e23, #808000, #9acd32)',
-                  boxShadow: '0 -4px 24px rgba(107, 142, 35, 0.7)',
-                  width: '100%',
-                  transition: 'height 200ms ease-out'
-                }}
-              />
+            {isAuthenticated && (
+              <div className="lobby-sidebar-footer">
+                <button type="button" onClick={handleLogout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </aside>
+
+          <main className="lobby-main">
+            {/* Header */}
+            <div className="mb-4 flex justify-between items-center">
+              <div />
+              <h1 className="text-2xl font-bold">Multiplayer Game</h1>
+              <div className="text-sm text-gray-400">Room: {currentRoom.id}</div>
             </div>
-            <div className="text-xs text-gray-400 text-center">
-              {totalMoves} moves
-            </div>
-          </div>
+
+            <div className="flex gap-4 items-start">
+              {/* Chessboard */}
+              <div>
+                <Chessboard
+                  options={chessComOptions({
+                    id: 'multiplayer-room-chessboard',
+                    position: game.fen(),
+                    onPieceDrop: ({ sourceSquare, targetSquare }) =>
+                      onDrop(sourceSquare as Square, targetSquare as Square),
+                    boardOrientation,
+                    boardStyle: {
+                      width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
+                      height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
+                      borderRadius: '8px',
+                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+                    },
+                  })}
+                />
+              </div>
+
+              {/* Vertical Progress Bar */}
+              <div className="flex flex-col items-center gap-3" style={{ width: '60px' }}>
+                <div
+                  className="relative rounded-lg overflow-hidden border-2 border-gray-700"
+                  style={{ width: '48px', height: '682px', backgroundColor: '#111827' }}
+                >
+                  <div
+                    className="absolute left-0 right-0"
+                    style={{
+                      bottom: 0,
+                      height: `${progressPercentage}%`,
+                      background: 'linear-gradient(to top, #556b2f, #6b8e23, #808000, #9acd32)',
+                      boxShadow: '0 -4px 24px rgba(107, 142, 35, 0.7)',
+                      width: '100%',
+                      transition: 'height 200ms ease-out',
+                    }}
+                  />
+                </div>
+                <div className="text-xs text-gray-400 text-center">{totalMoves} moves</div>
+              </div>
 
           {/* Right Sidebar - Move History, Chat and Controls */}
           <div className="space-y-4 flex-1">
@@ -325,8 +412,10 @@ export const MultiplayerGame = () => {
               </div>
             </div>
           </div>
+
+            </div>
+          </main>
         </div>
-      </div>
 
       {/* Draw Offer Dialog */}
       {showDrawDialog && currentRoom.drawOffer?.status === 'pending' && (
@@ -353,6 +442,7 @@ export const MultiplayerGame = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -557,7 +557,7 @@ const GameAnalysis: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/auth');
+    navigate('/lobby', { replace: true });
   };
 
   const lobbySidebar = (

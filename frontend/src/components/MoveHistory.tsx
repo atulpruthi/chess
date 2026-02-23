@@ -1,8 +1,9 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 const MoveHistory = memo(() => {
   const { moveHistory, capturedPieces } = useGameStore();
+  const moveListRef = useRef<HTMLDivElement | null>(null);
 
   // Format moves into pairs (white, black)
   const movePairs: Array<{ number: number; white: string; black?: string }> = [];
@@ -23,9 +24,19 @@ const MoveHistory = memo(() => {
     k: '♚',
   };
 
+  useEffect(() => {
+    const container = moveListRef.current;
+    if (!container) return;
+
+    // Ensure we scroll after the DOM updates with the new row.
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
+  }, [moveHistory.length]);
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-4">
-      <h3 className="text-lg font-semibold mb-4 text-gray-800">Move History</h3>
+      <h3 className="text-lg font-semibold mb-4 text-gray-800">Move List</h3>
 
       {/* Captured Pieces */}
       <div className="mb-4 space-y-2">
@@ -58,7 +69,7 @@ const MoveHistory = memo(() => {
       </div>
 
       {/* Move list */}
-      <div className="max-h-96 overflow-y-auto border rounded-lg border-gray-200">
+      <div ref={moveListRef} className="h-[150px] overflow-y-auto border rounded-lg border-gray-200">
         {movePairs.length === 0 ? (
           <div className="text-center py-8 text-gray-400">No moves yet</div>
         ) : (

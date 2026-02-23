@@ -9,6 +9,7 @@ interface GameState {
   moveHistory: string[];
   capturedPieces: { white: string[]; black: string[] };
   currentTurn: 'w' | 'b';
+  isGameStarted: boolean;
   isCheck: boolean;
   isCheckmate: boolean;
   isStalemate: boolean;
@@ -52,6 +53,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   moveHistory: [],
   capturedPieces: { white: [], black: [] },
   currentTurn: 'w',
+  isGameStarted: false,
   isCheck: false,
   isCheckmate: false,
   isStalemate: false,
@@ -80,6 +82,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
           moveHistory: chess.history(),
           capturedPieces,
           currentTurn: chess.turn(),
+          isGameStarted: true,
           isCheck: chess.isCheck(),
           isCheckmate: chess.isCheckmate(),
           isStalemate: chess.isStalemate(),
@@ -111,6 +114,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       moveHistory: [],
       capturedPieces: { white: [], black: [] },
       currentTurn: 'w',
+      isGameStarted: true,
       isCheck: false,
       isCheckmate: false,
       isStalemate: false,

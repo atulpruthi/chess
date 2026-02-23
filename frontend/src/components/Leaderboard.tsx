@@ -71,6 +71,11 @@ const Leaderboard: React.FC = () => {
     return `#${rank}`;
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/lobby', { replace: true });
+  };
+
   const isCurrentUser = (userId: number) => {
     return user?.id === String(userId);
   };
@@ -142,7 +147,7 @@ const Leaderboard: React.FC = () => {
 
             {isAuthenticated && (
               <div className="lobby-sidebar-footer">
-                <button type="button" onClick={logout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                <button type="button" onClick={handleLogout} className="btn-secondary sidebar-btn sidebar-btn--logout">
                   <span>Logout</span>
                 </button>
               </div>

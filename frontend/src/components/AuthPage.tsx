@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
@@ -7,21 +7,52 @@ import { useAuthStore } from '../store/authStore';
 
 export const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
-  const { isAuthenticated, clearError } = useAuthStore();
+  const { isAuthenticated, clearError, user } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const resolveReturnTo = (state: unknown): string | null => {
+    if (!state || typeof state !== 'object') return null;
+    const maybeState = state as { from?: unknown };
+    const from = maybeState.from;
+
+    if (!from) return null;
+    if (typeof from === 'string') return from;
+    if (typeof from === 'object') {
+      const fromLoc = from as { pathname?: unknown; search?: unknown; hash?: unknown };
+      if (typeof fromLoc.pathname !== 'string') return null;
+      const search = typeof fromLoc.search === 'string' ? fromLoc.search : '';
+      const hash = typeof fromLoc.hash === 'string' ? fromLoc.hash : '';
+      return `${fromLoc.pathname}${search}${hash}`;
+    }
+
+    return null;
+  };
+
+  const returnTo = useMemo(() => {
+    return resolveReturnTo(location.state) ?? sessionStorage.getItem('auth:returnTo');
+  }, [location.state]);
+
+  useEffect(() => {
+    const fromState = resolveReturnTo(location.state);
+    if (fromState && !fromState.startsWith('/auth')) {
+      sessionStorage.setItem('auth:returnTo', fromState);
+    }
+  }, [location.state]);
 
   const handleModeChange = (newMode: 'login' | 'register' | 'forgot') => {
     clearError();
     setMode(newMode);
   };
 
-  const handleLoginSuccess = (loggedInUser: any) => {
-    // Redirect based on user role
-    if (loggedInUser?.role === 'admin') {
-      navigate('/admin');
-    } else {
-      navigate('/lobby');
+  const handleAuthSuccess = (loggedInUser?: any) => {
+    if (returnTo && !returnTo.startsWith('/auth')) {
+      navigate(returnTo, { replace: true });
+      return;
     }
+
+    const role = loggedInUser?.role ?? user?.role;
+    navigate(role === 'admin' ? '/admin' : '/lobby', { replace: true });
   };
 
   if (isAuthenticated) {
@@ -37,18 +68,18 @@ export const AuthPage: React.FC = () => {
       <div className="w-full relative z-10 flex flex-col items-center">
         {mode === 'login' ? (
           <LoginForm
-            onSuccess={handleLoginSuccess}
+            onSuccess={handleAuthSuccess}
             onSwitchToRegister={() => handleModeChange('register')}
             onForgotPassword={() => handleModeChange('forgot')}
           />
         ) : mode === 'register' ? (
           <RegisterForm
-            onSuccess={() => navigate('/lobby')}
+            onSuccess={() => handleAuthSuccess()}
             onSwitchToLogin={() => handleModeChange('login')}
           />
         ) : (
           <ForgotPasswordForm
-            onSuccess={() => navigate('/lobby')}
+            onSuccess={() => handleAuthSuccess()}
             onBackToLogin={() => handleModeChange('login')}
           />
         )}

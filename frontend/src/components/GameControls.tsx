@@ -1,9 +1,9 @@
 import { useGameStore } from '../store/gameStore';
 
 export default function GameControls() {
-  const { resetGame, undoMove, offerDraw, resign, moveHistory, gameOver, currentTurn } = useGameStore();
-  const isNewGameActive = moveHistory.length === 0 || gameOver;
-  const isGameInProgress = moveHistory.length > 0 && !gameOver;
+  const { resetGame, undoMove, offerDraw, resign, moveHistory, gameOver, currentTurn, isGameStarted } = useGameStore();
+  const isNewGameDisabled = isGameStarted && !gameOver;
+  const areControlsDisabled = !isGameStarted || gameOver;
 
   const handleResign = () => {
     if (window.confirm('Are you sure you want to resign?')) {
@@ -25,7 +25,7 @@ export default function GameControls() {
       <div className="space-y-3">
         <button
           onClick={resetGame}
-          disabled={isGameInProgress}
+          disabled={isNewGameDisabled}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           New Game
@@ -33,7 +33,7 @@ export default function GameControls() {
 
         <button
           onClick={undoMove}
-          disabled={moveHistory.length === 0 || gameOver}
+          disabled={areControlsDisabled || moveHistory.length === 0}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Undo Move
@@ -41,7 +41,7 @@ export default function GameControls() {
 
         <button
           onClick={handleOfferDraw}
-          disabled={isNewGameActive}
+          disabled={areControlsDisabled}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Offer Draw
@@ -49,7 +49,7 @@ export default function GameControls() {
 
         <button
           onClick={handleResign}
-          disabled={isNewGameActive}
+          disabled={areControlsDisabled}
           className="find-match-btn find-match-btn--full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Resign

@@ -1,4 +1,4 @@
-import { StrictMode, lazy, Suspense } from 'react'
+import { StrictMode, lazy, Suspense, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import './index.css'
@@ -34,10 +34,45 @@ const Router = () => {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
 
+  useEffect(() => {
+    if (location.pathname !== '/auth') {
+      sessionStorage.setItem(
+        'auth:returnTo',
+        `${location.pathname}${location.search}${location.hash ?? ''}`
+      );
+    }
+  }, [location.pathname, location.search, location.hash]);
+
+  const resolveReturnTo = (state: unknown): string | null => {
+    if (!state || typeof state !== 'object') return null;
+    const maybeState = state as { from?: unknown };
+    const from = maybeState.from;
+
+    if (!from) return null;
+    if (typeof from === 'string') return from;
+    if (typeof from === 'object') {
+      const fromLoc = from as { pathname?: unknown; search?: unknown; hash?: unknown };
+      if (typeof fromLoc.pathname !== 'string') return null;
+      const search = typeof fromLoc.search === 'string' ? fromLoc.search : '';
+      const hash = typeof fromLoc.hash === 'string' ? fromLoc.hash : '';
+      return `${fromLoc.pathname}${search}${hash}`;
+    }
+
+    return null;
+  };
+
   // Determine default redirect based on user role
   const getDefaultRedirect = () => {
     if (!isAuthenticated) return '/auth';
     return user?.role === 'admin' ? '/admin' : '/lobby';
+  };
+
+  const getPostAuthRedirect = () => {
+    const fromState = resolveReturnTo(location.state);
+    const stored = sessionStorage.getItem('auth:returnTo');
+    const target = fromState ?? stored;
+    if (target && !target.startsWith('/auth')) return target;
+    return getDefaultRedirect();
   };
 
   return (
@@ -45,7 +80,7 @@ const Router = () => {
       <Routes>
         <Route 
           path="/auth" 
-          element={!isAuthenticated ? <AuthPage /> : <Navigate to={getDefaultRedirect()} replace />} 
+          element={!isAuthenticated ? <AuthPage /> : <Navigate to={getPostAuthRedirect()} replace />} 
         />
         <Route
           path="/lobby"

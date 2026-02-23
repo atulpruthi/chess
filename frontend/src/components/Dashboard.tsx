@@ -88,6 +88,11 @@ const Dashboard: React.FC = () => {
     return Math.max(0, Math.min(100, value));
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/lobby', { replace: true });
+  };
+
   const getWinRate = () => {
     const s = stats || displayStats;
     if (!s || s.gamesPlayed === 0) return 0;
@@ -217,7 +222,7 @@ const Dashboard: React.FC = () => {
 
             {isAuthenticated && (
               <div className="lobby-sidebar-footer">
-                <button type="button" onClick={logout} className="btn-secondary sidebar-btn sidebar-btn--logout">
+                <button type="button" onClick={handleLogout} className="btn-secondary sidebar-btn sidebar-btn--logout">
                   <span>Logout</span>
                 </button>
               </div>

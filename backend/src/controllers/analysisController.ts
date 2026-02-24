@@ -5,7 +5,7 @@ import pool from '../config/database';
 export const analyzeGame = async (req: Request, res: Response) => {
   try {
     const gameId = parseInt(String(req.params.gameId));
-    const depth = parseInt(req.body.depth) || 20;
+    const depth = parseInt(req.body.depth) || 12;
 
     console.log(`🔍 Analyzing game ${gameId} with depth ${depth}`);
 
@@ -23,14 +23,36 @@ export const analyzeGame = async (req: Request, res: Response) => {
       });
     }
 
-    // Start analysis (this can take a while)
-    console.log(`⏳ Starting analysis for game ${gameId}...`);
-    const analysis = await GameAnalysisService.analyzeGame(gameId, depth);
-    console.log(`✅ Analysis completed for game ${gameId}`);
+    if (existing && !existing.analysisCompleted) {
+      return res.status(202).json({
+        message: 'Analysis already in progress',
+        status: 'in_progress',
+        analysis: existing
+      });
+    }
 
-    res.json({
-      message: 'Game analysis completed',
-      analysis,
+    await pool.query(
+      `INSERT INTO game_analysis (game_id, depth, analysis_completed)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (game_id)
+       DO UPDATE SET depth = EXCLUDED.depth, analysis_completed = $3, updated_at = CURRENT_TIMESTAMP`,
+      [gameId, depth, false]
+    );
+
+    // Start analysis in background
+    console.log(`⏳ Starting analysis for game ${gameId}...`);
+    setImmediate(async () => {
+      try {
+        await GameAnalysisService.analyzeGame(gameId, depth);
+        console.log(`✅ Analysis completed for game ${gameId}`);
+      } catch (error) {
+        console.error('❌ Error analyzing game (background):', error);
+      }
+    });
+
+    res.status(202).json({
+      message: 'Game analysis queued',
+      status: 'queued'
     });
   } catch (error) {
     console.error('❌ Error analyzing game:', error);
@@ -50,10 +72,10 @@ export const getGameAnalysis = async (req: Request, res: Response) => {
     const analysis = await GameAnalysisService.getGameAnalysis(gameId);
 
     if (!analysis) {
-      return res.status(404).json({ error: 'Analysis not found' });
+      return res.status(200).json({ found: false });
     }
 
-    res.json(analysis);
+    res.json({ found: true, ...analysis });
   } catch (error) {
     console.error('Error fetching analysis:', error);
     res.status(500).json({ error: 'Failed to fetch analysis' });

@@ -69,6 +69,7 @@ const GameAnalysis: React.FC = () => {
   const chessboardRef = useRef<HTMLDivElement>(null);
   const moveRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const moveListRef = useRef<HTMLDivElement>(null);
+  const analysisPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadAnalysis = useCallback(async () => {
     try {
@@ -82,12 +83,15 @@ const GameAnalysis: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setAnalysis(data);
-        setIsAnalyzing(false);
-        setLoadingError(null);
-      } else if (response.status === 404) {
-        setAnalysis(null);
-        setIsAnalyzing(false);
+        if (data.found === false) {
+          setAnalysis(null);
+          setIsAnalyzing(false);
+          return null;
+        } else {
+          setAnalysis(data);
+          setIsAnalyzing(!data.analysisCompleted);
+          return data;
+        }
         setLoadingError(null);
       } else {
         const errorText = await response.text();
@@ -100,7 +104,32 @@ const GameAnalysis: React.FC = () => {
       setLoadingError(error instanceof Error ? error.message : 'Network error');
       setIsAnalyzing(false);
     }
+    return null;
   }, [gameId, token]);
+
+  const startAnalysisPolling = useCallback(() => {
+    if (analysisPollRef.current) {
+      clearInterval(analysisPollRef.current);
+    }
+
+    let attempts = 0;
+    analysisPollRef.current = setInterval(async () => {
+      attempts += 1;
+      const data = await loadAnalysis();
+      if (data?.analysisCompleted) {
+        if (analysisPollRef.current) {
+          clearInterval(analysisPollRef.current);
+          analysisPollRef.current = null;
+        }
+      } else if (attempts >= 120) {
+        if (analysisPollRef.current) {
+          clearInterval(analysisPollRef.current);
+          analysisPollRef.current = null;
+        }
+        setIsAnalyzing(false);
+      }
+    }, 2000);
+  }, [loadAnalysis]);
 
   const loadCommentaries = useCallback(async () => {
     try {
@@ -125,6 +154,15 @@ const GameAnalysis: React.FC = () => {
     loadAnalysis();
     loadCommentaries();
   }, [loadAnalysis, loadCommentaries]);
+
+  useEffect(() => {
+    return () => {
+      if (analysisPollRef.current) {
+        clearInterval(analysisPollRef.current);
+        analysisPollRef.current = null;
+      }
+    };
+  }, []);
 
   // Scroll chessboard to center of viewport
   useEffect(() => {
@@ -389,7 +427,7 @@ const GameAnalysis: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ depth: 20 })
+        body: JSON.stringify({ depth: 12 })
       });
 
       if (response.status === 401) {
@@ -401,7 +439,14 @@ const GameAnalysis: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Analysis result:', result);
-        await loadAnalysis();
+        if (result?.analysis) {
+          setAnalysis(result.analysis);
+          setLoadingError(null);
+          setIsAnalyzing(!result.analysis.analysisCompleted);
+        }
+        if (!result?.analysis?.analysisCompleted) {
+          startAnalysisPolling();
+        }
       } else {
         const errorData = await response.json();
         console.error('Analysis failed:', errorData);
@@ -724,18 +769,28 @@ const GameAnalysis: React.FC = () => {
           <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
             <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
             <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-            <button
-              type="button"
-              className="sidebar-user"
-              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-            >
-              <div>
-                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-              </div>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isAuthenticated && (
+                <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                  {user?.avatarUrl
+                    ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                    : (user?.username?.[0] ?? 'U').toUpperCase()
+                  }
+                </div>
+              )}
+              <button
+                type="button"
+                className="sidebar-user"
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+              >
+                <div>
+                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="lobby-layout">
@@ -763,18 +818,28 @@ const GameAnalysis: React.FC = () => {
           <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
             <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
             <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-            <button
-              type="button"
-              className="sidebar-user"
-              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-            >
-              <div>
-                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-              </div>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isAuthenticated && (
+                <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                  {user?.avatarUrl
+                    ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                    : (user?.username?.[0] ?? 'U').toUpperCase()
+                  }
+                </div>
+              )}
+              <button
+                type="button"
+                className="sidebar-user"
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+              >
+                <div>
+                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="lobby-layout">
@@ -808,18 +873,28 @@ const GameAnalysis: React.FC = () => {
           <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
             <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
             <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-            <button
-              type="button"
-              className="sidebar-user"
-              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-            >
-              <div>
-                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-              </div>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isAuthenticated && (
+                <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                  {user?.avatarUrl
+                    ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                    : (user?.username?.[0] ?? 'U').toUpperCase()
+                  }
+                </div>
+              )}
+              <button
+                type="button"
+                className="sidebar-user"
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+              >
+                <div>
+                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="lobby-layout">
@@ -853,94 +928,34 @@ const GameAnalysis: React.FC = () => {
         <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
           <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
           <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-          <button
-            type="button"
-            className="sidebar-user"
-            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-            aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-          >
-            <div>
-              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-            </div>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isAuthenticated && (
+              <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                  : (user?.username?.[0] ?? 'U').toUpperCase()
+                }
+              </div>
+            )}
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="lobby-layout">
           {lobbySidebar}
           <main className="lobby-main">
-            {/* Header */}
-            <div className="mb-4 flex justify-between items-center">
-              <h1 className="text-2xl font-bold">Game Analysis</h1>
-              <div className="flex gap-2 relative">
-            <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="h-11 px-5 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-[0_4px_14px_rgba(59,130,246,0.35)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.45)] transition-all active:scale-[0.97]"
-            >
-              📤 Export
-            </button>
-            
-            {/* Export Dropdown Menu */}
-            {showExportMenu && (
-              <div className="absolute right-0 top-14 bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 z-50 min-w-[220px] overflow-hidden animate-fade-in">
-                <button
-                  onClick={handleDownloadPGN}
-                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
-                >
-                  <span className="text-lg">💾</span>
-                  <span>Download PGN</span>
-                </button>
-                <div className="h-px bg-white/10" />
-                <button
-                  onClick={handleCopyPGN}
-                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
-                >
-                  <span className="text-lg">📋</span>
-                  <span>Copy PGN</span>
-                </button>
-                <div className="h-px bg-white/10" />
-                <button
-                  onClick={handleCopyLink}
-                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
-                >
-                  <span className="text-lg">🔗</span>
-                  <span>Copy Link</span>
-                </button>
-                <div className="h-px bg-white/10" />
-                <button
-                  onClick={handleShareGame}
-                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
-                >
-                  <span className="text-lg">🔄</span>
-                  <span>Share Game</span>
-                </button>
-                <div className="h-px bg-white/10" />
-                <button
-                  onClick={handlePrintGame}
-                  className="w-full px-5 py-3 text-left hover:bg-white/10 transition-all flex items-center gap-3 text-white/90 hover:text-white font-medium"
-                >
-                  <span className="text-lg">🖨️</span>
-                  <span>Print Game</span>
-                </button>
-              </div>
-            )}
-            
-            <button style={{display: 'none'}}
-              onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className={`px-4 py-2 rounded hover:bg-gray-600 ${voiceEnabled ? 'bg-blue-600' : 'bg-gray-700'}`}
-              title={voiceEnabled ? 'Voice On' : 'Voice Off'}
-            >
-              {voiceEnabled ? '🔊' : '🔇'} Voice
-            </button>
-            <button
-              onClick={() => setShowCommentary(!showCommentary)}
-              className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600" style={{display: 'none'}}
-            >
-              {showCommentary ? 'Hide' : 'Show'} Commentary
-            </button>
-              </div>
-            </div>
+
 
         {/* Opening Info */}
         <div className="bg-gray-800 rounded-lg p-4 mb-4" style={{ visibility: 'hidden', display: 'none' }}>
@@ -969,7 +984,7 @@ const GameAnalysis: React.FC = () => {
             {/* Graph and Board Side by Side with Vertical Control */}
             <div className="flex gap-2 mb-4" ref={chessboardRef}>
               {/* Chessboard */}
-              <div className="flex-1 rounded-lg p-4 flex items-center justify-start" style={{ backgroundColor: '#1f2937' }}>
+              <div className="flex-1 rounded-lg p-4 flex items-center justify-center" style={{ backgroundColor: '#1f2937' }}>
                 <DisplayBoard 
                   fen={currentFen} 
                   orientation="white"

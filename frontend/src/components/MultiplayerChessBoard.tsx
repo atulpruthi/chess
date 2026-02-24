@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { type Square } from 'chess.js';
 import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
@@ -21,6 +21,8 @@ export const MultiplayerChessBoard: React.FC = () => {
   const [moveFrom, setMoveFrom] = useState<string>('');
   const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, any>>({});
   const [optionSquares, setOptionSquares] = useState<Record<string, any>>({});
+  const boardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
 
   useEffect(() => {
     setMoveFrom('');
@@ -129,7 +131,7 @@ export const MultiplayerChessBoard: React.FC = () => {
   const boardOrientation = playerColor === 'black' ? 'black' : 'white';
 
   return (
-    <div className="relative">
+    <div className="relative" ref={boardRef}>
       <Chessboard
         key={`multiplayer-board-${playerColor ?? 'pending'}`}
         options={chessComOptions({
@@ -155,13 +157,6 @@ export const MultiplayerChessBoard: React.FC = () => {
       {isCheck && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg animate-pulse">
           Check!
-        </div>
-      )}
-
-      {/* Turn indicator */}
-      {!isMyTurn && !opponentDisconnected && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg">
-          Opponent's turn...
         </div>
       )}
 

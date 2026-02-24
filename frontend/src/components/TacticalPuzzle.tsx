@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { config } from '../config';
-import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 import { soundService } from '../services/soundService';
 import brilliantknightzLogo from '../assets/brilliantknightz.png';
 import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
@@ -42,6 +42,8 @@ const TacticalPuzzle: React.FC = () => {
 
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [game, setGame] = useState<Chess>(new Chess());
+  const puzzleBoardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { puzzleBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
   const [userMoves, setUserMoves] = useState<string[]>([]); // SAN format for display
   const [userMovesUCI, setUserMovesUCI] = useState<string[]>([]); // UCI format for backend
   const [moveIndex, setMoveIndex] = useState(0);
@@ -390,18 +392,28 @@ const TacticalPuzzle: React.FC = () => {
         <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
           <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
           <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-          <button
-            type="button"
-            className="sidebar-user"
-            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-            aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-          >
-            <div>
-              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-            </div>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isAuthenticated && (
+              <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                  : (user?.username?.[0] ?? 'U').toUpperCase()
+                }
+              </div>
+            )}
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="lobby-layout">
@@ -451,20 +463,10 @@ const TacticalPuzzle: React.FC = () => {
           </aside>
 
           <main className="lobby-main">
-        {/* Header */}
-        <header className="flex flex-col gap-4 mb-8">
-          <div className="flex items-center justify-between">
-            <div className="text-[30px] font-extrabold text-center">🧩 Tactical Puzzles</div>
-            <div className="text-sm text-white/60">
-              {stats ? `Rating: ${stats.puzzleRating}` : ''}
-            </div>
-          </div>
-        </header>
-
-        <div className="flex gap-6" style={{ marginTop: '40px' }}>
+        <div className="flex gap-4 items-start">
           {/* Puzzle Board */}
-          <div className="flex-1">
-            <div className="card-lift rounded-3xl bg-white/[0.03] px-8 py-10">
+          <div ref={puzzleBoardRef}>
+            <div className="bg-gray-800 rounded-lg p-4">
               {puzzle && (
                 <>
                   {/* Status Message */}
@@ -489,10 +491,7 @@ const TacticalPuzzle: React.FC = () => {
                           return onDrop(sourceSquare, targetSquare);
                         },
                         boardStyle: {
-                          width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                          height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                          borderRadius: '8px',
-                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+                          ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
                         },
                       })}
                     />
@@ -559,7 +558,7 @@ const TacticalPuzzle: React.FC = () => {
           </div>
 
           {/* Left Sidebar - Difficulty Selector */}
-          <div className="w-100 flex-shrink-0">
+          <div className="flex flex-1 items-start justify-center">
             <div className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl px-6 py-8 shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
               <div className="text-[15px] font-semibold tracking-[0.22em] text-white/60 mb-2" style={{marginTop: '20px'}}></div>
               <div className="h-px bg-white/10 my-4" />

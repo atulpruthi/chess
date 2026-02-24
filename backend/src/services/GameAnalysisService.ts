@@ -33,7 +33,7 @@ class GameAnalysisService {
   /**
    * Analyze a complete game
    */
-  async analyzeGame(gameId: number, depth: number = 20): Promise<GameAnalysisResult> {
+  async analyzeGame(gameId: number, depth: number = 12): Promise<GameAnalysisResult> {
     const client = await pool.connect();
     const stockfish = getStockfishInstance();
 

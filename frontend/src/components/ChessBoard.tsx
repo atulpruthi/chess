@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { useGameStore, type PieceSymbol } from '../store/gameStore';
 import { type Square } from 'chess.js';
@@ -19,6 +19,8 @@ export default function ChessBoard() {
   const [moveFrom, setMoveFrom] = useState<Square | null>(null);
   const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, any>>({});
   const [optionSquares, setOptionSquares] = useState<Record<string, any>>({});
+  const boardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
 
   const getMoveOptions = (square: Square) => {
     const moves = chess.moves({
@@ -130,7 +132,7 @@ export default function ChessBoard() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={boardRef}>
       <Chessboard
         options={chessComOptions({
           id: 'local-chessboard',
@@ -144,7 +146,7 @@ export default function ChessBoard() {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 240),
+            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
             borderRadius: '8px',
           },
         })}

@@ -94,18 +94,28 @@ const Leaderboard: React.FC = () => {
         <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
           <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
           <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-          <button
-            type="button"
-            className="sidebar-user"
-            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-            aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-          >
-            <div>
-              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-            </div>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isAuthenticated && (
+              <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                  : (user?.username?.[0] ?? 'U').toUpperCase()
+                }
+              </div>
+            )}
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="lobby-layout">

@@ -11,17 +11,6 @@ export const MultiplayerLobby: React.FC<{ onGameStart: () => void }> = ({ onGame
 
       {!isSearching ? (
         <div className="text-center">
-          <div className="card-lift mb-8 p-6 rounded-3xl bg-white/[0.03] backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.35)]">
-            <div className="text-5xl mb-4">🎮</div>
-            <h3 className="text-[20px] font-semibold text-white mb-2">Quick Match</h3>
-            <p className="text-white/60 mb-4">Get matched with a random player of similar skill level</p>
-            <p className="text-[14px] text-white/45 leading-relaxed">
-              • Random color assignment
-              <br />• Standard rules
-              <br />• Real-time gameplay
-            </p>
-          </div>
-
           <button
             onClick={() => {
               startSearching();

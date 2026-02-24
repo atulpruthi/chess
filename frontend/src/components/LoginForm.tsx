@@ -36,8 +36,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
       onSuccess?.(user);
     } catch (err) {
       // Error is handled in store
-      // Reset CAPTCHA after failed attempt if CAPTCHA is required
-      if (requiresCaptchaForLogin && recaptchaRef.current) {
+      // Reset CAPTCHA after failed attempt
+      if (recaptchaRef.current) {
         recaptchaRef.current.reset();
         setRecaptchaToken(null);
       }

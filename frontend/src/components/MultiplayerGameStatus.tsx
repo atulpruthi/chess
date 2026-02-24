@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
 
 export const MultiplayerGameStatus: React.FC = () => {
@@ -15,10 +15,16 @@ export const MultiplayerGameStatus: React.FC = () => {
     opponent,
     drawOffered,
     opponentDisconnected,
-    resign,
-    offerDraw,
     acceptDraw,
   } = useMultiplayerGameStore();
+
+  const moveListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (moveListRef.current) {
+      moveListRef.current.scrollTop = moveListRef.current.scrollHeight;
+    }
+  }, [moveHistory]);
 
   const getTurnDisplay = () => {
     if (gameOver) {
@@ -110,23 +116,35 @@ export const MultiplayerGameStatus: React.FC = () => {
         </div>
       )}
 
-      {/* Game controls */}
-      {!gameOver && !opponentDisconnected && (
-        <div className="mt-4 space-y-2">
-          <button
-            onClick={offerDraw}
-            className="btn-secondary w-full"
-          >
-            Offer Draw
-          </button>
-          <button
-            onClick={resign}
-            className="btn-secondary sidebar-btn--logout w-full" style={{marginTop: '5px'}}
-          >
-            Resign
-          </button>
+      {/* Move List */}
+      <div className="mt-4 backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-2xl p-4 shadow-xl">
+        <h3 className="text-xl font-bold text-white mb-4 text-center">Move List</h3>
+        <div className="grid grid-cols-3 items-center text-xs font-semibold text-white/60 mb-2">
+          <div />
+          <div className="text-center">You</div>
+          <div className="text-center">{opponent?.username || 'Opponent'}</div>
         </div>
-      )}
+        <div ref={moveListRef} className="space-y-2 overflow-y-auto" style={{ height: '150px' }}>
+          {moveHistory.length === 0 ? (
+            <div className="text-gray-400 text-center py-4">No moves yet</div>
+          ) : (
+            Array.from({ length: Math.ceil(moveHistory.length / 2) }, (_, i) => {
+              const moveNumber = i + 1;
+              const whiteMove = moveHistory[i * 2];
+              const blackMove = moveHistory[i * 2 + 1];
+              const myMove = (playerColor === 'black' ? blackMove : whiteMove) || '';
+              const opponentMove = (playerColor === 'black' ? whiteMove : blackMove) || '';
+              return (
+                <div key={moveNumber} className="grid grid-cols-3 items-center text-gray-300 font-mono text-sm">
+                  <div className="text-gray-400 font-semibold text-center">{moveNumber}.</div>
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis text-center">{myMove}</span>
+                  <span className="whitespace-nowrap overflow-hidden text-ellipsis text-center">{opponentMove}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
 
       {/* Game over message */}
       {gameOver && (

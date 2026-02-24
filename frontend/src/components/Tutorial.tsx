@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 import { useAuthStore } from '../store/authStore';
 import brilliantknightzLogo from '../assets/brilliantknightz.png';
 import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
@@ -118,6 +118,8 @@ const Tutorial: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [game, setGame] = useState(new Chess());
   const [completed, setCompleted] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
 
   const step = tutorialSteps[currentStep];
 
@@ -167,11 +169,6 @@ const Tutorial: React.FC = () => {
     }
   };
 
-  const skipTutorial = () => {
-    localStorage.setItem('chess-tutorial-completed', 'true');
-    navigate('/lobby');
-  };
-
   if (completed) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center px-4">
@@ -212,18 +209,28 @@ const Tutorial: React.FC = () => {
         <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
           <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
           <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-          <button
-            type="button"
-            className="sidebar-user"
-            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-            aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-          >
-            <div>
-              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-            </div>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isAuthenticated && (
+              <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                  : (user?.username?.[0] ?? 'U').toUpperCase()
+                }
+              </div>
+            )}
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="lobby-layout">
@@ -273,17 +280,6 @@ const Tutorial: React.FC = () => {
           </aside>
 
           <main className="lobby-main">
-        {/* Header */}
-        <div className="mb-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">📚 Chess Tutorial</h1>
-          <button
-            onClick={skipTutorial}
-            className="btn-secondary"
-          >
-            Skip Tutorial
-          </button>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Chessboard */}
           <div className="lg:col-span-2">
@@ -291,7 +287,7 @@ const Tutorial: React.FC = () => {
               {/* Board and Progress Bar */}
               <div className="flex gap-2 mb-4">
                 {/* Board */}
-                <div className="flex items-center justify-start">
+                <div className="flex items-center justify-center" ref={boardRef}>
                   <Chessboard
                     options={chessComOptions({
                       id: 'tutorial-board',
@@ -311,10 +307,7 @@ const Tutorial: React.FC = () => {
                           }, {} as Record<string, React.CSSProperties>)
                         : undefined,
                       boardStyle: {
-                        width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                        height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                        borderRadius: '8px',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+                        ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
                       },
                     })}
                   />

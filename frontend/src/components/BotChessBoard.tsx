@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { type Square } from 'chess.js';
 import { useBotGameStore } from '../store/botGameStore';
@@ -13,6 +13,7 @@ export const BotChessBoard: React.FC = () => {
     playerColor,
     isThinking,
     promotionSquare,
+    hintMove,
     setPromotionSquare,
     promoteAndMove,
   } = useBotGameStore() as any;
@@ -24,6 +25,15 @@ export const BotChessBoard: React.FC = () => {
   const [moveFrom, setMoveFrom] = useState<string>('');
   const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, any>>({});
   const [optionSquares, setOptionSquares] = useState<Record<string, any>>({});
+  const boardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
+
+  const hintSquares: Record<string, any> = hintMove
+    ? {
+        [hintMove.from]: { background: 'rgba(96, 165, 250, 0.45)' },
+        [hintMove.to]: { background: 'rgba(96, 165, 250, 0.65)' },
+      }
+    : {};
 
   useEffect(() => {
     setMoveFrom('');
@@ -164,7 +174,7 @@ export const BotChessBoard: React.FC = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={boardRef}>
       <Chessboard
         key={`bot-board-${playerColor}`}
         options={chessComOptions({
@@ -178,6 +188,7 @@ export const BotChessBoard: React.FC = () => {
           squareStyles: {
             ...optionSquares,
             ...rightClickedSquares,
+            ...hintSquares,
           },
           boardStyle: {
             ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),

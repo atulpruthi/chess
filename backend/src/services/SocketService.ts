@@ -101,9 +101,12 @@ class SocketService {
         // Fetch user rating from database
         let rating = 1200; // Default rating
         try {
-          const result = await query('SELECT rating FROM users WHERE id = $1', [socket.userId]);
-          if (result.rows.length > 0) {
-            rating = result.rows[0].rating;
+          const userIdNumber = Number(socket.userId);
+          if (Number.isInteger(userIdNumber)) {
+            const result = await query('SELECT rating FROM users WHERE id = $1', [userIdNumber]);
+            if (result.rows.length > 0) {
+              rating = result.rows[0].rating;
+            }
           }
         } catch (error) {
           console.error('Error fetching user rating:', error);

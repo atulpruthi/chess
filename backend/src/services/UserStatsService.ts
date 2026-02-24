@@ -172,6 +172,12 @@ class UserStatsService {
    * Get user statistics
    */
   async getUserStats(userId: number): Promise<UserStats | null> {
+    // Auto-initialize a stats row if one doesn't exist yet
+    await pool.query(
+      'INSERT INTO user_statistics (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING',
+      [userId]
+    );
+
     const result = await pool.query(
       'SELECT * FROM user_statistics WHERE user_id = $1',
       [userId]

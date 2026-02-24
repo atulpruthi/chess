@@ -16,6 +16,96 @@ interface GuestGame {
 
 const guestGames = new Map<string, GuestGame>();
 
+const applyBotMove = (chess: Chess, botMove: string) => {
+  const uciMatch = botMove.match(/^([a-h][1-8])([a-h][1-8])([qrbn])?$/i);
+  if (uciMatch) {
+    const [, from, to, promotion] = uciMatch;
+    return chess.move({
+      from: from.toLowerCase(),
+      to: to.toLowerCase(),
+      promotion: promotion ? promotion.toLowerCase() : undefined
+    });
+  }
+
+  return chess.move(botMove);
+};
+
+export const getBotHint = async (req: Request, res: Response) => {
+  try {
+    const { gameId: gameIdParam } = req.params;
+    const gameId = Array.isArray(gameIdParam) ? gameIdParam[0] : gameIdParam;
+    const userId = (req as any).userId;
+    const isGuest = (req as any).isGuest;
+
+    if (!gameId || gameId === 'null' || gameId === 'undefined') {
+      return res.status(400).json({ error: 'Invalid game ID' });
+    }
+
+    const stockfish = getStockfishInstance();
+
+    // Handle guest games
+    if (gameId.startsWith('guest_') || isGuest) {
+      const guestGame = guestGames.get(gameId);
+      if (!guestGame) {
+        return res.status(404).json({ error: 'Game not found' });
+      }
+
+      const bestMove = await stockfish.getBestMove(guestGame.chess.fen(), guestGame.difficulty);
+      const tempChess = new Chess(guestGame.chess.fen());
+      const applied = applyBotMove(tempChess, bestMove);
+      if (!applied) {
+        return res.status(500).json({ error: 'Failed to generate hint' });
+      }
+
+      return res.json({
+        moveUci: bestMove,
+        moveSan: applied.san,
+      });
+    }
+
+    const gameIdNumber = Number(gameId);
+    if (!Number.isInteger(gameIdNumber)) {
+      return res.status(400).json({ error: 'Invalid game ID' });
+    }
+
+    const gameResult = await pool.query(
+      'SELECT * FROM games WHERE id = $1 AND game_type = $2 AND status = $3 AND (white_player_id = $4 OR black_player_id = $4)',
+      [gameIdNumber, 'bot', 'active', userId]
+    );
+
+    if (gameResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Game not found or not active' });
+    }
+
+    const game = gameResult.rows[0];
+    const chess = new Chess();
+    if (game.pgn) {
+      try {
+        chess.loadPgn(game.pgn);
+      } catch (e) {
+        chess.load(game.current_fen);
+      }
+    } else if (game.current_fen) {
+      chess.load(game.current_fen);
+    }
+
+    const bestMove = await stockfish.getBestMove(chess.fen(), 'medium');
+    const tempChess = new Chess(chess.fen());
+    const applied = applyBotMove(tempChess, bestMove);
+    if (!applied) {
+      return res.status(500).json({ error: 'Failed to generate hint' });
+    }
+
+    return res.json({
+      moveUci: bestMove,
+      moveSan: applied.san,
+    });
+  } catch (error) {
+    console.error('Get bot hint error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const createBotGame = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
@@ -157,6 +247,10 @@ export const makeBotMove = async (req: Request, res: Response) => {
       difficulty: DifficultyLevel;
     };
 
+    if (!gameId || gameId === 'null' || gameId === 'undefined') {
+      return res.status(400).json({ error: 'Invalid game ID' });
+    }
+
     // Handle guest games
     if (gameId.startsWith('guest_')) {
       const guestGame = guestGames.get(gameId);
@@ -216,7 +310,10 @@ export const makeBotMove = async (req: Request, res: Response) => {
 
       // Make bot's move
       try {
-        chess.move(botMove);
+        const appliedMove = applyBotMove(chess, botMove);
+        if (!appliedMove) {
+          throw new Error('Invalid move');
+        }
       } catch (error) {
         console.error(`Failed to make bot move ${botMove}:`, error);
         return res.status(500).json({ error: 'Failed to make bot move' });
@@ -247,9 +344,14 @@ export const makeBotMove = async (req: Request, res: Response) => {
     }
 
     // Handle authenticated user games - database storage
+    const gameIdNumber = Number(gameId);
+    if (!Number.isInteger(gameIdNumber)) {
+      return res.status(400).json({ error: 'Invalid game ID' });
+    }
+
     const gameResult = await pool.query(
       'SELECT * FROM games WHERE id = $1 AND game_type = $2 AND status = $3',
-      [gameId, 'bot', 'active']
+      [gameIdNumber, 'bot', 'active']
     );
 
     if (gameResult.rows.length === 0) {
@@ -304,7 +406,7 @@ export const makeBotMove = async (req: Request, res: Response) => {
     const playerMoveNumber = Math.floor(chess.moveNumber());
     await pool.query(
       'INSERT INTO moves (game_id, move_number, move_notation, fen) VALUES ($1, $2, $3, $4)',
-      [gameId, playerMoveNumber, move, chess.fen()]
+      [gameIdNumber, playerMoveNumber, move, chess.fen()]
     );
 
     // Get bot's move
@@ -324,7 +426,10 @@ export const makeBotMove = async (req: Request, res: Response) => {
 
     // Make bot's move
     try {
-      chess.move(botMove);
+      const appliedMove = applyBotMove(chess, botMove);
+      if (!appliedMove) {
+        throw new Error('Invalid move');
+      }
     } catch (error) {
       console.error(`Failed to make bot move ${botMove}:`, error);
       return res.status(500).json({ error: 'Failed to make bot move' });
@@ -347,13 +452,13 @@ export const makeBotMove = async (req: Request, res: Response) => {
     // Update game state
     await pool.query(
       'UPDATE games SET current_fen = $1, pgn = $2, status = $3, result = $4, total_moves = $5, completed_at = $6 WHERE id = $7',
-      [chess.fen(), chess.pgn(), gameOver ? 'completed' : 'active', result, chess.moveNumber(), gameOver ? new Date() : null, gameId]
+      [chess.fen(), chess.pgn(), gameOver ? 'completed' : 'active', result, chess.moveNumber(), gameOver ? new Date() : null, gameIdNumber]
     );
 
     // Save bot's move
     await pool.query(
       'INSERT INTO moves (game_id, move_number, move_notation, fen) VALUES ($1, $2, $3, $4)',
-      [gameId, botMoveNumber, botMove, chess.fen()]
+      [gameIdNumber, botMoveNumber, botMove, chess.fen()]
     );
 
     res.json({

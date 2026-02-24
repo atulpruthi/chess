@@ -32,17 +32,6 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Rate limiting - global
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use('/api/', limiter);
-
 // CORS configuration
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -50,6 +39,18 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Rate limiting - global
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1'
+});
+
+app.use('/api/', limiter);
 
 app.use(express.json({ limit: '10mb' }));
 

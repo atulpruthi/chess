@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 import { useAuthStore } from '../store/authStore';
 import { config } from '../config';
 import brilliantknightzLogo from '../assets/brilliantknightz.png';
@@ -361,18 +361,28 @@ const GameReplay: React.FC = () => {
           <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
             <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
             <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-            <button
-              type="button"
-              className="sidebar-user"
-              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-            >
-              <div>
-                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-              </div>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isAuthenticated && (
+                <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                  {user?.avatarUrl
+                    ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                    : (user?.username?.[0] ?? 'U').toUpperCase()
+                  }
+                </div>
+              )}
+              <button
+                type="button"
+                className="sidebar-user"
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+              >
+                <div>
+                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="lobby-layout">
@@ -431,18 +441,28 @@ const GameReplay: React.FC = () => {
           <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
             <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
             <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-            <button
-              type="button"
-              className="sidebar-user"
-              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-            >
-              <div>
-                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-              </div>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isAuthenticated && (
+                <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                  {user?.avatarUrl
+                    ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                    : (user?.username?.[0] ?? 'U').toUpperCase()
+                  }
+                </div>
+              )}
+              <button
+                type="button"
+                className="sidebar-user"
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+              >
+                <div>
+                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="lobby-layout">
@@ -502,18 +522,28 @@ const GameReplay: React.FC = () => {
         <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
           <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
           <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-          <button
-            type="button"
-            className="sidebar-user"
-            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-            aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-          >
-            <div>
-              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-            </div>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isAuthenticated && (
+              <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                  : (user?.username?.[0] ?? 'U').toUpperCase()
+                }
+              </div>
+            )}
+            <button
+              type="button"
+              className="sidebar-user"
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="lobby-layout">
@@ -568,17 +598,14 @@ const GameReplay: React.FC = () => {
                   {/* Board and Progress Bar */}
                   <div className="flex gap-2 mb-4">
                     {/* Board */}
-                    <div ref={chessboardRef} className="flex items-center justify-start">
+                    <div ref={chessboardRef} className="flex items-center justify-center">
                       <Chessboard
                         options={chessComOptions({
                           id: 'game-replay-chessboard',
                           position,
                           allowDragging: false,
                           boardStyle: {
-                            width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                            height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                            borderRadius: '8px',
-                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+                            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
                           },
                         })}
                       />

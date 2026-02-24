@@ -125,6 +125,8 @@ class UserStatsService {
      * Get user statistics
      */
     async getUserStats(userId) {
+        // Auto-initialize a stats row if one doesn't exist yet
+        await database_1.default.query('INSERT INTO user_statistics (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING', [userId]);
         const result = await database_1.default.query('SELECT * FROM user_statistics WHERE user_id = $1', [userId]);
         if (result.rows.length === 0) {
             return null;

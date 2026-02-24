@@ -1,6 +1,6 @@
 import React from 'react';
 import { Chessboard } from 'react-chessboard';
-import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 interface DisplayBoardProps {
   fen: string;
@@ -105,8 +105,6 @@ const ClassificationBadge: React.FC<{ classification: string }> = ({ classificat
 };
 
 const DisplayBoard: React.FC<DisplayBoardProps> = ({ fen, orientation = 'white', moveSquare, classification }) => {
-  const boardSize = ONLINE_MULTIPLAYER_BOARD_PX;
-  
   // Calculate badge position based on square notation
   const getBadgePosition = (square: string, boardOrientation: 'white' | 'black') => {
     if (!square || square.length !== 2) return null;
@@ -134,10 +132,7 @@ const DisplayBoard: React.FC<DisplayBoardProps> = ({ fen, orientation = 'white',
           allowDragging: false,
           showNotation: true,
           boardStyle: {
-            width: `${boardSize}px`,
-            height: `${boardSize}px`,
-            borderRadius: '8px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
           },
         })}
       />

@@ -47,9 +47,9 @@ const getGameAnalysis = async (req, res) => {
         }
         const analysis = await GameAnalysisService_1.default.getGameAnalysis(gameId);
         if (!analysis) {
-            return res.status(404).json({ error: 'Analysis not found' });
+            return res.status(200).json({ found: false });
         }
-        res.json(analysis);
+        res.json({ found: true, ...analysis });
     }
     catch (error) {
         console.error('Error fetching analysis:', error);

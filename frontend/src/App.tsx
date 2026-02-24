@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ChessBoard from './components/ChessBoard';
 import GameStatus from './components/GameStatus';
@@ -40,23 +41,8 @@ function App() {
     logout();
     navigate('/lobby');
   };
-  const { resetGame: resetBotGame, moveHistory: botMoveHistory, gameOver: botGameOver } = useBotGameStore();
-  const { resetGame: resetMultiplayerGame, moveHistory: multiplayerMoveHistory, opponent, playerColor, turn, fen: multiplayerFen } = useMultiplayerGameStore();
-
-  const normalizedPlayerColor = useMemo<'white' | 'black' | null>(() => {
-    if (playerColor === 'white' || playerColor === 'black') return playerColor;
-    const raw = playerColor as unknown as string | null;
-    if (raw === 'w') return 'white';
-    if (raw === 'b') return 'black';
-    return null;
-  }, [playerColor]);
-
-  const derivedTurn = useMemo<'w' | 'b' | null>(() => {
-    const fenTurn = multiplayerFen?.split(' ')?.[1];
-    if (fenTurn === 'w' || fenTurn === 'b') return fenTurn;
-    if (turn === 'w' || turn === 'b') return turn;
-    return null;
-  }, [multiplayerFen, turn]);
+  const { resetGame: resetBotGame, moveHistory: botMoveHistory, gameOver: botGameOver, isCheck: botIsCheck, gameId: botGameId, requestHint, hintSan: botHintSan, isThinking: botIsThinking } = useBotGameStore();
+  const { resetGame: resetMultiplayerGame, offerDraw: multiplayerOfferDraw, resign: multiplayerResign, gameOver: multiplayerGameOver, opponentDisconnected: multiplayerOpponentDisconnected } = useMultiplayerGameStore();
 
   // Auto-scroll bot move history to bottom when new moves are added
   useEffect(() => {
@@ -64,6 +50,7 @@ function App() {
       botMoveHistoryRef.current.scrollTop = botMoveHistoryRef.current.scrollHeight;
     }
   }, [botMoveHistory]);
+
 
   const handleNewLocalGame = () => {
     setGameMode('local');
@@ -168,18 +155,28 @@ function App() {
             <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
               <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
               <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-              <button
-                type="button"
-                className="sidebar-user"
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-                aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-              >
-                <div>
-                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-                </div>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAuthenticated && (
+                  <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                    {user?.avatarUrl
+                      ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                      : (user?.username?.[0] ?? 'U').toUpperCase()
+                    }
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="sidebar-user"
+                  onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                  aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+                  style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+                >
+                  <div>
+                    <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                    <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <div className="lobby-layout">
@@ -306,44 +303,25 @@ function App() {
                           <MultiplayerChessBoard />
                         </div>
 
-                        <div
-                          className={`${glassCardSoftClass} p-6 shadow-xl mx-auto`}
-                          style={{ maxWidth: `${ONLINE_MULTIPLAYER_BOARD_PX}px`, width: '100%' }}
-                        >
-                          <h3 className="text-xl font-bold text-white mb-4 text-center">Move List</h3>
-                          <div className="text-center text-sm text-white/70 mb-3">
-                            {normalizedPlayerColor
-                              ? ((normalizedPlayerColor === 'white' && derivedTurn === 'w') || (normalizedPlayerColor === 'black' && derivedTurn === 'b'))
-                                ? "Your's turn"
-                                : "Opponent's turn"
-                              : ''}
+                        {!multiplayerGameOver && !multiplayerOpponentDisconnected && (
+                          <div
+                            className="mx-auto flex gap-2"
+                            style={{ maxWidth: `${ONLINE_MULTIPLAYER_BOARD_PX}px`, width: '100%', marginTop: '5px' }}
+                          >
+                            <button
+                              onClick={multiplayerOfferDraw}
+                              className="btn-secondary w-full"
+                            >
+                              Offer Draw
+                            </button>
+                            <button
+                              onClick={multiplayerResign}
+                              className="btn-secondary sidebar-btn--logout w-full"
+                            >
+                              Resign
+                            </button>
                           </div>
-                          <div className="grid grid-cols-3 items-center text-xs font-semibold text-white/60 mb-2">
-                            <div />
-                            <div className="text-center">You</div>
-                            <div className="text-center">{opponent?.username || 'Opponent'}</div>
-                          </div>
-                          <div className="space-y-2 overflow-y-auto" style={{ height: '150px' }}>
-                            {multiplayerMoveHistory.length === 0 ? (
-                              <div className="text-gray-400 text-center py-4">No moves yet</div>
-                            ) : (
-                              Array.from({ length: Math.ceil(multiplayerMoveHistory.length / 2) }, (_, i) => {
-                                const moveNumber = i + 1;
-                                const whiteMove = multiplayerMoveHistory[i * 2];
-                                const blackMove = multiplayerMoveHistory[i * 2 + 1];
-                                const myMove = (normalizedPlayerColor === 'black' ? blackMove : whiteMove) || '';
-                                const opponentMove = (normalizedPlayerColor === 'black' ? whiteMove : blackMove) || '';
-                                return (
-                                  <div key={moveNumber} className="grid grid-cols-3 items-center text-gray-300 font-mono text-sm">
-                                    <div className="text-gray-400 font-semibold text-center">{moveNumber}.</div>
-                                    <span className="whitespace-nowrap overflow-hidden text-ellipsis text-center">{myMove}</span>
-                                    <span className="whitespace-nowrap overflow-hidden text-ellipsis text-center">{opponentMove}</span>
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        </div>
+                        )}
                       </div>
 
                       {/* Right Panel - Lobby + Status + Chat + History */}
@@ -400,11 +378,18 @@ function App() {
                           </div>
                           
                           {/* Game Review Button */}
-                          {botGameOver && botMoveHistory.length > 0 && (
+                          {isAuthenticated && botGameOver && botMoveHistory.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-white/10">
                               <button
-                                onClick={() => setShowBotReview(true)}
-                                className="find-match-btn"
+                                type="button"
+                                onClick={() => {
+                                  if (botGameId) {
+                                    navigate(`/game-analysis/${botGameId}`);
+                                  } else {
+                                    setShowBotReview(true);
+                                  }
+                                }}
+                                className="find-match-btn find-match-btn--full"
                               >
                                 <span>🎬</span>
                                 <span>Review Game</span>
@@ -414,22 +399,36 @@ function App() {
                         </div>
                         {/* Game Actions */}
                         {!botGameOver && (
-                          <div className="flex gap-4 justify-center mt-4" style={{marginTop: '5px'}}>
+                          <div className="flex flex-col gap-2 justify-center mt-4" style={{marginTop: '5px'}}>
+                            <div className="flex gap-4 justify-center">
+                              <button
+                                type="button"
+                                onClick={() => requestHint()}
+                                disabled={botIsThinking}
+                                className="find-match-btn"
+                                style={{ width: 'auto', paddingLeft: '14px', paddingRight: '14px', height: '30px', paddingTop: '0px', paddingBottom: '0px', lineHeight: '30px', opacity: botIsThinking ? 0.6 : 1 }}
+                              >
+                                💡 Hint
+                              </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 const botStore = useBotGameStore.getState();
                                 botStore.offerDraw();
                               }}
-                               className="find-match-btn"
-                               style={{ width: 'auto', paddingLeft: '14px', paddingRight: '14px', height: '30px', paddingTop: '0px', paddingBottom: '0px', lineHeight: '30px' }}
+                              disabled={botIsCheck}
+                              className="find-match-btn"
+                              style={{ width: 'auto', paddingLeft: '14px', paddingRight: '14px', height: '30px', paddingTop: '0px', paddingBottom: '0px', lineHeight: '30px', opacity: botIsCheck ? 0.6 : 1 }}
                             >
                               🤝 Offer Draw
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 const botStore = useBotGameStore.getState();
                                 botStore.resign();
                               }}
+                              disabled={botIsCheck}
                               className="find-match-btn"
                               style={{ 
                                 width: 'auto', 
@@ -439,20 +438,24 @@ function App() {
                                 paddingTop: '0px',
                                 paddingBottom: '0px',
                                   lineHeight: '30px',
-                                background: 'linear-gradient(180deg, #ff6b6b 0%, #ee5a52 55%, #dc4b3e 100%)'
+                                background: 'linear-gradient(180deg, #ff6b6b 0%, #ee5a52 55%, #dc4b3e 100%)',
+                                opacity: botIsCheck ? 0.6 : 1
                               }}
                             >
                               🏳️ Resign
                             </button>
+                            </div>
+                            {botHintSan && (
+                              <div className="text-center text-sm text-white/80">
+                                Hint: {botHintSan}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     </div>
                     
                     {/* Game Review Modal */}
-                    {showBotReview && (
-                      <BotGameReview onClose={() => setShowBotReview(false)} />
-                    )}
                   </>
                 ) : (
                   <>
@@ -490,18 +493,28 @@ function App() {
             <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
               <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
               <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-              <button
-                type="button"
-                className="sidebar-user"
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-                aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-              >
-                <div>
-                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-                </div>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAuthenticated && (
+                  <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                    {user?.avatarUrl
+                      ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                      : (user?.username?.[0] ?? 'U').toUpperCase()
+                    }
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="sidebar-user"
+                  onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                  aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+                  style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+                >
+                  <div>
+                    <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                    <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <div className="max-w-7xl mx-auto space-y-6">
@@ -559,18 +572,28 @@ function App() {
             <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
               <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
               <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-              <button
-                type="button"
-                className="sidebar-user"
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-                aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-              >
-                <div>
-                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-                </div>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAuthenticated && (
+                  <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                    {user?.avatarUrl
+                      ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                      : (user?.username?.[0] ?? 'U').toUpperCase()
+                    }
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="sidebar-user"
+                  onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                  aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+                  style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+                >
+                  <div>
+                    <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                    <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                  </div>
+                </button>
+              </div>
             </div>
 
               {/* Multiplayer Game Area */}
@@ -581,45 +604,25 @@ function App() {
                     <MultiplayerChessBoard />
                   </div>
 
-                  <div
-                    className={`${glassCardSoftClass} p-6 shadow-xl mx-auto`}
-                    style={{ maxWidth: `${ONLINE_MULTIPLAYER_BOARD_PX}px`, width: '100%' }}
-                  >
-                    <h3 className="text-xl font-bold text-white mb-4 text-center">Move List</h3>
-                    <div className="text-center text-sm text-white/70 mb-3">
-                      {normalizedPlayerColor
-                        ? ((normalizedPlayerColor === 'white' && derivedTurn === 'w') || (normalizedPlayerColor === 'black' && derivedTurn === 'b'))
-                          ? "Your's turn"
-                          : "Opponent's turn"
-                        : ''}
+                  {!multiplayerGameOver && !multiplayerOpponentDisconnected && (
+                    <div
+                      className="mx-auto flex gap-2"
+                      style={{ maxWidth: `${ONLINE_MULTIPLAYER_BOARD_PX}px`, width: '100%', marginTop: '5px' }}
+                    >
+                      <button
+                        onClick={multiplayerOfferDraw}
+                        className="btn-secondary w-full"
+                      >
+                        Offer Draw
+                      </button>
+                      <button
+                        onClick={multiplayerResign}
+                        className="btn-secondary sidebar-btn--logout w-full"
+                      >
+                        Resign
+                      </button>
                     </div>
-                    <div className="grid grid-cols-3 items-center text-xs font-semibold text-white/60 mb-2">
-                      <div />
-                      <div className="text-center">You</div>
-                      <div className="text-center">{opponent?.username || 'Opponent'}</div>
-                    </div>
-                    <div className="space-y-2 overflow-y-auto" style={{ height: '150px' }}>
-                      {multiplayerMoveHistory.length === 0 ? (
-                        <div className="text-gray-400 text-center py-4">No moves yet</div>
-                      ) : (
-                        Array.from({ length: Math.ceil(multiplayerMoveHistory.length / 2) }, (_, i) => {
-                          const moveNumber = i + 1;
-                          const whiteMove = multiplayerMoveHistory[i * 2];
-                          const blackMove = multiplayerMoveHistory[i * 2 + 1];
-                          const myMove = (normalizedPlayerColor === 'black' ? blackMove : whiteMove) || '';
-                          const opponentMove = (normalizedPlayerColor === 'black' ? whiteMove : blackMove) || '';
-
-                          return (
-                            <div key={moveNumber} className="grid grid-cols-3 items-center text-gray-300 font-mono text-sm">
-                              <div className="text-gray-400 font-semibold text-center">{moveNumber}.</div>
-                              <span className="whitespace-nowrap overflow-hidden text-ellipsis text-center">{myMove}</span>
-                              <span className="whitespace-nowrap overflow-hidden text-ellipsis text-center">{opponentMove}</span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Right Panel - Lobby + Status + Chat + History */}
@@ -635,18 +638,28 @@ function App() {
             <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
               <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
               <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-              <button
-                type="button"
-                className="sidebar-user"
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-                aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-              >
-                <div>
-                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-                </div>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAuthenticated && (
+                  <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                    {user?.avatarUrl
+                      ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                      : (user?.username?.[0] ?? 'U').toUpperCase()
+                    }
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="sidebar-user"
+                  onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                  aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+                  style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+                >
+                  <div>
+                    <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                    <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                  </div>
+                </button>
+              </div>
             </div>
 
               {/* Bot Game Area */}
@@ -687,18 +700,28 @@ function App() {
             <div className="sidebar-logo-container" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
               <img src={brilliantknightzLogo} alt="BrilliantKnightz" className="sidebar-logo" onClick={() => navigate('/lobby')} style={{ width: '150px', height: '150px', cursor: 'pointer' }} />
               <img src={brilliantknightzBanner} alt="Brilliant Knightz" style={{ width: '400px', height: '200px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} />
-              <button
-                type="button"
-                className="sidebar-user"
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-                aria-label={isAuthenticated ? "Open dashboard" : "Login"}
-                style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-              >
-                <div>
-                  <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-                  <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-                </div>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAuthenticated && (
+                  <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                    {user?.avatarUrl
+                      ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                      : (user?.username?.[0] ?? 'U').toUpperCase()
+                    }
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="sidebar-user"
+                  onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                  aria-label={isAuthenticated ? "Open dashboard" : "Login"}
+                  style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+                >
+                  <div>
+                    <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                    <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+                  </div>
+                </button>
+              </div>
             </div>
 
               {/* Local Game Area */}
@@ -728,6 +751,11 @@ function App() {
             </>
           )}
         </div>
+      {/* Bot Game Review Modal - portal to document.body to bypass all stacking contexts */}
+      {showBotReview && createPortal(
+        <BotGameReview onClose={() => setShowBotReview(false)} />,
+        document.body
+      )}
       </div>
   );
 }

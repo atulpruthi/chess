@@ -6,7 +6,7 @@ import { useSocket } from '../hooks/useSocket';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
-import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX } from '../styles/chessboardTheme';
+import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 import { glassCardSoftClass } from '../styles/appTheme';
 import brilliantknightzLogo from '../assets/brilliantknightz.png';
 import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
@@ -218,18 +218,28 @@ export const MultiplayerGame = () => {
               transform: 'translateX(-50%)',
             }}
           />
-          <button
-            type="button"
-            className="sidebar-user"
-            aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
-            style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
-            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
-          >
-            <div>
-              <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
-              <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
-            </div>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isAuthenticated && (
+              <div className="sidebar-user-avatar" style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '14px' }} />
+                  : (user?.username?.[0] ?? 'U').toUpperCase()
+                }
+              </div>
+            )}
+            <button
+              type="button"
+              className="sidebar-user"
+              aria-label={isAuthenticated ? 'Open dashboard' : 'Login'}
+              style={{ width: 'auto', minWidth: 'unset', maxWidth: '120px' }}
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+            >
+              <div>
+                <div className="sidebar-user-name">{isAuthenticated ? (user?.username ?? 'User') : 'Login'}</div>
+                <div className="sidebar-user-hint">{isAuthenticated ? 'Dashboard' : 'Sign in'}</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <div className="lobby-layout">
@@ -297,10 +307,7 @@ export const MultiplayerGame = () => {
                       onDrop(sourceSquare as Square, targetSquare as Square),
                     boardOrientation,
                     boardStyle: {
-                      width: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                      height: `${ONLINE_MULTIPLAYER_BOARD_PX}px`,
-                      borderRadius: '8px',
-                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+                      ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
                     },
                   })}
                 />

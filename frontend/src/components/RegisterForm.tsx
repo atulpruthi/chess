@@ -168,6 +168,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
     // Validation
     if (password !== confirmPassword) {
       setValidationError('Passwords do not match.');
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+        setRecaptchaToken(null);
+      }
       return;
     }
 

@@ -10,6 +10,8 @@ interface BotGameState {
   chess: Chess;
   fen: string;
   moveHistory: string[];
+  hintMove: { from: string; to: string } | null;
+  hintSan: string | null;
   capturedPieces: {
     white: string[];
     black: string[];
@@ -35,6 +37,7 @@ interface BotGameState {
   resign: () => void;
   offerDraw: () => void;
   resetThinkingState: () => void;
+  requestHint: () => Promise<void>;
 }
 
 const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -62,6 +65,8 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
   chess: new Chess(),
   fen: initialFen,
   moveHistory: [],
+  hintMove: null,
+  hintSan: null,
   capturedPieces: { white: [], black: [] },
   turn: 'w',
   isCheck: false,
@@ -96,6 +101,8 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
         chess,
         fen: chess.fen(),
         moveHistory: chess.history(),
+        hintMove: null,
+        hintSan: null,
         capturedPieces: updateCapturedPieces(chess),
         turn: chess.turn(),
         isCheck: chess.isCheck(),
@@ -157,18 +164,42 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
         soundService.playCheck();
       }
 
+      const isGameOver = chess.isGameOver();
+      const isCheckmate = chess.isCheckmate();
+      const isStalemate = chess.isStalemate();
+      const isDraw = chess.isDraw();
+      const finalResult = isGameOver
+        ? (isCheckmate ? (chess.turn() === 'w' ? 'black' : 'white') : 'draw')
+        : null;
+
       // Update local state
       set({
         fen: chess.fen(),
         moveHistory: chess.history(),
+        hintMove: null,
+        hintSan: null,
         capturedPieces: updateCapturedPieces(chess),
         turn: chess.turn(),
         isCheck: chess.isCheck(),
-        isCheckmate: chess.isCheckmate(),
-        isStalemate: chess.isStalemate(),
-        isDraw: chess.isDraw(),
-        isThinking: true,
+        isCheckmate,
+        isStalemate,
+        isDraw,
+        gameOver: isGameOver,
+        result: finalResult,
+        isThinking: !isGameOver,
       });
+
+      if (isGameOver) {
+        try {
+          await api.post(`/api/bot/${gameId}/move`, {
+            move: result.san,
+            difficulty,
+          });
+        } catch (error) {
+          console.error('Failed to persist game over move:', error);
+        }
+        return;
+      }
 
       // Send move to server and get bot's response with timeout
       const timeoutPromise = new Promise((_, reject) => 
@@ -213,6 +244,8 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
         chess: newChess,
         fen: newChess.fen(),
         moveHistory: newChess.history(),
+        hintMove: null,
+        hintSan: null,
         capturedPieces: updateCapturedPieces(newChess),
         turn: newChess.turn(),
         isCheck: newChess.isCheck(),
@@ -249,6 +282,8 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
       chess: newChess,
       fen: initialFen,
       moveHistory: [],
+      hintMove: null,
+      hintSan: null,
       capturedPieces: { white: [], black: [] },
       turn: 'w',
       isCheck: false,
@@ -347,5 +382,25 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
   resetThinkingState: () => {
     // Emergency function to reset thinking state if bot gets stuck
     set({ isThinking: false });
+  },
+
+  requestHint: async () => {
+    const { gameId, isThinking, gameOver } = get();
+    if (!gameId || isThinking || gameOver) return;
+
+    try {
+      const response = await api.get(`/api/bot/${gameId}/hint`);
+      const { moveUci, moveSan } = response.data;
+      if (!moveUci) return;
+      const match = String(moveUci).match(/^([a-h][1-8])([a-h][1-8])([qrbn])?$/i);
+      if (!match) return;
+      const [, from, to] = match;
+      set({
+        hintMove: { from: from.toLowerCase(), to: to.toLowerCase() },
+        hintSan: moveSan || null,
+      });
+    } catch (error) {
+      console.error('Failed to get hint:', error);
+    }
   },
 }));

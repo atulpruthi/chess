@@ -314,7 +314,7 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setActiveTab('overview')}
             className={`px-6 py-3 rounded-xl font-semibold transition ${
               activeTab === 'overview'
-                ? 'bg-purple-600 text-white'
+                ? 'bg-amber-600 text-white'
                 : 'bg-white/10 text-white/70 hover:bg-white/15 border border-white/10'
             }`}
           >
@@ -324,7 +324,7 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setActiveTab('users')}
             className={`px-6 py-3 rounded-xl font-semibold transition ${
               activeTab === 'users'
-                ? 'bg-purple-600 text-white'
+                ? 'bg-amber-600 text-white'
                 : 'bg-white/10 text-white/70 hover:bg-white/15 border border-white/10'
             }`}
           >
@@ -334,7 +334,7 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setActiveTab('games')}
             className={`px-6 py-3 rounded-xl font-semibold transition ${
               activeTab === 'games'
-                ? 'bg-purple-600 text-white'
+                ? 'bg-amber-600 text-white'
                 : 'bg-white/10 text-white/70 hover:bg-white/15 border border-white/10'
             }`}
           >
@@ -375,7 +375,7 @@ const AdminDashboard: React.FC = () => {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-2 bg-white/[0.04] text-white rounded-xl border border-white/10 focus:border-purple-500 focus:outline-none"
+                className="px-4 py-2 bg-white/[0.04] text-white rounded-xl border border-white/10 focus:border-amber-500 focus:outline-none"
               />
             </div>
 

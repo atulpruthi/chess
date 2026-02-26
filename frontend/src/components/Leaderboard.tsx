@@ -184,7 +184,7 @@ const Leaderboard: React.FC = () => {
                 onClick={() => setSelectedTimeControl(tc.value)}
                 className={`px-4 py-2 rounded-xl font-semibold transition ${
                   selectedTimeControl === tc.value
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-amber-600 text-white'
                     : 'bg-white/10 border border-white/10 text-white/70 hover:bg-white/15'
                 }`}
               >
@@ -233,7 +233,7 @@ const Leaderboard: React.FC = () => {
                     <tr
                       key={entry.userId}
                       className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${
-                        isCurrentUser(entry.userId) ? 'bg-purple-500/10 border-purple-500/30' : ''
+                        isCurrentUser(entry.userId) ? 'bg-amber-500/10 border-amber-500/30' : ''
                       }`}
                       onClick={() => navigate(`/profile/${entry.userId}`)}
                     >
@@ -253,7 +253,7 @@ const Leaderboard: React.FC = () => {
                             <div className="text-white font-semibold flex items-center gap-2">
                               {entry.username}
                               {isCurrentUser(entry.userId) && (
-                                <span className="px-2 py-0.5 bg-purple-600 text-white text-xs rounded">
+                                <span className="px-2 py-0.5 bg-amber-600 text-white text-xs rounded">
                                   You
                                 </span>
                               )}

@@ -154,7 +154,7 @@ const Settings: React.FC = () => {
                   onClick={() => setMode('light')}
                   className={`flex-1 h-14 px-6 rounded-2xl font-semibold transition-all active:scale-[0.97] ${
                     mode === 'light'
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-[0_10px_22px_rgba(59,130,246,0.25)]'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-[0_10px_22px_rgba(245,158,11,0.25)]'
                       : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10'
                   }`}
                 >
@@ -164,7 +164,7 @@ const Settings: React.FC = () => {
                   onClick={() => setMode('dark')}
                   className={`flex-1 h-14 px-6 rounded-2xl font-semibold transition-all active:scale-[0.97] ${
                     mode === 'dark'
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-[0_10px_22px_rgba(59,130,246,0.25)]'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-[0_10px_22px_rgba(245,158,11,0.25)]'
                       : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10'
                   }`}
                 >
@@ -289,7 +289,7 @@ const Settings: React.FC = () => {
               <button
                 onClick={toggleAnimations}
                 className={`relative w-16 h-9 rounded-full transition-all ${
-                  animationsEnabled ? 'bg-gradient-to-r from-purple-500 to-purple-600 shadow-[0_4px_14px_rgba(168,85,247,0.4)]' : 'bg-white/10'
+                  animationsEnabled ? 'bg-gradient-to-r from-amber-500 to-amber-600 shadow-[0_4px_14px_rgba(245,158,11,0.4)]' : 'bg-white/10'
                 }`}
               >
                 <div

@@ -1,9 +1,9 @@
 export const appShellClass =
   'min-h-screen text-white ' +
-  'bg-[radial-gradient(1200px_600px_at_20%_0%,rgba(168,85,247,0.20)_0%,rgba(0,0,0,0)_60%),' +
-  'radial-gradient(900px_500px_at_80%_10%,rgba(59,130,246,0.16)_0%,rgba(0,0,0,0)_55%),' +
-  'radial-gradient(900px_700px_at_50%_110%,rgba(16,185,129,0.10)_0%,rgba(0,0,0,0)_55%),' +
-  'linear-gradient(180deg,#05060a_0%,#020205_100%)]';
+  'bg-[radial-gradient(1200px_600px_at_20%_0%,rgba(212,168,83,0.22)_0%,rgba(0,0,0,0)_60%),' +
+  'radial-gradient(900px_500px_at_80%_10%,rgba(180,130,50,0.14)_0%,rgba(0,0,0,0)_55%),' +
+  'radial-gradient(900px_700px_at_50%_110%,rgba(212,168,83,0.08)_0%,rgba(0,0,0,0)_55%),' +
+  'linear-gradient(180deg,#08070a_0%,#020202_100%)]';
 
 export const appPageClass = `${appShellClass} p-4 md:p-8`;
 export const appCenteredClass = `${appShellClass} flex items-center justify-center p-6`;
@@ -16,8 +16,8 @@ export const glassCardSoftClass =
   'backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-2xl';
 
 export const buttonPrimaryClass =
-  'inline-flex items-center justify-center rounded-xl bg-blue-600 text-white font-semibold ' +
-  'hover:bg-blue-500 active:bg-blue-700 transition-colors';
+  'inline-flex items-center justify-center rounded-xl bg-amber-600 text-white font-semibold ' +
+  'hover:bg-amber-500 active:bg-amber-700 transition-colors';
 
 export const buttonSecondaryClass =
   'inline-flex items-center justify-center rounded-xl bg-white/10 text-white font-semibold ' +

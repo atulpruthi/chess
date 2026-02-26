@@ -111,7 +111,7 @@ export const GameLobby = () => {
       <div className="lobby-shell flex items-center justify-center p-6">
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-8 shadow-[0_16px_50px_rgba(0,0,0,0.55)]">
           <div className="flex items-center justify-center mb-6">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-white/10 border-t-purple-400"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-white/10 border-t-amber-400"></div>
           </div>
           <h1 className="text-white text-xl font-semibold text-center">Connecting…</h1>
           <p className="text-white/60 text-sm text-center mt-2">
@@ -123,7 +123,7 @@ export const GameLobby = () => {
           <div className="mt-6 flex justify-center">
             <button
               onClick={() => window.location.reload()}
-              className="h-10 px-5 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors"
+              className="h-10 px-5 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 transition-colors"
             >
               Retry
             </button>

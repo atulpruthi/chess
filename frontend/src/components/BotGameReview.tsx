@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { useBotGameStore } from '../store/botGameStore';
 import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
@@ -146,14 +146,14 @@ export const BotGameReview: React.FC<BotGameReviewProps> = ({ onClose }) => {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Chessboard */}
             <div>
-              <Chessboard
+              <SVGChessboard
                 options={chessComOptions({
                   id: 'review-board',
                   position,
                   boardOrientation: playerColor,
                   allowDragging: false,
                   boardStyle: {
-                    ...responsiveBoardStyle(400, 100),
+                    ...responsiveBoardStyle(440, 100),
                   },
                 })}
               />
@@ -173,11 +173,11 @@ export const BotGameReview: React.FC<BotGameReviewProps> = ({ onClose }) => {
               </div>
 
               {/* Commentary */}
-              <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg p-4">
+              <div className="bg-gradient-to-r from-amber-900/30 to-blue-900/30 border border-amber-500/30 rounded-lg p-4">
                 <div className="flex items-start gap-2">
                   <span className="text-2xl">💬</span>
                   <div>
-                    <div className="text-xs font-semibold text-purple-300 mb-1">Move Analysis</div>
+                    <div className="text-xs font-semibold text-amber-300 mb-1">Move Analysis</div>
                     <p className="text-sm text-gray-200 leading-relaxed">
                       {getMoveCommentary()}
                     </p>
@@ -206,7 +206,7 @@ export const BotGameReview: React.FC<BotGameReviewProps> = ({ onClose }) => {
                 <div className="flex gap-2">
                   <button
                     onClick={handlePlayPause}
-                    className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-semibold"
+                    className="flex-1 py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors font-semibold"
                   >
                     {isPlaying ? '⏸ Pause' : '▶ Play'}
                   </button>

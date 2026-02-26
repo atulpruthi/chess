@@ -90,7 +90,7 @@ export const Matchmaking = () => {
   if (!isConnected) {
     return (
       <div className="card card-lift text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
         <p className="text-white/60">Connecting to server...</p>
       </div>
     );
@@ -170,8 +170,8 @@ export const Matchmaking = () => {
       ) : (
         <div className="text-center py-8">
           <div className="relative w-24 h-24 mx-auto mb-6">
-            <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 border-4 border-amber-500/30 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-white font-bold text-[24px]">{formatTime(searchTime)}</span>
             </div>

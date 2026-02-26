@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Chess, type Square } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { config } from '../config';
@@ -43,7 +43,12 @@ const TacticalPuzzle: React.FC = () => {
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [game, setGame] = useState<Chess>(new Chess());
   const puzzleBoardRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { puzzleBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      puzzleBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
   const [userMoves, setUserMoves] = useState<string[]>([]); // SAN format for display
   const [userMovesUCI, setUserMovesUCI] = useState<string[]>([]); // UCI format for backend
   const [moveIndex, setMoveIndex] = useState(0);
@@ -481,7 +486,7 @@ const TacticalPuzzle: React.FC = () => {
 
                   {/* Chess Board */}
                   <div className="mb-4 flex justify-start">
-                    <Chessboard
+                    <SVGChessboard
                       options={chessComOptions({
                         id: 'tactical-puzzle-board',
                         position: game.fen(),
@@ -521,7 +526,7 @@ const TacticalPuzzle: React.FC = () => {
                   )}
                   <button
                     onClick={() => loadNewPuzzle()}
-                    className="px-8 py-4 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-2xl transition-all font-bold text-lg text-white shadow-[0_4px_14px_rgba(168,85,247,0.4)] active:scale-[0.97]"
+                    className="px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-2xl transition-all font-bold text-lg text-white shadow-[0_4px_14px_rgba(245,158,11,0.4)] active:scale-[0.97]"
                   >
                     🎯 Load Random Puzzle
                   </button>

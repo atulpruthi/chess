@@ -1,4 +1,4 @@
-import type { ChessboardOptions } from 'react-chessboard';
+import type { SVGChessboardOptions } from '../components/SVGChessboard';
 
 const LIGHT_SQUARE = '#eeeed2'; // chess.com-like
 const DARK_SQUARE = '#769656';
@@ -6,7 +6,7 @@ const DARK_SQUARE = '#769656';
 const LIGHT_COORD = 'rgba(0, 0, 0, 0.55)';
 const DARK_COORD = 'rgba(255, 255, 255, 0.75)';
 
-const baseTheme: Partial<ChessboardOptions> = {
+const baseTheme: Partial<SVGChessboardOptions> = {
   lightSquareStyle: { backgroundColor: LIGHT_SQUARE },
   darkSquareStyle: { backgroundColor: DARK_SQUARE },
 
@@ -36,7 +36,7 @@ const baseTheme: Partial<ChessboardOptions> = {
   animationDurationInMs: 180,
 };
 
-export function chessComOptions(options: ChessboardOptions): ChessboardOptions {
+export function chessComOptions(options: SVGChessboardOptions): SVGChessboardOptions {
   return {
     ...baseTheme,
     ...options,
@@ -76,10 +76,10 @@ export const chessComHighlight = {
 };
 
 // Matches the board size used in the Online Multiplayer room.
-export const ONLINE_MULTIPLAYER_BOARD_PX = 682;
+export const ONLINE_MULTIPLAYER_BOARD_PX = 825;
 
 export function responsiveBoardStyle(
-  maxPx = 560,
+  maxPx = 678,
   viewportPaddingPx = 220,
 ): React.CSSProperties {
   return {

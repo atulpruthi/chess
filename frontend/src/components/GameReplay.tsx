@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 import { useAuthStore } from '../store/authStore';
 import { config } from '../config';
@@ -599,7 +599,7 @@ const GameReplay: React.FC = () => {
                   <div className="flex gap-2 mb-4">
                     {/* Board */}
                     <div ref={chessboardRef} className="flex items-center justify-center">
-                      <Chessboard
+                      <SVGChessboard
                         options={chessComOptions({
                           id: 'game-replay-chessboard',
                           position,
@@ -618,7 +618,7 @@ const GameReplay: React.FC = () => {
                     >
                       <div
                         className="relative rounded-lg overflow-hidden border-2 border-gray-700"
-                        style={{ width: '48px', height: '500px', backgroundColor: '#111827' }}
+                        style={{ width: '48px', height: '550px', backgroundColor: '#111827' }}
                       >
                         <div
                           className="absolute left-0 right-0"

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import './index.css'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
+import { Footer } from './components/Footer.tsx'
 import { useAuthStore } from './store/authStore.ts'
 import { registerServiceWorker } from './services/sw-registration'
 
@@ -169,7 +170,12 @@ const Router = () => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <Router />
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1">
+          <Router />
+        </div>
+        <Footer />
+      </div>
     </BrowserRouter>
   </StrictMode>,
 )

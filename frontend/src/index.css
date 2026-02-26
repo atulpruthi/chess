@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg-main: radial-gradient(circle at top, #1d2451, #060814);
+  --bg-main: radial-gradient(circle at top, #1a1200, #060400);
   --card-bg: rgba(255, 255, 255, 0.08);
   --border-soft: rgba(255, 255, 255, 0.16);
 
   --accent-green: linear-gradient(135deg, #34d399, #22c55e);
-  --accent-purple: linear-gradient(135deg, #a78bfa, #60a5fa);
+  --accent-purple: linear-gradient(135deg, #f59e0b, #d97706);
   --accent-pink: linear-gradient(135deg, #fb7185, #f472b6);
 
   --font-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -55,15 +55,15 @@ textarea {
 @layer components {
   .lobby-shell {
     min-height: 100vh;
-    background-color: #0b0f14;
+    background-color: #0b0c08;
     background-image: radial-gradient(
         ellipse at top,
-        rgba(99, 102, 241, 0.22),
+        rgba(212, 168, 83, 0.22),
         transparent 55%
       ),
       radial-gradient(
         ellipse at bottom,
-        rgba(168, 85, 247, 0.18),
+        rgba(180, 130, 50, 0.16),
         transparent 55%
       );
     font-size: 16px;
@@ -121,7 +121,7 @@ textarea {
 
   .sidebar-user:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(168, 85, 247, 0.45);
+    border-color: rgba(212, 168, 83, 0.45);
     transform: translateY(-1px);
   }
 
@@ -138,7 +138,7 @@ textarea {
     font-family: var(--font-display);
     font-weight: 800;
     color: white;
-    background: linear-gradient(135deg, #a855f7, #3b82f6);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
     flex: 0 0 50px;
   }
@@ -365,7 +365,7 @@ textarea {
 
   .time-card:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.45);
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.45);
   }
 
   .game-type {

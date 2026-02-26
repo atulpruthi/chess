@@ -63,7 +63,7 @@ export const MultiplayerGameStatus: React.FC = () => {
     }
     if (opponentDisconnected) return 'from-orange-600 to-red-600';
     if (isCheck) return 'from-red-600 to-orange-600';
-    return 'from-purple-600 to-blue-600';
+    return 'from-amber-600 to-blue-600';
   };
 
   return (

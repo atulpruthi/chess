@@ -14,6 +14,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
     "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
     "chess.js": "^1.4.0",
@@ -24,6 +25,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
+    "nsfwjs": "^4.2.1",
     "pg": "^8.18.0",
     "redis": "^5.10.0",
     "socket.io": "^4.8.3"

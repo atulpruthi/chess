@@ -385,22 +385,59 @@ export const useBotGameStore = create<BotGameState>((set, get) => ({
   },
 
   requestHint: async () => {
-    const { gameId, isThinking, gameOver } = get();
-    if (!gameId || isThinking || gameOver) return;
+    const { gameId, isThinking, gameOver, chess, playerColor } = get();
+    if (isThinking || gameOver) return;
 
-    try {
-      const response = await api.get(`/api/bot/${gameId}/hint`);
-      const { moveUci, moveSan } = response.data;
-      if (!moveUci) return;
-      const match = String(moveUci).match(/^([a-h][1-8])([a-h][1-8])([qrbn])?$/i);
-      if (!match) return;
-      const [, from, to] = match;
+    // Helper: pick best move client-side using simple heuristics
+    const clientSideHint = () => {
+      const moves = chess.moves({ verbose: true }) as any[];
+      if (moves.length === 0) return;
+
+      // Filter to player's moves only
+      const currentTurn = chess.turn();
+      const playerTurn = playerColor === 'white' ? 'w' : 'b';
+      if (currentTurn !== playerTurn) return;
+
+      // Heuristic priority: checkmate > check > capture queen > capture rook > capture > center control > other
+      const score = (m: any) => {
+        if (m.san.includes('#')) return 1000;
+        if (m.san.includes('+')) return 100;
+        const captureValues: Record<string, number> = { q: 90, r: 50, b: 30, n: 30, p: 10 };
+        if (m.captured) return (captureValues[m.captured] ?? 10);
+        // Center squares
+        const centerBonus = ['d4','d5','e4','e5'].includes(m.to) ? 5 : 0;
+        return centerBonus;
+      };
+
+      const sorted = [...moves].sort((a, b) => score(b) - score(a));
+      const best = sorted[0];
       set({
-        hintMove: { from: from.toLowerCase(), to: to.toLowerCase() },
-        hintSan: moveSan || null,
+        hintMove: { from: best.from, to: best.to },
+        hintSan: best.san || null,
       });
-    } catch (error) {
-      console.error('Failed to get hint:', error);
+    };
+
+    // Try server hint first, fall back to client-side
+    if (gameId) {
+      try {
+        const response = await api.get(`/api/bot/${gameId}/hint`);
+        const { moveUci, moveSan } = response.data;
+        if (moveUci) {
+          const match = String(moveUci).match(/^([a-h][1-8])([a-h][1-8])([qrbn])?$/i);
+          if (match) {
+            const [, from, to] = match;
+            set({
+              hintMove: { from: from.toLowerCase(), to: to.toLowerCase() },
+              hintSan: moveSan || null,
+            });
+            return;
+          }
+        }
+      } catch {
+        // Fall through to client-side hint
+      }
     }
+
+    clientSideHint();
   },
 }));

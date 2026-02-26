@@ -27,7 +27,7 @@ const difficultyInfo = {
   expert: {
     name: 'Expert',
     description: 'Maximum strength - good luck!',
-    color: 'from-purple-600 to-pink-600',
+    color: 'from-amber-600 to-pink-600',
     icon: '🐉',
   },
 };

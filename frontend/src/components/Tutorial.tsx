@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 import { useAuthStore } from '../store/authStore';
 import brilliantknightzLogo from '../assets/brilliantknightz.png';
@@ -119,7 +119,12 @@ const Tutorial: React.FC = () => {
   const [game, setGame] = useState(new Chess());
   const [completed, setCompleted] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
 
   const step = tutorialSteps[currentStep];
 
@@ -181,13 +186,13 @@ const Tutorial: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               onClick={() => navigate('/local?mode=bot', { preventScrollReset: true })}
-              className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-2xl font-semibold transition-all active:scale-[0.97] shadow-[0_4px_14px_rgba(59,130,246,0.4)]"
+              className="px-6 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-2xl font-semibold transition-all active:scale-[0.97] shadow-[0_4px_14px_rgba(245,158,11,0.4)]"
             >
               🤖 Play vs Bot
             </button>
             <button
               onClick={() => navigate('/puzzles')}
-              className="px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-2xl font-semibold transition-all active:scale-[0.97] shadow-[0_4px_14px_rgba(168,85,247,0.4)]"
+              className="px-6 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-2xl font-semibold transition-all active:scale-[0.97] shadow-[0_4px_14px_rgba(245,158,11,0.4)]"
             >
               🧩 Solve Puzzles
             </button>
@@ -288,7 +293,7 @@ const Tutorial: React.FC = () => {
               <div className="flex gap-2 mb-4">
                 {/* Board */}
                 <div className="flex items-center justify-center" ref={boardRef}>
-                  <Chessboard
+                  <SVGChessboard
                     options={chessComOptions({
                       id: 'tutorial-board',
                       position: game.fen(),
@@ -317,15 +322,15 @@ const Tutorial: React.FC = () => {
                 <div className="flex flex-col items-center justify-center gap-3 py-4" style={{ width: '60px', marginLeft: '5px', marginRight: '5px' }}>
                   <div 
                     className="relative rounded-lg overflow-hidden border-2 border-gray-700" 
-                    style={{ width: '48px', height: '500px', backgroundColor: '#111827' }}
+                    style={{ width: '48px', height: '550px', backgroundColor: '#111827' }}
                   >
                     <div 
                       className="absolute left-0 right-0"
                       style={{
                         bottom: 0,
                         height: `${((currentStep + 1) / tutorialSteps.length) * 100}%`,
-                        background: 'linear-gradient(to top, #3b82f6, #8b5cf6)',
-                        boxShadow: '0 -4px 24px rgba(59, 130, 246, 0.7)',
+                        background: 'linear-gradient(to top, #f59e0b, #d97706)',
+                        boxShadow: '0 -4px 24px rgba(245, 158, 11, 0.7)',
                         width: '100%',
                         transition: 'height 200ms ease-out'
                       }}
@@ -337,7 +342,7 @@ const Tutorial: React.FC = () => {
                 </div>
 
                 {/* Tutorial Content */}
-                <div style={{ width: '100%', height: '500px' }}>
+                <div style={{ width: '100%', height: '550px' }}>>
                   <div className="bg-gray-800 rounded-lg p-4 h-full overflow-y-auto">
                     <h2 className="text-2xl font-bold text-white mb-4 text-center">{step.title}</h2>
                     <p className="text-white/80 text-lg leading-relaxed mb-6">{step.description}</p>
@@ -350,7 +355,7 @@ const Tutorial: React.FC = () => {
                     )}
 
                     {step.highlight && !step.interactive && (
-                      <div className="p-3 bg-purple-500/20 border border-purple-500/50 rounded-2xl mb-4">
+                      <div className="p-3 bg-amber-500/20 border border-amber-500/50 rounded-2xl mb-4">
                         <p className="text-white/80 text-sm">💡 Highlighted squares show possible moves</p>
                       </div>
                     )}

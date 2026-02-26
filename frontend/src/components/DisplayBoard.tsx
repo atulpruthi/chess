@@ -1,5 +1,5 @@
 import React from 'react';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 interface DisplayBoardProps {
@@ -23,6 +23,13 @@ const ClassificationBadge: React.FC<{ classification: string }> = ({ classificat
           <svg {...svgBase}>
             <circle cx="20" cy="20" r="18" fill="#22d3ee" stroke="#0e7490" strokeWidth="2"/>
             <text x="20" y="28" fontSize="20" fontWeight="bold" fill="white" textAnchor="middle">!!</text>
+          </svg>
+        );
+      case 'checkmate':
+        return (
+          <svg {...svgBase}>
+            <circle cx="20" cy="20" r="18" fill="#f59e0b" stroke="#b45309" strokeWidth="2"/>
+            <text x="20" y="28" fontSize="16" fontWeight="bold" fill="white" textAnchor="middle">#</text>
           </svg>
         );
       case 'great':
@@ -124,7 +131,7 @@ const DisplayBoard: React.FC<DisplayBoardProps> = ({ fen, orientation = 'white',
   
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
-      <Chessboard 
+      <SVGChessboard 
         options={chessComOptions({
           id: 'display-chessboard',
           position: fen,

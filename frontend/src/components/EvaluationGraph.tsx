@@ -115,6 +115,9 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({ moves, currentMoveInd
       let color = '#6b7280'; // gray-500 default
 
       switch (move.classification) {
+        case 'checkmate':
+          color = '#f59e0b'; // amber-400
+          break;
         case 'brilliant':
           color = '#22d3ee'; // cyan-400
           break;
@@ -148,7 +151,7 @@ const EvaluationGraph: React.FC<EvaluationGraphProps> = ({ moves, currentMoveInd
         ctx.arc(x, y, 7, 0, 2 * Math.PI);
         ctx.stroke();
         
-        ctx.fillStyle = '#3b82f6';
+        ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
         ctx.arc(x, y, 5, 0, 2 * Math.PI);
         ctx.fill();

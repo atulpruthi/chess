@@ -93,7 +93,7 @@ export const UserProfile: React.FC = () => {
             <p className="text-white/70 mb-6">You need to login to view your profile.</p>
             <button
               onClick={() => navigate('/auth')}
-              className="h-12 px-8 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-all"
+              className="h-12 px-8 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 transition-all"
             >
               Login / Sign Up
             </button>
@@ -302,7 +302,7 @@ export const UserProfile: React.FC = () => {
               <td className="py-4">
                 <div className="flex items-center gap-4">
                   <div
-                    className="w-20 h-20 max-w-20 max-h-20 aspect-square flex-none rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold"
+                    className="w-20 h-20 max-w-20 max-h-20 aspect-square flex-none rounded-full overflow-hidden bg-gradient-to-br from-amber-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold"
                     style={{ width: 80, height: 80 }}
                   >
                     <img
@@ -336,7 +336,7 @@ export const UserProfile: React.FC = () => {
                           }
                           void validateAndSetAvatarFile(file);
                         }}
-                        className="w-full h-11 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[19px] text-white file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-white file:font-semibold hover:file:bg-white/15 focus:outline-none focus:border-purple-500 transition-colors"
+                        className="w-full h-11 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[19px] text-white file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-white file:font-semibold hover:file:bg-white/15 focus:outline-none focus:border-amber-500 transition-colors"
                         aria-label="Upload avatar"
                       />
                       {avatarError && (
@@ -358,7 +358,7 @@ export const UserProfile: React.FC = () => {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-[19px] text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
+                    className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-xl text-[19px] text-white placeholder-white/40 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 ) : (
                   <p className="text-white text-lg">{displayUser.username}</p>
@@ -397,7 +397,7 @@ export const UserProfile: React.FC = () => {
                     onChange={(e) => setBio(e.target.value)}
                     rows={5}
                     placeholder="Tell us about yourself..."
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[19px] text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[19px] text-white placeholder-white/40 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 ) : (
                   <p className="text-white/70 whitespace-pre-wrap">{displayUser.bio || 'No bio yet'}</p>

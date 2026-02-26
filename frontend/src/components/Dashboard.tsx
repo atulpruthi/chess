@@ -387,7 +387,7 @@ const Dashboard: React.FC = () => {
                   <div className="text-4xl mb-2">{achievement.icon}</div>
                   <div className="text-white font-semibold mb-1">{achievement.name}</div>
                   <div className="text-xs text-white/60 mb-2">{achievement.description}</div>
-                  <div className="text-xs text-purple-400">
+                  <div className="text-xs text-amber-400">
                     {new Date(achievement.unlockedAt).toLocaleDateString()}
                   </div>
                 </div>

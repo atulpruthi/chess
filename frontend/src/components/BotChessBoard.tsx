@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { type Square } from 'chess.js';
 import { useBotGameStore } from '../store/botGameStore';
 import { chessComHighlight, chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
@@ -26,7 +26,12 @@ export const BotChessBoard: React.FC = () => {
   const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, any>>({});
   const [optionSquares, setOptionSquares] = useState<Record<string, any>>({});
   const boardRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
 
   const hintSquares: Record<string, any> = hintMove
     ? {
@@ -34,6 +39,10 @@ export const BotChessBoard: React.FC = () => {
         [hintMove.to]: { background: 'rgba(96, 165, 250, 0.65)' },
       }
     : {};
+
+  const hintArrows = hintMove
+    ? [[hintMove.from, hintMove.to, 'rgba(96, 165, 250, 0.9)']]
+    : [];
 
   useEffect(() => {
     setMoveFrom('');
@@ -175,7 +184,7 @@ export const BotChessBoard: React.FC = () => {
 
   return (
     <div className="relative" ref={boardRef}>
-      <Chessboard
+      <SVGChessboard
         key={`bot-board-${playerColor}`}
         options={chessComOptions({
           id: 'bot-chessboard',
@@ -190,8 +199,9 @@ export const BotChessBoard: React.FC = () => {
             ...rightClickedSquares,
             ...hintSquares,
           },
+          customArrows: hintArrows as any,
           boardStyle: {
-            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
+            ...responsiveBoardStyle(1568, 137),
           },
           allowDragging: isMyTurn && !isThinking,
         })}
@@ -206,7 +216,7 @@ export const BotChessBoard: React.FC = () => {
 
       {/* Bot thinking indicator */}
       {isThinking && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-amber-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
           Bot is thinking...
         </div>

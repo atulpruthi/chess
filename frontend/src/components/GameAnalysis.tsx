@@ -22,7 +22,7 @@ interface MoveAnalysis {
   bestMoveSan: string | null;
   bestMoveUci: string | null;
   centipawnLoss: number;
-  classification: 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
+  classification: 'checkmate' | 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
   isBookMove: boolean;
   isForced: boolean;
 }
@@ -274,6 +274,7 @@ const GameAnalysis: React.FC = () => {
 
     const getVoiceText = (classification: string) => {
       switch (classification) {
+        case 'checkmate': return 'Checkmate!';
         case 'brilliant': return 'Brilliant move!';
         case 'great': return 'Great move!';
         case 'best': return 'Best move!';
@@ -516,6 +517,7 @@ const GameAnalysis: React.FC = () => {
 
   const getClassificationText = (classification: string) => {
     switch (classification) {
+      case 'checkmate': return 'Checkmate! ♛♚';
       case 'brilliant': return 'Brilliant!! ✨';
       case 'great': return 'Great Move! ⭐';
       case 'best': return 'Best Move! ⬆️';
@@ -853,7 +855,7 @@ const GameAnalysis: React.FC = () => {
                     setLoadingError(null);
                     loadAnalysis();
                   }}
-                  className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 font-bold"
+                  className="px-6 py-3 bg-amber-600 rounded-lg hover:bg-amber-700 font-bold"
                 >
                   Retry
                 </button>
@@ -908,7 +910,7 @@ const GameAnalysis: React.FC = () => {
                 <button
                   onClick={startAnalysis}
                   disabled={isAnalyzing}
-                  className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-amber-600 rounded-lg hover:bg-amber-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isAnalyzing ? 'Analyzing...' : 'Start Analysis'}
                 </button>
@@ -997,7 +999,7 @@ const GameAnalysis: React.FC = () => {
               <div className="flex flex-col items-center justify-center gap-3 py-4" style={{ width: '60px', marginLeft: '5px', marginRight: '5px' }}>
                 <div 
                   className="relative rounded-lg overflow-hidden border-2 border-gray-700" 
-                  style={{ width: '48px', height: '500px', backgroundColor: '#111827' }}
+                  style={{ width: '48px', height: '550px', backgroundColor: '#111827' }}
                 >
                   <div 
                     className="absolute left-0 right-0"
@@ -1188,16 +1190,16 @@ const GameAnalysis: React.FC = () => {
                           height: '100px',
                           fontSize: '90px',
                           lineHeight: '100px',
-                          color: '#3b82f6',
-                          textShadow: '0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4)',
-                          filter: 'drop-shadow(0 4px 12px rgba(59, 130, 246, 0.5))',
+                          color: '#f59e0b',
+                          textShadow: '0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(245, 158, 11, 0.4)',
+                          filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.5))',
                           transform: 'scaleX(-1)'
                         }}
                       >
                         ♞
                       </div>
                       {/* Animated Sparkles for Brilliant/Great moves */}
-                      {(currentMove.classification === 'brilliant' || currentMove.classification === 'great') && (
+                      {(currentMove.classification === 'checkmate' || currentMove.classification === 'brilliant' || currentMove.classification === 'great') && (
                         <>
                           <div 
                             className="absolute"
@@ -1308,7 +1310,7 @@ const GameAnalysis: React.FC = () => {
                         paddingBottom: '24px',
                         borderRadius: '60px',
                         textShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                        animation: (currentMove.classification === 'brilliant' || currentMove.classification === 'blunder') 
+                        animation: (currentMove.classification === 'checkmate' || currentMove.classification === 'brilliant' || currentMove.classification === 'blunder') 
                           ? 'textPulse 1s ease-in-out infinite' : 'none',
                         boxShadow: '0 6px 20px rgba(0, 0, 0, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.8)',
                         border: '3px solid #e8e6e3',
@@ -1392,7 +1394,7 @@ const GameAnalysis: React.FC = () => {
                 <button
                   onClick={addCommentary}
                   disabled={!newComment.trim()}
-                  className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-amber-600 rounded hover:bg-amber-700 disabled:opacity-50"
                 >
                   Post Comment
                 </button>
@@ -1410,8 +1412,8 @@ const GameAnalysis: React.FC = () => {
                         <span className="ml-2 text-gray-400">• Move {comment.moveNumber}</span>
                       )}
                       <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                        comment.commentaryType === 'coach' ? 'bg-purple-600' :
-                        comment.commentaryType === 'ai' ? 'bg-blue-600' :
+                        comment.commentaryType === 'coach' ? 'bg-amber-600' :
+                        comment.commentaryType === 'ai' ? 'bg-amber-600' :
                         'bg-gray-600'
                       }`}>
                         {comment.commentaryType?.toUpperCase() || 'PLAYER'}

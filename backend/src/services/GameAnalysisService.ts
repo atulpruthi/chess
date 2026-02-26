@@ -15,7 +15,7 @@ interface MoveEvaluation {
   bestMoveUci: string | null;
   bestEvaluation: number | null;
   centipawnLoss: number;
-  classification: 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
+  classification: 'checkmate' | 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book';
   isBookMove: boolean;
   isForced: boolean;
 }
@@ -77,6 +77,7 @@ class GameAnalysisService {
       // Analyze each move
       for (let i = 0; i < moves.length; i++) {
         const move = moves[i];
+        console.log(`Analyzing move ${i + 1}/${moves.length}: ${move.san} (${move.from}${move.to}${move.promotion || ''})`);
         
         // Reset to position before this move
         const tempChess = new Chess();
@@ -114,6 +115,7 @@ class GameAnalysisService {
           evalBefore.mateIn,
           evalAfter.mateIn,
           move.san,
+          fenAfter,
           evalBefore.evaluation,
           evalAfter.evaluation,
           move.color
@@ -248,12 +250,15 @@ class GameAnalysisService {
   /**
    * Calculate centipawn loss
    */
-  private calculateCentipawnLoss(evalBefore: number, evalAfter: number, playerColor: 'w' | 'b'): number {
-    // Normalize evaluations from perspective of player to move
-    const beforeNorm = playerColor === 'w' ? evalBefore : -evalBefore;
-    const afterNorm = playerColor === 'w' ? -evalAfter : evalAfter;
-
-    const loss = beforeNorm - afterNorm;
+  private calculateCentipawnLoss(evalBefore: number, evalAfter: number, _playerColor: 'w' | 'b'): number {
+    // evalBefore  = Stockfish score from the side-to-move's perspective (positive = good for the player making the move)
+    // evalAfter   = Stockfish score from the OPPONENT's perspective after the move (positive = good for opponent)
+    // Player quality before the move  = evalBefore
+    // Player quality after  the move  = -evalAfter  (negate because evalAfter is from opponent POV)
+    // Centipawn loss = max(0, quality_before - quality_after) = max(0, evalBefore + evalAfter)
+    // This formula is identical for white and black because Stockfish always returns
+    // from the side-to-move perspective, so the sign convention is consistent.
+    const loss = evalBefore + evalAfter;
     return Math.max(0, loss);
   }
 
@@ -265,17 +270,41 @@ class GameAnalysisService {
     mateInBefore: number | null,
     mateInAfter: number | null,
     moveSan: string,
+    fenAfter: string,
     evalBefore: number,
     evalAfter: number,
     color: string
-  ): 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book' {
-    // Missed mate or turned winning into losing
-    if (mateInBefore && !mateInAfter) {
-      return 'blunder';
+  ): 'checkmate' | 'brilliant' | 'great' | 'best' | 'good' | 'sacrifice' | 'inaccuracy' | 'mistake' | 'blunder' | 'book' {
+    try {
+      const mateCheck = new Chess(fenAfter);
+      if (mateCheck.isCheckmate()) {
+        return 'checkmate';
+      }
+    } catch {
+      // Ignore invalid FEN and fall back to evaluation-based checks.
     }
 
-    // Found mate
-    if (!mateInBefore && mateInAfter) {
+    // Checkmate moves should be labeled explicitly
+    if (moveSan.includes('#')) {
+      return 'checkmate';
+    }
+
+    // ── Missed mate: player had a winning forced-mate but lost it ─────────────
+    // mateInBefore > 0 means the side to move (current player) had a forced win.
+    // mateInAfter  < 0 means after the move the OPPONENT is being force-mated (player still winning).
+    // If the player HAD a winning mate (mateInBefore > 0) but after their move the opponent
+    // is no longer being mated (mateInAfter is null or >= 0), that is a blunder.
+    if (mateInBefore !== null && mateInBefore > 0) {
+      const stillWinning = mateInAfter !== null && mateInAfter < 0;
+      if (!stillWinning) {
+        return 'blunder';
+      }
+    }
+
+    // ── Found mate: player found a forced-mate from a position without one ────
+    // After the move it is the OPPONENT's turn; mateInAfter < 0 means the opponent
+    // is being force-mated (the player who just moved is winning).
+    if ((mateInBefore === null || mateInBefore <= 0) && mateInAfter !== null && mateInAfter < 0) {
       return 'brilliant';
     }
 

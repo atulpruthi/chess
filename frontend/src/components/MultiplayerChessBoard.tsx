@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { type Square } from 'chess.js';
 import { useMultiplayerGameStore } from '../store/multiplayerGameStore';
-import { chessComHighlight, chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { chessComHighlight, chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 
 export const MultiplayerChessBoard: React.FC = () => {
   const {
@@ -22,7 +22,12 @@ export const MultiplayerChessBoard: React.FC = () => {
   const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, any>>({});
   const [optionSquares, setOptionSquares] = useState<Record<string, any>>({});
   const boardRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     setMoveFrom('');
@@ -132,7 +137,7 @@ export const MultiplayerChessBoard: React.FC = () => {
 
   return (
     <div className="relative" ref={boardRef}>
-      <Chessboard
+      <SVGChessboard
         key={`multiplayer-board-${playerColor ?? 'pending'}`}
         options={chessComOptions({
           id: playerColor ? `multiplayer-chessboard-${playerColor}` : 'multiplayer-chessboard',
@@ -147,7 +152,7 @@ export const MultiplayerChessBoard: React.FC = () => {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
+            ...responsiveBoardStyle(1568, 137),
           },
           allowDragging: isMyTurn && !opponentDisconnected,
         })}

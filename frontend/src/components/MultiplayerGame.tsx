@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { Chess, type Square } from 'chess.js';
 import { useSocket } from '../hooks/useSocket';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { useAuthStore } from '../store/authStore';
 import { GameChat } from './GameChat';
-import { chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
+import { chessComOptions, responsiveBoardStyle } from '../styles/chessboardTheme';
 import { glassCardSoftClass } from '../styles/appTheme';
 import brilliantknightzLogo from '../assets/brilliantknightz.png';
 import brilliantknightzBanner from '../assets/brilliantknightzbgremoved.png';
@@ -299,7 +299,7 @@ export const MultiplayerGame = () => {
             <div className="flex gap-4 items-start">
               {/* Chessboard */}
               <div>
-                <Chessboard
+                <SVGChessboard
                   options={chessComOptions({
                     id: 'multiplayer-room-chessboard',
                     position: game.fen(),
@@ -307,7 +307,7 @@ export const MultiplayerGame = () => {
                       onDrop(sourceSquare as Square, targetSquare as Square),
                     boardOrientation,
                     boardStyle: {
-                      ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
+                      ...responsiveBoardStyle(1568, 137),
                     },
                   })}
                 />
@@ -317,7 +317,7 @@ export const MultiplayerGame = () => {
               <div className="flex flex-col items-center gap-3" style={{ width: '60px' }}>
                 <div
                   className="relative rounded-lg overflow-hidden border-2 border-gray-700"
-                  style={{ width: '48px', height: '682px', backgroundColor: '#111827' }}
+                  style={{ width: '48px', height: '1568px', backgroundColor: '#111827' }}
                 >
                   <div
                     className="absolute left-0 right-0"

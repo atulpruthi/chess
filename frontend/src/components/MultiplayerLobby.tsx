@@ -24,8 +24,8 @@ export const MultiplayerLobby: React.FC<{ onGameStart: () => void }> = ({ onGame
       ) : (
         <div className="text-center py-8">
           <div className="relative w-24 h-24 mx-auto mb-6">
-            <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full"></div> 
-            <div className="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 border-4 border-amber-500/30 rounded-full"></div> 
+            <div className="absolute inset-0 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
 
           <h3 className="text-[24px] font-bold text-white mb-2">Searching for opponent...</h3>

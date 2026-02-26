@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Chessboard } from 'react-chessboard';
+import { SVGChessboard } from './SVGChessboard';
 import { useGameStore, type PieceSymbol } from '../store/gameStore';
 import { type Square } from 'chess.js';
 import { chessComHighlight, chessComOptions, ONLINE_MULTIPLAYER_BOARD_PX, responsiveBoardStyle } from '../styles/chessboardTheme';
@@ -20,7 +20,12 @@ export default function ChessBoard() {
   const [rightClickedSquares, setRightClickedSquares] = useState<Record<string, any>>({});
   const [optionSquares, setOptionSquares] = useState<Record<string, any>>({});
   const boardRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      boardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
 
   const getMoveOptions = (square: Square) => {
     const moves = chess.moves({
@@ -133,7 +138,7 @@ export default function ChessBoard() {
 
   return (
     <div className="relative" ref={boardRef}>
-      <Chessboard
+      <SVGChessboard
         options={chessComOptions({
           id: 'local-chessboard',
           position: fen,
@@ -146,13 +151,12 @@ export default function ChessBoard() {
             ...rightClickedSquares,
           },
           boardStyle: {
-            ...responsiveBoardStyle(ONLINE_MULTIPLAYER_BOARD_PX, 260),
+            ...responsiveBoardStyle(1568, 137),
             borderRadius: '8px',
           },
         })}
       />
 
-      {/* Promotion Dialog */}
       {promotionSquare && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
           <div className="bg-white rounded-lg p-6 shadow-xl">

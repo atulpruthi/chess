@@ -7,6 +7,7 @@ import pool from '../config/database';
 import { otpService } from '../services/OTPService';
 import { rateLimitService } from '../services/RateLimitService';
 import { recaptchaService } from '../services/RecaptchaService';
+import { analyzeImage } from '../services/ContentModerationService';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -637,6 +638,12 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     const detected = detectImageExtension(file.buffer);
     if (!detected) {
       return res.status(400).json({ error: 'Invalid image file. Please upload a PNG, JPG, GIF, or WEBP image.' });
+    }
+
+    // AI content moderation — reject inappropriate images before saving to disk
+    const moderation = await analyzeImage(file.buffer);
+    if (!moderation.safe) {
+      return res.status(422).json({ error: moderation.reason || 'Image rejected by content moderation.' });
     }
 
     const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');

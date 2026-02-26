@@ -284,7 +284,7 @@ const GameHistory: React.FC = () => {
             games.map((game) => (
               <div
                 key={game.id}
-                className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl p-6 border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] hover:border-purple-500/50 transition cursor-pointer"
+                className="card-lift rounded-3xl bg-white/[0.03] backdrop-blur-xl p-6 border border-white/10 shadow-[0_14px_50px_rgba(0,0,0,0.45)] hover:border-amber-500/50 transition cursor-pointer"
                 onClick={() => handleViewGame(game.id)}
               >
                 <div className="flex items-center justify-between">
@@ -347,7 +347,7 @@ const GameHistory: React.FC = () => {
                         e.stopPropagation();
                         navigate(`/game-analysis/${game.id}`);
                       }}
-                      className="h-10 px-5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all active:scale-[0.97]"
+                      className="h-10 px-5 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 transition-all active:scale-[0.97]"
                     >
                       📊 Analyze
                     </button>
@@ -373,7 +373,7 @@ const GameHistory: React.FC = () => {
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] flex items-center justify-center font-semibold shadow-lg"
+              className="px-4 py-2 bg-gradient-to-r from-amber-600 to-pink-600 text-white rounded-xl hover:from-amber-700 hover:to-pink-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] flex items-center justify-center font-semibold shadow-lg"
               style={{ minWidth: '48px', height: '40px' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -389,7 +389,7 @@ const GameHistory: React.FC = () => {
             <button
               onClick={() => setPage(page + 1)}
               disabled={!hasMore}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] flex items-center justify-center font-semibold shadow-lg"
+              className="px-4 py-2 bg-gradient-to-r from-amber-600 to-pink-600 text-white rounded-xl hover:from-amber-700 hover:to-pink-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] flex items-center justify-center font-semibold shadow-lg"
               style={{ minWidth: '48px', height: '40px' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

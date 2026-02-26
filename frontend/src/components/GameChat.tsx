@@ -62,7 +62,7 @@ export const GameChat = () => {
           chatMessages.map((msg) => (
             <div key={msg.id} className="text-sm">
               <div className="flex items-baseline gap-2">
-                <span className="font-semibold text-purple-400">{msg.username}</span>
+                <span className="font-semibold text-amber-400">{msg.username}</span>
                 <span className="text-white/40 text-xs">
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -81,7 +81,7 @@ export const GameChat = () => {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type a message..."
           maxLength={200}
-          className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-purple-500 transition-colors"
+          className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-amber-500 transition-colors"
         />
         <button
           type="submit"

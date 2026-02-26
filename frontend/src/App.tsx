@@ -41,7 +41,7 @@ function App() {
     logout();
     navigate('/lobby');
   };
-  const { resetGame: resetBotGame, moveHistory: botMoveHistory, gameOver: botGameOver, isCheck: botIsCheck, gameId: botGameId, requestHint, hintSan: botHintSan, isThinking: botIsThinking } = useBotGameStore();
+  const { resetGame: resetBotGame, moveHistory: botMoveHistory, gameOver: botGameOver, isCheck: botIsCheck, gameId: botGameId, requestHint, isThinking: botIsThinking, playerColor: botPlayerColor } = useBotGameStore();
   const { resetGame: resetMultiplayerGame, offerDraw: multiplayerOfferDraw, resign: multiplayerResign, gameOver: multiplayerGameOver, opponentDisconnected: multiplayerOpponentDisconnected } = useMultiplayerGameStore();
 
   // Auto-scroll bot move history to bottom when new moves are added
@@ -135,7 +135,7 @@ function App() {
                       onClick={() => setShowProfile(!showProfile)}
                       className={`flex items-center gap-2 px-4 py-2 ${glassCardSoftClass} hover:bg-white/[0.06] transition-colors`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-yellow-400 flex items-center justify-center text-white text-sm font-bold">
                         {user?.username.charAt(0).toUpperCase()}
                       </div>
                       <span className="text-white font-medium">{user?.username}</span>
@@ -251,10 +251,10 @@ function App() {
                         <div className="grid md:grid-cols-3 gap-6">
                           <button
                             onClick={handleNewLocalGame}
-                            className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-purple-500/50 group`}
+                            className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-amber-500/50 group`}
                           >
                             <IconChessboard className="kid-hero-icon" />
-                            <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+                            <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">
                               Local Game
                             </h3>
                             <p className="text-gray-400">
@@ -264,10 +264,10 @@ function App() {
 
                           <button
                             onClick={handleNewBotGame}
-                            className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-blue-500/50 group`}
+                            className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-amber-500/40 group`}
                           >
                             <IconRobot className="kid-hero-icon" />
-                            <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                            <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">
                               Play vs Bot
                             </h3>
                             <p className="text-gray-400">
@@ -299,27 +299,41 @@ function App() {
                     <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[minmax(0,1fr)_320px] overflow-x-auto">
                       {/* Left Panel - Chess Board */}
                       <div className="space-y-6">
-                        <div className="w-full flex justify-center items-start mt-2.5">
+                        <div className="w-full flex justify-start items-start mt-2.5">
                           <MultiplayerChessBoard />
                         </div>
 
                         {!multiplayerGameOver && !multiplayerOpponentDisconnected && (
-                          <div
-                            className="mx-auto flex gap-2"
-                            style={{ maxWidth: `${ONLINE_MULTIPLAYER_BOARD_PX}px`, width: '100%', marginTop: '5px' }}
-                          >
-                            <button
-                              onClick={multiplayerOfferDraw}
-                              className="btn-secondary w-full"
-                            >
-                              Offer Draw
-                            </button>
-                            <button
-                              onClick={multiplayerResign}
-                              className="btn-secondary sidebar-btn--logout w-full"
-                            >
-                              Resign
-                            </button>
+                          <div style={{ width: 'min(92vw, 90vh, calc(100vh - 137px), 1568px)', maxWidth: '100%' }}>
+                            <div className="flex gap-[5px] justify-center mt-2">
+                              {/* Offer Draw */}
+                              <div className="relative group" style={{ width: '87px' }}>
+                                <button
+                                  onClick={multiplayerOfferDraw}
+                                  className="w-full aspect-[25/16] overflow-hidden rounded-xl flex items-center justify-center text-[56px] transition-all bg-slate-700 hover:bg-slate-600 active:scale-95 shadow-lg"
+                                  aria-label="Offer Draw"
+                                >
+                                  🤝
+                                </button>
+                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-lg bg-slate-900 border border-white/10 px-2.5 py-1 text-xs font-medium text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                                  Offer Draw
+                                </span>
+                              </div>
+                              {/* Resign */}
+                              <div className="relative group" style={{ width: '87px' }}>
+                                <button
+                                  onClick={multiplayerResign}
+                                  className="w-full aspect-[25/16] overflow-hidden rounded-xl flex items-center justify-center text-[56px] transition-all active:scale-95 shadow-lg"
+                                  style={{ background: 'linear-gradient(180deg, #ff6b6b 0%, #ee5a52 55%, #dc4b3e 100%)' }}
+                                  aria-label="Resign"
+                                >
+                                  🏳️
+                                </button>
+                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-lg bg-slate-900 border border-white/10 px-2.5 py-1 text-xs font-medium text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                                  Resign
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -336,23 +350,33 @@ function App() {
                   <>
                     {/* Bot Game Area */}
                     <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[minmax(0,1fr)_320px] overflow-x-auto">
-                      {/* Left Panel - Chess Board + Status */}
+                      {/* Left Panel - Chess Board */}
                       <div className="space-y-4">
-                        <div className="w-full flex justify-center items-start mt-2.5">
+                        <div className="w-full flex justify-start items-start mt-2.5">
                           <BotChessBoard />
                         </div>
-                        <BotGameStatus />
                       </div>
 
                       {/* Right Panel - History */}
                       <div className="space-y-6">
                         <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
-                          <h3 className="text-xl font-bold text-white mb-4 text-center">Move History</h3>
+                          <h3 className="text-xl font-bold text-white mb-4 text-center">Move List</h3>
                           <div ref={botMoveHistoryRef} className="overflow-y-auto" style={{ height: '150px' }}>
                             {botMoveHistory.length === 0 ? (
                               <div className="text-gray-400 text-center py-4">No moves yet</div>
                             ) : (
                               <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-white/10">
+                                    <th className="py-1 px-2 text-gray-500 font-medium text-center w-10">#</th>
+                                    <th className="py-1 px-2 font-semibold text-center w-24 text-amber-300">
+                                      {botPlayerColor === 'white' ? 'You' : 'Bot'}
+                                    </th>
+                                    <th className="py-1 px-2 font-semibold text-center w-24 text-gray-400">
+                                      {botPlayerColor === 'black' ? 'You' : 'Bot'}
+                                    </th>
+                                  </tr>
+                                </thead>
                                 <tbody>
                                   {Array.from({ length: Math.ceil(botMoveHistory.length / 2) }, (_, i) => {
                                     const moveNumber = i + 1;
@@ -360,13 +384,13 @@ function App() {
                                     const blackMove = botMoveHistory[i * 2 + 1];
                                     return (
                                       <tr key={moveNumber} className="border-b border-white/5">
-                                        <td className="py-2 px-2 text-gray-400 font-medium w-10">
+                                        <td className="py-2 px-2 text-gray-400 font-medium w-10 text-center">
                                           {moveNumber}.
                                         </td>
-                                        <td className="py-2 px-2 text-white font-mono w-24">
+                                        <td className="py-2 px-2 text-white font-mono w-24 text-center">
                                           {whiteMove}
                                         </td>
-                                        <td className="py-2 px-2 text-gray-300 font-mono w-24">
+                                        <td className="py-2 px-2 text-gray-300 font-mono w-24 text-center">
                                           {blackMove || ''}
                                         </td>
                                       </tr>
@@ -399,59 +423,57 @@ function App() {
                         </div>
                         {/* Game Actions */}
                         {!botGameOver && (
-                          <div className="flex flex-col gap-2 justify-center mt-4" style={{marginTop: '5px'}}>
-                            <div className="flex gap-4 justify-center">
+                          <div className="flex gap-[5px] px-6 w-full mt-4">
+                            {/* Hint */}
+                            <div className="relative group flex-1">
                               <button
                                 type="button"
                                 onClick={() => requestHint()}
                                 disabled={botIsThinking}
-                                className="find-match-btn"
-                                style={{ width: 'auto', paddingLeft: '14px', paddingRight: '14px', height: '30px', paddingTop: '0px', paddingBottom: '0px', lineHeight: '30px', opacity: botIsThinking ? 0.6 : 1 }}
+                                className="w-full aspect-[25/16] overflow-hidden rounded-xl flex items-center justify-center text-[56px] transition-all bg-amber-600 hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                                aria-label="Hint"
                               >
-                                💡 Hint
+                                💡
                               </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const botStore = useBotGameStore.getState();
-                                botStore.offerDraw();
-                              }}
-                              disabled={botIsCheck}
-                              className="find-match-btn"
-                              style={{ width: 'auto', paddingLeft: '14px', paddingRight: '14px', height: '30px', paddingTop: '0px', paddingBottom: '0px', lineHeight: '30px', opacity: botIsCheck ? 0.6 : 1 }}
-                            >
-                              🤝 Offer Draw
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const botStore = useBotGameStore.getState();
-                                botStore.resign();
-                              }}
-                              disabled={botIsCheck}
-                              className="find-match-btn"
-                              style={{ 
-                                width: 'auto', 
-                                paddingLeft: '14px', 
-                                paddingRight: '14px',
-                                 height: '30px',
-                                paddingTop: '0px',
-                                paddingBottom: '0px',
-                                  lineHeight: '30px',
-                                background: 'linear-gradient(180deg, #ff6b6b 0%, #ee5a52 55%, #dc4b3e 100%)',
-                                opacity: botIsCheck ? 0.6 : 1
-                              }}
-                            >
-                              🏳️ Resign
-                            </button>
+                              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-lg bg-slate-900 border border-white/10 px-2.5 py-1 text-xs font-medium text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                                Hint
+                              </span>
                             </div>
-                            {botHintSan && (
-                              <div className="text-center text-sm text-white/80">
-                                Hint: {botHintSan}
-                              </div>
-                            )}
+                            {/* Offer Draw */}
+                            <div className="relative group flex-1">
+                              <button
+                                type="button"
+                                onClick={() => { const s = useBotGameStore.getState(); s.offerDraw(); }}
+                                disabled={botIsCheck}
+                                className="w-full aspect-[25/16] overflow-hidden rounded-xl flex items-center justify-center text-[56px] transition-all bg-slate-700 hover:bg-slate-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                                aria-label="Offer Draw"
+                              >
+                                🤝
+                              </button>
+                              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-lg bg-slate-900 border border-white/10 px-2.5 py-1 text-xs font-medium text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                                Offer Draw
+                              </span>
+                            </div>
+                            {/* Resign */}
+                            <div className="relative group flex-1">
+                              <button
+                                type="button"
+                                onClick={() => { const s = useBotGameStore.getState(); s.resign(); }}
+                                disabled={botIsCheck}
+                                className="w-full aspect-[25/16] overflow-hidden rounded-xl flex items-center justify-center text-[56px] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                                style={{ background: 'linear-gradient(180deg, #ff6b6b 0%, #ee5a52 55%, #dc4b3e 100%)' }}
+                                aria-label="Resign"
+                              >
+                                🏳️
+                              </button>
+                              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-lg bg-slate-900 border border-white/10 px-2.5 py-1 text-xs font-medium text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                                Resign
+                              </span>
+                            </div>
                           </div>
                         )}
+                        {/* Game Status below Move History */}
+                        <BotGameStatus />
                       </div>
                     </div>
                     
@@ -463,7 +485,7 @@ function App() {
                     <div className="grid gap-6 max-w-7xl mx-auto grid-cols-[minmax(0,1fr)_320px] overflow-x-auto">
                       {/* Left Panel - Chess Board + Tips */}
                       <div className="space-y-6">
-                        <div className="w-full flex justify-center items-start mt-2.5">
+                        <div className="w-full flex justify-start items-start mt-2.5">
                           <ChessBoard />
                         </div>
 
@@ -524,10 +546,10 @@ function App() {
                   <div className="grid md:grid-cols-3 gap-6">
                     <button
                       onClick={handleNewLocalGame}
-                      className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-purple-500/50 group`}
+                      className={`p-8 ${glassCardSoftClass} hover:bg-white/[0.06] transition-all border border-white/10 hover:border-amber-500/50 group`}
                     >
                       <IconChessboard className="kid-hero-icon" />
-                      <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+                      <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">
                         Local Game
                       </h3>
                       <p className="text-gray-400">
@@ -676,7 +698,7 @@ function App() {
                     </button>
                   </div>
                   <div className={`${glassCardSoftClass} p-6 shadow-xl`}>
-                    <h3 className="text-xl font-bold text-white mb-4">Move History</h3>
+                    <h3 className="text-xl font-bold text-white mb-4">Move List</h3>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {botMoveHistory.map((move, index) => (
                         <div key={index} className="text-gray-300">

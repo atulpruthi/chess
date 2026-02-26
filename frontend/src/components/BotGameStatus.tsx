@@ -95,7 +95,7 @@ export const BotGameStatus: React.FC = () => {
     }
     if (isCheck) return 'from-red-600 to-orange-600';
     if (isThinking) return 'from-blue-600 to-cyan-600';
-    return 'from-purple-600 to-blue-600';
+    return 'from-amber-600 to-blue-600';
   };
 
   const getCommentary = (): string => {
@@ -226,11 +226,11 @@ export const BotGameStatus: React.FC = () => {
       )}
 
       {/* Commentary Section */}
-      <div className="mb-4 p-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg">
+      <div className="mb-4 p-4 bg-gradient-to-r from-amber-900/30 to-blue-900/30 rounded-lg">
         <div className="flex items-start gap-2">
           <span className="text-2xl">💬</span>
           <div>
-            <div className="text-xs font-semibold text-purple-300 mb-1">Commentary</div>
+            <div className="text-xs font-semibold text-amber-300 mb-1">Commentary</div>
             <p className="text-sm text-gray-200 leading-relaxed">
               {getCommentary()}
             </p>
@@ -277,13 +277,10 @@ export const BotGameStatus: React.FC = () => {
         </div>
 
         {isThinking && !gameOver && (
-          <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <p className="text-xs text-center text-blue-300 mb-2">
-              If the bot seems stuck, you can reset the thinking state:
-            </p>
+          <div className="mt-4">
             <button
               onClick={resetThinkingState}
-              className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all active:scale-[0.97]"
+              className="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition-all active:scale-[0.97]"
             >
               Reset Bot Thinking
             </button>

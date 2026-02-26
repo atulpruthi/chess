@@ -38,7 +38,7 @@ export const MultiplayerChat: React.FC = () => {
           chatMessages.map((msg, index) => (
             <div key={index} className="bg-slate-700 rounded-lg p-2">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-purple-400 font-semibold text-sm">
+                <span className="text-amber-400 font-semibold text-sm">
                   {msg.username}
                 </span>
                 <span className="text-gray-500 text-xs">
@@ -58,7 +58,7 @@ export const MultiplayerChat: React.FC = () => {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
           maxLength={200}
         />
         <button
